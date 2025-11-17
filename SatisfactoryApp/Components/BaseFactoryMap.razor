@@ -1,0 +1,260 @@
+@using SatisfactoryApp.Models
+@using SatisfactoryApp.Services
+@using SatisfactoryApp.Utils
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject FactoryStore FactoryStore
+@inject IJSRuntime JSRuntime
+
+<MudCard>
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">@Title</MudText>
+        @if (_isLoading)
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase">Loading...</MudText>
+        }
+        else if (!string.IsNullOrEmpty(_error))
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase">
+                Selected: @(_selectedFactory?.Type ?? "-") | 
+                @(_selectedFactory?.PercentageProducing ?? 0)% | 
+                Main:@CircuitNames.GetMainCircuitName(_selectedFactory?.MainPowerCircuitId) | 
+                Sub:@CircuitNames.GetSubCircuitName(_selectedFactory?.SubPowerCircuitId)
+            </MudText>
+        }
+    </MudCardHeader>
+    <MudCardContent>
+        <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
+            <div class="map-wrapper">
+                @if (!string.IsNullOrEmpty(_mergedImageUrl))
+                {
+                    <img src="@_mergedImageUrl" alt="@Title with Background" class="map-image" />
+                }
+                else
+                {
+                    <img src="/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                }
+            </div>
+        </div>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public Func<Factory, string> GetFactoryColor { get; set; } = null!;
+
+    private bool _isLoading;
+    private string? _error;
+    private string? _mergedImageUrl;
+    private Factory? _selectedFactory;
+    private int _lastUpdateCounter = -1;
+    private bool _graphvizLoaded = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _isLoading = true;
+                StateHasChanged();
+                await JSRuntime.InvokeVoidAsync("loadGraphviz");
+                _graphvizLoaded = true;
+                _isLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                _error = "Failed to load graph renderer: " + ex.Message;
+                _isLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        // Check if factories were updated
+        if (_graphvizLoaded && FactoryStore.UpdateCounter != _lastUpdateCounter)
+        {
+            _lastUpdateCounter = FactoryStore.UpdateCounter;
+            if (FactoryStore.Factories.Count > 0 && !_isLoading && string.IsNullOrEmpty(_error))
+            {
+                await RenderMap();
+            }
+        }
+    }
+
+    private async Task RenderMap()
+    {
+        try
+        {
+            _isLoading = true;
+            StateHasChanged();
+
+            var filteredFactories = FactoryStore.FilteredFactories;
+            var nonFilteredFactories = FactoryStore.NonFilteredFactories;
+
+            var dotContentFiltered = CreateDotContent(filteredFactories);
+            var dotContentNonFiltered = CreateDotContent(nonFilteredFactories);
+
+            var svgFiltered = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContentFiltered);
+            var svgNonFiltered = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContentNonFiltered);
+
+            await MergeImages(svgFiltered, svgNonFiltered);
+
+            _isLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to render graph: " + ex.Message;
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string CreateDotContent(List<Factory> factories)
+    {
+        const int minX = -320000;
+        const int maxX = 380000;
+        const int minY = -250000;
+        const int maxY = 450000;
+        const int mapWidth = 30;
+        const int mapHeight = 30;
+
+        var scaleX = (mapWidth - 2.0) / (maxX - minX);
+        var scaleY = (mapHeight - 2.0) / (maxY - minY);
+
+        var dot = $@"digraph G {{
+  layout=neato;
+  size=""{mapWidth},{mapHeight}"";
+  bgcolor=transparent;
+  node [shape=circle, style=filled, penwidth=1, width=0.2, height=0.2, fontsize=8, fontname=""Arial"", label=""""];
+  edge [fontname=""Arial"", penwidth=2];
+  graph [ranksep=0, nodesep=0, splines=curved];
+";
+
+        const double cornerSize = 0.001;
+        dot += $"\n_tl [label=\"\", pos=\"0,{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_tr [label=\"\", pos=\"{mapWidth},{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_bl [label=\"\", pos=\"0,0!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_br [label=\"\", pos=\"{mapWidth},0!\", width={cornerSize}, height={cornerSize}];";
+
+        for (int index = 0; index < factories.Count; index++)
+        {
+            var factory = factories[index];
+            if (factory.X.HasValue && factory.Y.HasValue)
+            {
+                var x = (factory.X.Value - minX) * scaleX;
+                var y = mapHeight - (factory.Y.Value - minY) * scaleY - 5;
+                var color = GetFactoryColor(factory);
+                var shape = GetFactoryShape(factory.Type);
+
+                var factoryId = $"factory_{index}";
+                dot += $"\n{factoryId} [shape=\"{shape}\", fillcolor=\"{color}\", color=\"#000000\", pos=\"{x:F2},{y:F2}!\"];";
+            }
+        }
+
+        dot += "\n}";
+        return dot;
+    }
+
+    private string GetFactoryShape(string? factoryType)
+    {
+        var circleTypes = new[] { "Converter", "HadronCollider", "QuantumEncoder" };
+        return circleTypes.Contains(factoryType) ? "triangle" : "circle";
+    }
+
+    private async Task MergeImages(string svgFiltered, string svgNonFiltered)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("mergeFactoryMapImages", svgFiltered, svgNonFiltered, DotNetObjectReference.Create(this));
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to merge images: " + ex.Message;
+        }
+    }
+
+    [JSInvokable]
+    public void SetMergedImageUrl(string url)
+    {
+        _mergedImageUrl = url;
+        StateHasChanged();
+    }
+
+    private async Task HandleMapClick(MouseEventArgs e)
+    {
+        if (_mergedImageUrl == null) return;
+
+        var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", ".map-wrapper");
+        if (rect == null) return;
+
+        var clickX = e.ClientX - rect.Left;
+        var clickY = e.ClientY - rect.Top;
+
+        const int minX = -320000;
+        const int maxX = 435000;
+        const int minY = -372000;
+        const int maxY = 372000;
+
+        var scaleX = (maxX - minX) / rect.Width;
+        var scaleY = (maxY - minY) / rect.Height;
+
+        var factoryX = clickX * scaleX + minX;
+        var factoryY = clickY * scaleY + minY;
+
+        const int clickRadius = 5000;
+        Factory? closestFactory = null;
+        double closestDistance = double.MaxValue;
+
+        foreach (var factory in FactoryStore.NonFilteredFactories)
+        {
+            if (factory.X.HasValue && factory.Y.HasValue)
+            {
+                var distance = Math.Sqrt(Math.Pow(factoryX - factory.X.Value, 2) + Math.Pow(factoryY - factory.Y.Value, 2));
+                if (distance < clickRadius && distance < closestDistance)
+                {
+                    closestDistance = distance;
+                    closestFactory = factory;
+                }
+            }
+        }
+
+        _selectedFactory = closestFactory;
+        StateHasChanged();
+    }
+
+    private class BoundingClientRect
+    {
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
+}
+
+<style>
+    .map-wrapper {
+        position: relative;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+
+    .map-image {
+        object-fit: contain;
+        transition: opacity 0.2s;
+        width: 100%;
+        height: auto;
+    }
+
+    .map-image.background-only {
+        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+        opacity: 0.4;
+    }
+</style>
+

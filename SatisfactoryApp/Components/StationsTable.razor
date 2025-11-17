@@ -1,0 +1,162 @@
+@using SatisfactoryApp.Models
+@using SatisfactoryApp.Services
+@using MudBlazor
+@inject StationStore StationStore
+
+<MudCard>
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">Stations</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        @if (StationStore.FilteredStations.Count > 0)
+        {
+            <MudTable Items="@StationStore.FilteredStations" Hover="true" Dense="true" Striped="true">
+                <HeaderContent>
+                    <MudTh></MudTh>
+                    <MudTh></MudTh>
+                    <MudTh>Station</MudTh>
+                    <MudTh>Cargo</MudTh>
+                    <MudTh>Vehicles</MudTh>
+                </HeaderContent>
+                <RowTemplate>
+                    <MudTd>
+                        @if (context.Type == "train")
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Train" Size="Size.Small" />
+                        }
+                        else if (context.Type == "truck")
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                        }
+                        else if (context.Type == "drone")
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Flight" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.Help" Size="Size.Small" />
+                        }
+                    </MudTd>
+                    <MudTd>
+                        @if (context.IsUnload)
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" />
+                        }
+                        else
+                        {
+                            <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" />
+                        }
+                    </MudTd>
+                    <MudTd>
+                        <MudText>@(context.ShortName ?? context.Name ?? "Unknown")</MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudText>
+                            @GetCargoFlowText(context)
+                        </MudText>
+                    </MudTd>
+                    <MudTd>
+                        <MudText>@(context.Transporters?.Count ?? 0)</MudText>
+                    </MudTd>
+                    <MudTd DataLabel="">
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => ShowStationDetails(context))">
+                            Details
+                        </MudButton>
+                    </MudTd>
+                </RowTemplate>
+            </MudTable>
+        }
+        else
+        {
+            <MudAlert Severity="Severity.Info">No Stations Available</MudAlert>
+        }
+
+        <MudDialog @bind-IsVisible="_showStationDetailsDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
+            <TitleContent>
+                <MudText Typo="Typo.h6">Station Details</MudText>
+            </TitleContent>
+            <DialogContent>
+                @if (_selectedStation != null)
+                {
+                    <MudGrid>
+                        <MudItem xs="4"><MudText><strong>Id:</strong></MudText></MudItem>
+                        <MudItem xs="8"><MudText>@(_selectedStation.Id ?? "??")</MudText></MudItem>
+                        <MudItem xs="4"><MudText><strong>Name:</strong></MudText></MudItem>
+                        <MudItem xs="8"><MudText>@(_selectedStation.Name ?? "??")</MudText></MudItem>
+                        <MudItem xs="4"><MudText><strong>Type:</strong></MudText></MudItem>
+                        <MudItem xs="8"><MudText>@(_selectedStation.IsUnload ? "Unload" : "Load")</MudText></MudItem>
+                        <MudItem xs="4"><MudText><strong>Cargo Type:</strong></MudText></MudItem>
+                        <MudItem xs="8"><MudText>@(string.Join("/", _selectedStation.CargoTypes ?? new List<string>()) ?? "Unknown")</MudText></MudItem>
+                        <MudItem xs="12">
+                            <MudDivider Class="my-2" />
+                            <MudText><strong>Vehicles:</strong></MudText>
+                            @if (_selectedStation.Transporters != null && _selectedStation.Transporters.Count > 0)
+                            {
+                                <ul>
+                                    @foreach (var vehicle in _selectedStation.Transporters)
+                                    {
+                                        <li>
+                                            @(vehicle.Name ?? vehicle.Id) 
+                                            (Destinations: @string.Join(", ", GetDestinations(vehicle, _selectedStation.Id)))
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                            else
+                            {
+                                <MudText Class="text-muted">No vehicles associated with this station</MudText>
+                            }
+                        </MudItem>
+                    </MudGrid>
+                }
+            </DialogContent>
+            <DialogActions>
+                <MudButton OnClick="@(() => _showStationDetailsDialog = false)">Close</MudButton>
+            </DialogActions>
+        </MudDialog>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private bool _showStationDetailsDialog = false;
+    private Station? _selectedStation;
+
+    private void ShowStationDetails(Station station)
+    {
+        _selectedStation = station;
+        _showStationDetailsDialog = true;
+    }
+
+    private string GetCargoFlowText(Station station)
+    {
+        if (station.CargoFlows == null || station.CargoFlows.Count == 0)
+        {
+            return "Unknown";
+        }
+
+        var parts = new List<string>();
+        foreach (var cf in station.CargoFlows)
+        {
+            var prefix = (cf.IsExact ? "" : "~") + (station.IsUnload ? "-" : "+");
+            var flow = cf.FlowPerMinute.HasValue ? cf.FlowPerMinute.Value.ToString("F0") : "??";
+            parts.Add($"{prefix}{flow} {cf.Type}");
+        }
+        return string.Join(" / ", parts);
+    }
+
+    private List<string> GetDestinations(Transporter transporter, string currentStationId)
+    {
+        var destinationIds = new List<string>();
+        if (!string.IsNullOrEmpty(transporter.From)) destinationIds.Add(transporter.From);
+        if (!string.IsNullOrEmpty(transporter.To)) destinationIds.Add(transporter.To);
+        if (transporter.OtherStops != null) destinationIds.AddRange(transporter.OtherStops);
+
+        var destinationStations = StationStore.Stations
+            .Where(s => destinationIds.Contains(s.Id) && s.Id != currentStationId)
+            .Select(s => s.Name ?? "Unnamed Station")
+            .ToList();
+
+        return destinationStations;
+    }
+}
+

@@ -1,0 +1,168 @@
+@using SatisfactoryApp.Services
+@using SatisfactoryApp.Models
+@using Denxorz.Satisfactory.Routes
+@using MudBlazor
+@using SatisfactoryApp.Utils
+@inject RouteCalculationService RouteCalculationService
+@inject FactoryStore FactoryStore
+@inject StationStore StationStore
+@inject IJSRuntime JSRuntime
+
+<MudCard>
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">Route Calculator (Optimized Blazor WebAssembly)</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+
+        <MudStack Row="true" Spacing="2" Class="mb-4">
+            <InputFile OnChange="HandleFileSelect" accept=".sav" class="d-none" id="fileInput" />
+            <MudButton HtmlTag="label" Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Upload" for="fileInput" Disabled="@_isCalculating">
+                @(_isCalculating ? "Processing..." : "Upload Save File")
+            </MudButton>
+            @if (_selectedFile != null)
+            {
+                <MudText>@_selectedFile.Name</MudText>
+            }
+        </MudStack>
+
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudAlert Severity="Severity.Error" Class="mb-4">
+                <MudText Typo="Typo.h6">Error:</MudText>
+                <MudText>@_error</MudText>
+            </MudAlert>
+        }
+
+        @if (_result != null)
+        {
+            <MudCard Class="mt-4">
+                <MudCardContent>
+                    <MudText Typo="Typo.h6" Class="mb-4">Calculation Result:</MudText>
+                    <MudStack Row="true" Spacing="4">
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">Stations: @(_result.Stations?.Count ?? 0)</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">Uploaders: @(_result.Uploaders?.Count ?? 0)</MudChip>
+                        <MudChip T="string" Size="Size.Small" Color="Color.Primary">Factories: @(_result.Factories?.Count ?? 0)</MudChip>
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        }
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private IBrowserFile? _selectedFile;
+    private bool _isCalculating;
+    private string? _error;
+    private SaveDetails? _result;
+
+    private async Task HandleFileSelect(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+        _result = null;
+        _error = null;
+        StateHasChanged();
+
+        await CalculateRoutes();
+        
+        if (_result != null)
+        {
+            ApplyToStore();
+        }
+    }
+
+    private async Task CalculateRoutes()
+    {
+        if (_selectedFile == null) return;
+
+        _isCalculating = true;
+        _error = null;
+        StateHasChanged();
+
+        try
+        {
+            using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var bytes = memoryStream.ToArray();
+
+            await DebugLogger.LogAsync(JSRuntime, "Loaded...");
+            var result = await RouteCalculationService.CalculateRoutesAsync(bytes);
+
+            await DebugLogger.LogAsync(JSRuntime, "Parsed...");
+            _result = result;
+        }
+        catch (Exception ex)
+        {
+            await DebugLogger.LogAsync(JSRuntime, ex.Message);
+
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isCalculating = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ApplyToStore()
+    {
+        if (_result == null) return;
+
+        var factories = _result.Factories?.Select(f => new Factory
+        {
+            Id = f.Id,
+            Type = f.Type,
+            PercentageProducing = f.PercentageProducing,
+            X = (int?)f.X,
+            Y = (int?)f.Y,
+            MainPowerCircuitId = f.MainPowerCircuitId,
+            SubPowerCircuitId = f.SubPowerCircuitId
+        }).ToList() ?? new List<Factory>();
+
+        FactoryStore.SetFactories(factories);
+
+        var stations = _result.Stations?.Select(s => new Station
+        {
+            Id = s.Id,
+            Name = s.Name,
+            ShortName = s.ShortName,
+            Type = s.Type,
+            IsUnload = s.IsUnload,
+            X = s.X,
+            Y = s.Y,
+            CargoTypes = s.CargoTypes?.ToList(),
+            CargoFlows = s.CargoFlows?.Select(cf => new CargoFlow
+            {
+                Type = cf.Type,
+                IsUnload = cf.IsUnload,
+                FlowPerMinute = cf.FlowPerMinute,
+                IsExact = cf.IsExact
+            }).ToList(),
+            Transporters = s.Transporters?.Select(t => new Transporter
+            {
+                Id = t.Id,
+                Name = t.Name,
+                From = t.From,
+                To = t.To,
+                OtherStops = t.OtherStops?.ToList()
+            }).ToList()
+        }).ToList() ?? new List<Station>();
+
+        StationStore.SetStations(stations);
+
+        var uploaders = _result.Uploaders?.Select(u => new Uploader
+        {
+            Id = u.Id,
+            X = u.X,
+            Y = u.Y,
+            CargoTypes = u.CargoTypes?.ToList()
+        }).ToList() ?? new List<Uploader>();
+
+        StationStore.SetUploaders(uploaders);
+        
+        // Notify that data was updated - this will trigger map re-render
+        StateHasChanged();
+    }
+
+}
+

@@ -1,0 +1,44 @@
+@using SatisfactoryApp.Services
+@using MudBlazor
+@inject FactoryStore FactoryStore
+
+<MudCard>
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">Factory Filters</MudText>
+    </MudCardHeader>
+    <MudCardContent>
+        <MudGrid>
+            <MudItem xs="12" sm="4">
+                <MudAutocomplete T="string"
+                                Label="Type"
+                                Variant="Variant.Outlined"
+                                @bind-Values="FactoryStore.Filters.SelectedFactoryTypes"
+                                options="@FactoryStore.FactoryTypeOptions.Select(o => o.Value)"
+                                startAdornment="@Icons.Material.Filled.Factory"
+                                Clearable="true"
+                                multiSelection="true" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudAutocomplete T="string"
+                                Label="Power Circuit"
+                                Variant="Variant.Outlined"
+                                @bind-Values="FactoryStore.Filters.SelectedPowerCircuits"
+                                options="@FactoryStore.PowerCircuitIdOptions.Select(o => o.Value)"
+                                startAdornment="@Icons.Material.Filled.Bolt"
+                                Clearable="true"
+                                multiSelection="true" />
+            </MudItem>
+            <MudItem xs="12" sm="4">
+                <MudAutocomplete T="string"
+                                Label="Stability"
+                                Variant="Variant.Outlined"
+                                @bind-Values="FactoryStore.Filters.SelectedFactoryStabilities"
+                                options="@FactoryStore.FactoryStatusOptions.Select(o => o.Value)"
+                                startAdornment="@Icons.Material.Filled.Settings"
+                                Clearable="true"
+                                multiSelection="true" />
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+

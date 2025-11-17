@@ -1,0 +1,300 @@
+@using SatisfactoryApp.Models
+@using SatisfactoryApp.Services
+@using SatisfactoryApp.Utils
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject StationStore StationStore
+@inject IJSRuntime JSRuntime
+
+<MudCard>
+    <MudCardHeader>
+        <MudText Typo="Typo.h6">Map</MudText>
+        @if (_isLoading)
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase">Loading...</MudText>
+        }
+        else if (!string.IsNullOrEmpty(_error))
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
+        }
+    </MudCardHeader>
+    <MudCardContent>
+        <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
+            <div class="map-wrapper">
+                @if (!string.IsNullOrEmpty(_mergedImageUrl))
+                {
+                    <img src="@_mergedImageUrl" alt="Station Network Graph with Background" class="map-image" />
+                }
+                else
+                {
+                    <img src="/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                }
+            </div>
+        </div>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private bool _isLoading;
+    private string? _error;
+    private string? _mergedImageUrl;
+    private int _lastUpdateCounter = -1;
+    private bool _graphvizLoaded = false;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _isLoading = true;
+                StateHasChanged();
+                await JSRuntime.InvokeVoidAsync("loadGraphviz");
+                _graphvizLoaded = true;
+                _isLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                _error = "Failed to load graph renderer: " + ex.Message;
+                _isLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        if (_graphvizLoaded && StationStore.UpdateCounter != _lastUpdateCounter)
+        {
+            _lastUpdateCounter = StationStore.UpdateCounter;
+            if (StationStore.FilteredStations.Count > 0 && !_isLoading && string.IsNullOrEmpty(_error))
+            {
+                await RenderMap();
+            }
+        }
+    }
+
+    private async Task RenderMap()
+    {
+        try
+        {
+            _isLoading = true;
+            StateHasChanged();
+
+            var dotContent = CreateDotContent();
+
+            var svg = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContent);
+
+            await MergeImages(svg);
+
+            _isLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to render graph: " + ex.Message;
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string CreateDotContent()
+    {
+        const int minX = -320000;
+        const int maxX = 350000;
+        const int minY = -375000;
+        const int maxY = 300000;
+        const int mapWidth = 30;
+        const int mapHeight = 30;
+
+        var scaleX = (mapWidth - 2.0) / (maxX - minX);
+        var scaleY = (mapHeight - 2.0) / (maxY - minY);
+
+        var dot = $@"digraph G {{
+  layout=neato;
+  size=""{mapWidth},{mapHeight}"";
+  bgcolor=transparent;
+  node [shape=box, style=filled, fontname=""Arial"", fontcolor=""#e59345"", color=""#e59345"", penwidth=0.5, fillcolor=""#212121"", fontweight=600];
+  edge [fontname=""Arial"", penwidth=2];
+  graph [ranksep=0, nodesep=0, splines=curved];
+";
+
+        const double cornerSize = 0.001;
+        dot += $"\n_tl [label=\"\", pos=\"0,{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_tr [label=\"\", pos=\"{mapWidth},{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_bl [label=\"\", pos=\"0,0!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_br [label=\"\", pos=\"{mapWidth},0!\", width={cornerSize}, height={cornerSize}];";
+
+        var requiredStations = new HashSet<string>();
+        var edges = new List<(string from, string to, string color, string style, int penwidth)>();
+
+        foreach (var station in StationStore.FilteredStations)
+        {
+            if (station.Transporters == null) continue;
+
+            foreach (var transporter in station.Transporters)
+            {
+                var fromStation = StationStore.Stations.FirstOrDefault(s => s.Id == transporter.From);
+                var toStation = StationStore.Stations.FirstOrDefault(s => s.Id == transporter.To);
+
+                if (fromStation == null || toStation == null) continue;
+
+                var edgeColor = "#FF0000";
+                var edgeStyle = "solid";
+                var edgePenwidth = 2;
+
+                var stationType = station.Type;
+                if (stationType == "drone")
+                {
+                    edgeStyle = "dashed";
+                }
+                else if (stationType == "truck")
+                {
+                    edgeStyle = "dotted";
+                    edgePenwidth = 4;
+                }
+
+                var cargoTypes = fromStation.CargoTypes ?? new List<string>();
+                if (cargoTypes.Count == 0 && fromStation.CargoFlows != null)
+                {
+                    cargoTypes = fromStation.CargoFlows.Select(cf => cf.Type).ToList();
+                }
+
+                if (cargoTypes.Count > 0)
+                {
+                    edgeColor = CargoColors.GetCargoColor(cargoTypes[0]);
+                }
+
+                var fromName = fromStation.ShortName ?? fromStation.Id;
+                var toName = toStation.ShortName ?? toStation.Id;
+                requiredStations.Add(fromName);
+                requiredStations.Add(toName);
+
+                if (fromStation.IsUnload)
+                {
+                    edges.Add((toName, fromName, edgeColor, edgeStyle, edgePenwidth));
+                }
+                else
+                {
+                    edges.Add((fromName, toName, edgeColor, edgeStyle, edgePenwidth));
+                }
+
+                if (transporter.OtherStops != null)
+                {
+                    foreach (var stopId in transporter.OtherStops)
+                    {
+                        var otherStopStation = StationStore.Stations.FirstOrDefault(s => s.Id == stopId);
+                        if (otherStopStation != null)
+                        {
+                            var otherName = otherStopStation.ShortName ?? otherStopStation.Id;
+                            requiredStations.Add(otherName);
+                            if (fromStation.IsUnload)
+                            {
+                                edges.Add((toName, otherName, edgeColor, edgeStyle, edgePenwidth));
+                            }
+                            else
+                            {
+                                edges.Add((otherName, toName, edgeColor, edgeStyle, edgePenwidth));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        var uniqueEdges = edges
+            .GroupBy(e => (e.from, e.to))
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (var edge in uniqueEdges)
+        {
+            var fromId = SanitizeDotId(edge.from);
+            var toId = SanitizeDotId(edge.to);
+            dot += $"\n{fromId} -> {toId} [color=\"{edge.color}\", style=\"{edge.style}\", penwidth={edge.penwidth}];";
+        }
+
+        var uniqueStations = StationStore.Stations
+            .Where(s => requiredStations.Contains(s.ShortName ?? s.Id))
+            .GroupBy(s => s.ShortName ?? s.Id)
+            .Select(g => g.First())
+            .ToList();
+
+        foreach (var station in uniqueStations)
+        {
+            var name = station.ShortName ?? station.Id;
+            var x = (station.X - minX) * scaleX;
+            var y = mapHeight - (station.Y - minY) * scaleY;
+            var stationId = SanitizeDotId(name);
+            dot += $"\n{stationId} [label=\"{name.ToUpper()}\", pos=\"{x:F2},{y:F2}!\"];";
+        }
+
+        foreach (var uploader in StationStore.FilteredUploaders)
+        {
+            if (uploader.X.HasValue && uploader.Y.HasValue)
+            {
+                var x = (uploader.X.Value - minX) * scaleX;
+                var y = mapHeight - (uploader.Y.Value - minY) * scaleY;
+                var cargoTypes = uploader.CargoTypes ?? new List<string>();
+                var color = cargoTypes.Count > 0 ? CargoColors.GetCargoColor(cargoTypes[0]) : "#FF0000";
+                var uploaderId = $"uploader_{uploader.Id ?? Guid.NewGuid().ToString()}";
+                uploaderId = SanitizeDotId(uploaderId);
+                dot += $"\n{uploaderId} [label=\"\", shape=triangle, style=filled, fillcolor=\"{color}\", color=\"#000000\", penwidth=2, pos=\"{x:F2},{y:F2}!\", width=0.3, height=0.3];";
+            }
+        }
+
+        dot += "\n}";
+        return dot;
+    }
+
+    private string SanitizeDotId(string name)
+    {
+        if (string.IsNullOrEmpty(name)) return "unknown";
+        var sanitized = System.Text.RegularExpressions.Regex.Replace(name, @"\W", "_");
+        return sanitized.StartsWith("_") ? $"station_{sanitized}" : sanitized;
+    }
+
+    private async Task MergeImages(string svgContent)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("mergeFactoryMapImages", svgContent, svgContent, DotNetObjectReference.Create(this));
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to merge images: " + ex.Message;
+        }
+    }
+
+    [JSInvokable]
+    public void SetMergedImageUrl(string url)
+    {
+        _mergedImageUrl = url;
+        StateHasChanged();
+    }
+
+    private async Task HandleMapClick(MouseEventArgs e)
+    {
+        // Placeholder for future click handling
+    }
+}
+
+<style>
+    .map-wrapper {
+        position: relative;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+
+    .map-image {
+        object-fit: contain;
+        transition: opacity 0.2s;
+        width: 100%;
+        height: auto;
+    }
+
+    .map-image.background-only {
+        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+        opacity: 0.4;
+    }
+</style>
+
