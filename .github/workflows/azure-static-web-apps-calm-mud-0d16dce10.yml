@@ -20,8 +20,21 @@ jobs:
           submodules: true
           lfs: false
 
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore workloads
+        run: dotnet workload restore
+        working-directory: SatisfactoryApp
+
       - name: Setup `wasmtime`
         uses: bytecodealliance/actions/wasmtime/setup@v1
+
+      - name: Publish Blazor WebAssembly
+        run: dotnet publish SatisfactoryApp.csproj -c Release -o build
+        working-directory: SatisfactoryApp
 
       - name: Build And Deploy
         id: builddeploy
@@ -30,11 +43,8 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_CALM_MUD_0D16DCE10 }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "./SatisfactoryApp"
-          output_location: "wwwroot"
-          ###### End of Repository/Build Configurations ######
+          skip_app_build: true
+          app_location: "SatisfactoryApp/build/wwwroot"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
