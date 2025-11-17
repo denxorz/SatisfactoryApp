@@ -116,6 +116,43 @@
   background-color: #e59345 !important;
 }
 
+.themed-tabs {
+  background: #2a2a2a !important;
+  border: 1px solid #e59345 !important;
+  border-radius: 0 !important;
+  display: block;
+  padding: 0 !important;
+}
+
+.themed-tabs .mud-tabs-toolbar-wrapper,
+.themed-tabs .mud-tabs-scroll-wrapper {
+  background: #2a2a2a !important;
+}
+
+.themed-tabs .mud-tabs-toolbar,
+.themed-tabs .mud-tabs-toolbar-inner,
+.themed-tabs .mud-tabs-toolbar-content {
+  background: #2a2a2a !important;
+  border: none !important;
+  box-shadow: inset 0 -1px 0 rgba(229, 147, 69, 0.4);
+  color: #f8c488 !important;
+}
+
+.themed-tabs .mud-tab {
+  color: #f8c488 !important;
+  opacity: 1 !important;
+}
+
+.themed-tabs .mud-tab.mud-tab-active {
+  background-color: #e59345 !important;
+  color: #202020 !important;
+}
+
+.themed-tabs .mud-tab:not(.mud-tab-active) {
+  background-color: rgba(33, 33, 33, 0.85) !important;
+  border-right: 1px solid rgba(229, 147, 69, 0.4);
+}
+
 /* AppBar styling */
 .mud-appbar {
   background: rgba(33, 33, 33, 0.9) !important;

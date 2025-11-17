@@ -1,12 +1,16 @@
 ﻿@page "/"
 @using SatisfactoryApp.Components
 @using MudBlazor
+@using Microsoft.AspNetCore.WebUtilities
 @inject NavigationManager NavigationManager
 
-<MudTabs @bind-ActivePanelIndex="_activeTab" Color="Color.Primary" Class="mb-4">
+<MudTabs ActivePanelIndex="_activeTabIndex"
+         ActivePanelIndexChanged="OnTabChanged"
+         Color="Color.Default"
+         Class="mb-4 themed-tabs">
     <MudTabPanel Text="Stations & Logistics" Icon="@Icons.Material.Filled.Train">
         <MudGrid>
-            <MudItem xs="12" md="8">
+            <MudItem xs="12">
                 <StationFilters />
             </MudItem>
             <MudItem xs="12">
@@ -37,31 +41,26 @@
 </MudTabs>
 
 @code {
-    private int _activeTab = 0;
+    private int _activeTabIndex = 0;
 
     protected override void OnInitialized()
     {
-        // Get tab from URL
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
-        if (!string.IsNullOrEmpty(uri.Query))
+        var query = QueryHelpers.ParseQuery(uri.Query);
+
+        if (query.TryGetValue("tab", out var tab) && int.TryParse(tab, out var tabIndex))
         {
-            var query = uri.Query.TrimStart('?');
-            var pairs = query.Split('&');
-            foreach (var pair in pairs)
-            {
-                var parts = pair.Split('=');
-                if (parts.Length == 2 && parts[0] == "tab")
-                {
-                    _activeTab = parts[1] switch
-                    {
-                        "stations" => 0,
-                        "factories" => 1,
-                        "route-calculator" => 2,
-                        _ => 0
-                    };
-                    break;
-                }
-            }
+            _activeTabIndex = tabIndex is >= 0 and <= 2 ? tabIndex : 0;
         }
+    }
+
+    private Task OnTabChanged(int newIndex)
+    {
+        _activeTabIndex = newIndex is >= 0 and <= 2 ? newIndex : 0;
+
+        var targetUri = NavigationManager.GetUriWithQueryParameter("tab", _activeTabIndex);
+        NavigationManager.NavigateTo(targetUri, replace: true);
+
+        return Task.CompletedTask;
     }
 }
