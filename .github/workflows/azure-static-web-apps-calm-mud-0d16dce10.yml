@@ -29,8 +29,8 @@ jobs:
         run: dotnet workload restore
         working-directory: SatisfactoryApp
 
-      - name: Setup `wasmtime`
-        uses: bytecodealliance/actions/wasmtime/setup@v1
+      - name: Setup `wasm-tools`
+        uses: bytecodealliance/actions/wasm-tools/setup@v1
 
       - name: Publish Blazor WebAssembly
         run: dotnet publish SatisfactoryApp.csproj -c Release -o build
