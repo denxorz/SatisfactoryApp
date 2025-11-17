@@ -25,12 +25,16 @@ jobs:
         with:
           dotnet-version: "10.0.x"
 
+      - name: Setup `wasm-tools`
+        uses: bytecodealliance/actions/wasm-tools/setup@v1
+
+      - name: Restore install wasm-tools
+        run: dotnet workload install wasm-tools
+        working-directory: SatisfactoryApp
+
       - name: Restore workloads
         run: dotnet workload restore
         working-directory: SatisfactoryApp
-
-      - name: Setup `wasm-tools`
-        uses: bytecodealliance/actions/wasm-tools/setup@v1
 
       - name: Publish Blazor WebAssembly
         run: dotnet publish SatisfactoryApp.csproj -c Release -o build
