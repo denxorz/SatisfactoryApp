@@ -30,7 +30,7 @@ jobs:
         working-directory: SatisfactoryApp
 
       - name: Publish Blazor WebAssembly (AOT)
-        run: dotnet publish SatisfactoryApp.csproj -c Release -o build -p:RunAOTCompilation=true
+        run: dotnet publish SatisfactoryApp.csproj -c Release -o build
         working-directory: SatisfactoryApp
 
       - name: Deploy
