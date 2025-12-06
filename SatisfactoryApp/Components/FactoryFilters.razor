@@ -10,7 +10,7 @@
                 <MudComboBox 
                     T="FactoryTypeOption"
                     @bind-SelectedValues="@FactoryStore.SelectedFactoryTypes"
-                    Variant="Variant.Filled" 
+                    Variant="Variant.Outlined"
                     MultiSelection
                     Label="Type" 
                     Editable
@@ -26,7 +26,7 @@
             <MudItem xs="12" sm="4">
                 <MudComboBox T="PowerCircuitOption"
                              @bind-SelectedValues="@FactoryStore.SelectedPowerCircuits"
-                             Variant="Variant.Filled"
+                             Variant="Variant.Outlined"
                              MultiSelection
                              Label="Power Circuit"
                              Editable
@@ -42,7 +42,7 @@
             <MudItem xs="12" sm="4">
                 <MudComboBox T="FactoryStabilityOption"
                              @bind-SelectedValues="@FactoryStore.SelectedFactoryStabilities"
-                             Variant="Variant.Filled"
+                             Variant="Variant.Outlined"
                              MultiSelection
                              Label="Stability"
                              Editable
@@ -61,9 +61,9 @@
 
 @code {
 
-    private readonly List<FactoryTypeOption> FactoryTypeOptions = new List<FactoryTypeOption>();
-    private readonly List<PowerCircuitOption> PowerCircuitIdOptions = new List<PowerCircuitOption>();
-    private readonly List<FactoryStabilityOption> FactoryStabilityOptions = new List<FactoryStabilityOption>();
+    private readonly List<FactoryTypeOption> FactoryTypeOptions = [];
+    private readonly List<PowerCircuitOption> PowerCircuitIdOptions = [];
+    private readonly List<FactoryStabilityOption> FactoryStabilityOptions = [];
 
     protected override void OnInitialized() 
     {
@@ -72,4 +72,3 @@
         FactoryStabilityOptions.AddRange(FactoryStore.FactoryStabilityOptions);
     }
 }
-

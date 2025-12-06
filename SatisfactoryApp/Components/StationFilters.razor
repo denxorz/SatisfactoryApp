@@ -3,11 +3,8 @@
 @inject StationStore StationStore
 
 <MudCard>
-    <MudCardHeader>
-        <MudText Typo="Typo.h6">Station Filters</MudText>
-    </MudCardHeader>
     <MudCardContent>
-        <MudGrid Class="pa-3">
+        <MudGrid Spacing="1">
             <MudItem xs="12" sm="6">
                 <MudTextField @bind-Value="_searchText" 
                               Label="Search Stations" 
@@ -18,59 +15,38 @@
                               Clearable="true" />
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudAutocomplete T="string"
-                                 Label="Cargo Type"
-                                 Variant="Variant.Outlined"
-                                 options="@StationStore.CargoTypeOptions.Select(o => o.Value)"
-                                 Values="_selectedCargoTypes"
-                                 ValuesChanged="OnCargoTypesChanged"
-                                 multiSelection="true"
-                                 startAdornment="@Icons.Material.Filled.Inventory"
-                                 Clearable="true" />
+                <MudComboBox T="CargoTypeOption"
+                             @bind-SelectedValues="@StationStore.SelectedCargoTypes"
+                             Variant="Variant.Outlined"
+                             MultiSelection
+                             Label="Cargo"
+                             Editable
+                             Clearable
+                             SelectAll
+                             ShowCheckbox>
+                    @foreach (var item in StationStore.CargoTypeOptions)
+                    {
+                        <MudComboBoxItem Value="@item" Text="@item.ToString()"></MudComboBoxItem>
+                    }
+                </MudComboBox>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudStack Row="true" Spacing="2">
-                    <MudChip T="string" Size="Size.Small" 
-                             Color="@(_filters.SelectedTransferTypes.Count == 0 || _filters.SelectedTransferTypes.Contains("load") ? Color.Primary : Color.Default)"
-                             OnClick="@(() => ToggleTransferType("load"))"
-                             StartIcon="@Icons.Material.Filled.ArrowDownward">
-                        Load
-                    </MudChip>
-                    <MudChip T="string" Size="Size.Small" 
-                             Color="@(_filters.SelectedTransferTypes.Count == 0 || _filters.SelectedTransferTypes.Contains("unload") ? Color.Primary : Color.Default)"
-                             OnClick="@(() => ToggleTransferType("unload"))"
-                             StartIcon="@Icons.Material.Filled.ArrowUpward">
-                        Unload
-                    </MudChip>
-                </MudStack>
+                <MudChipSet @bind-SelectedValues="StationStore.SelectedTransferTypes"
+                            SelectionMode="SelectionMode.MultiSelection" 
+                            Color="Color.Primary">
+                    <MudChip Value="@("Load")" Icon="@Icons.Material.Filled.ArrowDownward" />
+                    <MudChip Value="@("Unload")" Icon="@Icons.Material.Filled.ArrowUpward" />
+                </MudChipSet>
             </MudItem>
             <MudItem xs="12" sm="6">
-                <MudStack Row="true" Spacing="2">
-                    <MudChip T="string" Size="Size.Small" 
-                             Color="@(_filters.SelectedStationTypes.Count == 0 || _filters.SelectedStationTypes.Contains("train") ? Color.Primary : Color.Default)"
-                             OnClick="@(() => ToggleStationType("train"))"
-                             StartIcon="@Icons.Material.Filled.Train">
-                        Trains
-                    </MudChip>
-                    <MudChip T="string" Size="Size.Small" 
-                             Color="@(_filters.SelectedStationTypes.Count == 0 || _filters.SelectedStationTypes.Contains("truck") ? Color.Primary : Color.Default)"
-                             OnClick="@(() => ToggleStationType("truck"))"
-                             StartIcon="@Icons.Material.Filled.LocalShipping">
-                        Trucks
-                    </MudChip>
-                    <MudChip T="string" Size="Size.Small" 
-                             Color="@(_filters.SelectedStationTypes.Count == 0 || _filters.SelectedStationTypes.Contains("drone") ? Color.Primary : Color.Default)"
-                             OnClick="@(() => ToggleStationType("drone"))"
-                             StartIcon="@Icons.Material.Filled.Flight">
-                        Drones
-                    </MudChip>
-                    <MudChip T="string" Size="Size.Small" 
-                             Color="@(_filters.ShowUploaders ? Color.Primary : Color.Default)"
-                             OnClick="ToggleShowUploaders"
-                             StartIcon="@Icons.Material.Filled.Upload">
-                        Uploader
-                    </MudChip>
-                </MudStack>
+                <MudChipSet @bind-SelectedValues="StationStore.SelectedStationTypes"
+                            SelectionMode="SelectionMode.MultiSelection"
+                            Color="Color.Primary">
+                    <MudChip Value="@("Train")" Icon="@Icons.Material.Filled.Train" />
+                    <MudChip Value="@("Truck")" Icon="@Icons.Material.Filled.LocalShipping" />
+                    <MudChip Value="@("Drone")" Icon="@Icons.Material.Filled.Flight" />
+                    <MudChip Value="@("Uploader")" Icon="@Icons.Material.Filled.Upload" />
+                </MudChipSet>
             </MudItem>
         </MudGrid>
     </MudCardContent>
@@ -79,6 +55,14 @@
 @code {
     private int _lastUpdateCounter = -1;
     private Services.StationFilters _filters => StationStore.Filters;
+    private IReadOnlyCollection<string> _selected;
+
+    private readonly List<CargoTypeOption> CargoTypeOptions = [];
+
+    protected override void OnInitialized()
+    {
+        CargoTypeOptions.AddRange(StationStore.CargoTypeOptions);
+    }
 
     protected override void OnAfterRender(bool firstRender)
     {
@@ -103,44 +87,6 @@
             StationStore.NotifyFiltersChanged();
             StateHasChanged();
         }
-    }
-    private List<string> _selectedCargoTypes => _filters.SelectedCargoTypes;
-
-    private void OnCargoTypesChanged(List<string> values)
-    {
-        _filters.SelectedCargoTypes = values ?? new List<string>();
-        StationStore.NotifyFiltersChanged();
-        StateHasChanged();
-    }
-
-    private void ToggleStationType(string stationType)
-    {
-        var currentTypes = _filters.SelectedStationTypes;
-        if (currentTypes.Contains(stationType))
-        {
-            currentTypes.Remove(stationType);
-        }
-        else
-        {
-            currentTypes.Add(stationType);
-        }
-        StationStore.NotifyFiltersChanged();
-        StateHasChanged();
-    }
-
-    private void ToggleTransferType(string transferType)
-    {
-        var currentTypes = _filters.SelectedTransferTypes;
-        if (currentTypes.Contains(transferType))
-        {
-            currentTypes.Remove(transferType);
-        }
-        else
-        {
-            currentTypes.Add(transferType);
-        }
-        StationStore.NotifyFiltersChanged();
-        StateHasChanged();
     }
 
     private void ToggleShowUploaders()

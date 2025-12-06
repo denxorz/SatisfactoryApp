@@ -4,9 +4,9 @@ namespace SatisfactoryApp.Services;
 
 public class StationStore
 {
-    private List<Station> _stations = new();
-    private List<Uploader> _uploaders = new();
-    private StationFilters _filters = new();
+    private List<Station> _stations = [];
+    private List<Uploader> _uploaders = [];
+    private readonly StationFilters _filters = new();
     private int _updateCounter = 0;
 
     public List<Station> Stations => _stations;
@@ -14,10 +14,16 @@ public class StationStore
     public StationFilters Filters => _filters;
     public int UpdateCounter => _updateCounter;
 
+    public event Action? StationsChanged;
+    public event Action? FilteredStationsChanged;
+
     public void SetStations(List<Station> stations)
     {
         _stations = stations;
         _updateCounter++;
+
+        StationsChanged?.Invoke();
+        FilteredStationsChanged?.Invoke();
     }
 
     public void SetUploaders(List<Uploader> uploaders)
@@ -29,6 +35,7 @@ public class StationStore
     public void NotifyFiltersChanged()
     {
         _updateCounter++;
+        FilteredStationsChanged?.Invoke();
     }
 
     public List<Station> FilteredStations
@@ -68,8 +75,8 @@ public class StationStore
 
         if (_filters.SelectedStationTypes.Count > 0)
         {
-            var stationType = station.Type ?? "unknown";
-            if (!_filters.SelectedStationTypes.Contains(stationType))
+            Console.WriteLine($"IsStationFiltered: {station.Type}");
+            if (!_filters.SelectedStationTypes.Contains(station.Type, StringComparer.OrdinalIgnoreCase))
             {
                 return false;
             }
@@ -78,7 +85,7 @@ public class StationStore
         if (_filters.SelectedTransferTypes.Count > 0)
         {
             var transferType = station.IsUnload ? "unload" : "load";
-            if (!_filters.SelectedTransferTypes.Contains(transferType))
+            if (!_filters.SelectedTransferTypes.Contains(transferType, StringComparer.OrdinalIgnoreCase))
             {
                 return false;
             }
@@ -86,8 +93,7 @@ public class StationStore
 
         if (_filters.SelectedCargoTypes.Count > 0)
         {
-            var stationCargoTypes = station.CargoTypes ?? new List<string>();
-            var hasMatchingCargo = _filters.SelectedCargoTypes.Any(selectedType => stationCargoTypes.Contains(selectedType));
+            var hasMatchingCargo = _filters.SelectedCargoTypes.Any(s => station.CargoTypes.Contains(s.Value, StringComparer.OrdinalIgnoreCase));
             if (!hasMatchingCargo)
             {
                 return false;
@@ -101,8 +107,7 @@ public class StationStore
     {
         if (_filters.SelectedCargoTypes.Count > 0)
         {
-            var uploaderCargoTypes = uploader.CargoTypes ?? new List<string>();
-            var hasMatchingCargo = _filters.SelectedCargoTypes.Any(selectedType => uploaderCargoTypes.Contains(selectedType));
+            var hasMatchingCargo = _filters.SelectedCargoTypes.Any(s => uploader.CargoTypes.Contains(s.Value));
             if (!hasMatchingCargo)
             {
                 return false;
@@ -118,32 +123,14 @@ public class StationStore
         {
             var cargoTypes = new HashSet<string>();
 
-            foreach (var station in _stations)
+            foreach (var c in _stations.SelectMany(s => s.CargoTypes))
             {
-                if (station.CargoTypes != null)
-                {
-                    foreach (var type in station.CargoTypes)
-                    {
-                        if (!string.IsNullOrEmpty(type))
-                        {
-                            cargoTypes.Add(type);
-                        }
-                    }
-                }
+                cargoTypes.Add(c);
             }
 
-            foreach (var uploader in _uploaders)
+            foreach (var c in _uploaders.SelectMany(s => s.CargoTypes))
             {
-                if (uploader.CargoTypes != null)
-                {
-                    foreach (var type in uploader.CargoTypes)
-                    {
-                        if (!string.IsNullOrEmpty(type))
-                        {
-                            cargoTypes.Add(type);
-                        }
-                    }
-                }
+                cargoTypes.Add(c);
             }
 
             return cargoTypes
@@ -152,14 +139,44 @@ public class StationStore
                 .ToList();
         }
     }
+
+    public IReadOnlyCollection<string> SelectedTransferTypes
+    {
+        get => Filters.SelectedTransferTypes;
+        set
+        {
+            Filters.SelectedTransferTypes = value.ToList() ?? [];
+            NotifyFiltersChanged();
+        }
+    }
+
+    public IReadOnlyCollection<string> SelectedStationTypes
+    {
+        get => Filters.SelectedStationTypes;
+        set
+        {
+            Filters.SelectedStationTypes = value.ToList() ?? [];
+            NotifyFiltersChanged();
+        }
+    }
+
+    public IEnumerable<CargoTypeOption> SelectedCargoTypes
+    {
+        get => Filters.SelectedCargoTypes;
+        set
+        {
+            Filters.SelectedCargoTypes = value.ToList() ?? [];
+            NotifyFiltersChanged();
+        }
+    }
 }
 
 public class StationFilters
 {
     public string SearchText { get; set; } = string.Empty;
-    public List<string> SelectedStationTypes { get; set; } = new();
-    public List<string> SelectedTransferTypes { get; set; } = new();
-    public List<string> SelectedCargoTypes { get; set; } = new();
+    public List<string> SelectedStationTypes { get; set; } = [];
+    public List<string> SelectedTransferTypes { get; set; } = [];
+    public List<CargoTypeOption> SelectedCargoTypes { get; set; } = [];
     public bool ShowUploaders { get; set; } = true;
 }
 
@@ -167,5 +184,7 @@ public class CargoTypeOption
 {
     public string Title { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
+
+    public override string ToString() => Title;
 }
 
