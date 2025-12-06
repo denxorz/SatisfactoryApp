@@ -1,4 +1,4 @@
-@using SatisfactoryApp.Models
+@using Denxorz.Satisfactory.Routes.Types
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Utils
 @using Microsoft.JSInterop
@@ -20,9 +20,9 @@
         else
         {
             <MudText Typo="Typo.caption" Class="text-uppercase">
-                Selected: @(_selectedFactory?.Type ?? "-") | 
-                @(_selectedFactory?.PercentageProducing ?? 0)% | 
-                Main:@CircuitNames.GetMainCircuitName(_selectedFactory?.MainPowerCircuitId) | 
+                Selected: @(_selectedFactory?.Type ?? "-") |
+                @(_selectedFactory?.PercentageProducing ?? 0)% |
+                Main:@CircuitNames.GetMainCircuitName(_selectedFactory?.MainPowerCircuitId) |
                 Sub:@CircuitNames.GetSubCircuitName(_selectedFactory?.SubPowerCircuitId)
             </MudText>
         }
@@ -54,6 +54,11 @@
     private int _lastUpdateCounter = -1;
     private bool _graphvizLoaded = false;
 
+    protected override void OnInitialized()
+    {
+        FactoryStore.FilteredFactoriesChanged += async () => await CheckAndRenderIfNeeded();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
@@ -75,7 +80,12 @@
             }
         }
 
-        // Check if factories were updated
+        await CheckAndRenderIfNeeded();
+    }
+
+    private async Task CheckAndRenderIfNeeded()
+    {
+        // Check if factories or filters were updated
         if (_graphvizLoaded && FactoryStore.UpdateCounter != _lastUpdateCounter)
         {
             _lastUpdateCounter = FactoryStore.UpdateCounter;
@@ -145,16 +155,14 @@
         for (int index = 0; index < factories.Count; index++)
         {
             var factory = factories[index];
-            if (factory.X.HasValue && factory.Y.HasValue)
-            {
-                var x = (factory.X.Value - minX) * scaleX;
-                var y = mapHeight - (factory.Y.Value - minY) * scaleY - 5;
-                var color = GetFactoryColor(factory);
-                var shape = GetFactoryShape(factory.Type);
 
-                var factoryId = $"factory_{index}";
-                dot += $"\n{factoryId} [shape=\"{shape}\", fillcolor=\"{color}\", color=\"#000000\", pos=\"{x:F2},{y:F2}!\"];";
-            }
+            var x = (factory.X - minX) * scaleX;
+            var y = mapHeight - (factory.Y - minY) * scaleY - 5;
+            var color = GetFactoryColor(factory);
+            var shape = GetFactoryShape(factory.Type);
+
+            var factoryId = $"factory_{index}";
+            dot += $"\n{factoryId} [shape=\"{shape}\", fillcolor=\"{color}\", color=\"#000000\", pos=\"{x:F2},{y:F2}!\"];";
         }
 
         dot += "\n}";
@@ -213,15 +221,12 @@
 
         foreach (var factory in FactoryStore.NonFilteredFactories)
         {
-            if (factory.X.HasValue && factory.Y.HasValue)
-            {
-                var distance = Math.Sqrt(Math.Pow(factoryX - factory.X.Value, 2) + Math.Pow(factoryY - factory.Y.Value, 2));
+                var distance = Math.Sqrt(Math.Pow(factoryX - factory.X, 2) + Math.Pow(factoryY - factory.Y, 2));
                 if (distance < clickRadius && distance < closestDistance)
                 {
                     closestDistance = distance;
                     closestFactory = factory;
                 }
-            }
         }
 
         _selectedFactory = closestFactory;
@@ -252,9 +257,9 @@
         height: auto;
     }
 
-    .map-image.background-only {
-        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
-        opacity: 0.4;
-    }
+        .map-image.background-only {
+            filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+            opacity: 0.4;
+        }
 </style>
 

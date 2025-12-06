@@ -1,71 +1,73 @@
-using SatisfactoryApp.Models;
+using Denxorz.Satisfactory.Routes.Types;
 using SatisfactoryApp.Utils;
 
 namespace SatisfactoryApp.Services;
 
 public class FactoryStore
 {
-    private List<Factory> _factories = new();
-    private FactoryFilters _filters = new();
+    private readonly List<Factory> _factories = [];
+    private readonly FactoryFilters _filters = new();
     private int _updateCounter = 0;
 
     public List<Factory> Factories => _factories;
     public FactoryFilters Filters => _filters;
     public int UpdateCounter => _updateCounter;
 
+    public event Action? FactoriesChanged;
+    public event Action? FilteredFactoriesChanged;
+
     public void SetFactories(List<Factory> factories)
     {
-        _factories = factories;
+        _factories.Clear();
+        _factories.AddRange(factories);
+
         _updateCounter++;
+        FactoriesChanged?.Invoke();
     }
 
-    public List<Factory> FilteredFactories
+    public void NotifyFiltersChanged()
     {
-        get
-        {
-            return _factories.Where(f => IsFactoryFiltered(f)).ToList();
-        }
+        _updateCounter++;
+        FilteredFactoriesChanged?.Invoke();
     }
 
-    public List<Factory> NonFilteredFactories
-    {
-        get
-        {
-            return _factories.Where(f => !IsFactoryFiltered(f)).ToList();
-        }
-    }
+    public List<Factory> FilteredFactories => [.. _factories.Where(IsFactoryFiltered)];
+    public List<Factory> NonFilteredFactories => [.. _factories.Where(f => !IsFactoryFiltered(f))];
 
     private bool IsFactoryFiltered(Factory factory)
     {
         if (_filters.SelectedFactoryTypes.Count > 0)
         {
             var factoryType = factory.Type ?? "unknown";
-            if (!_filters.SelectedFactoryTypes.Contains(factoryType))
+            if (!_filters.SelectedFactoryTypes.Any(f => f.Value == factoryType))
             {
+                Console.WriteLine($"IsFactoryFiltered: Factory {factory.Id} filtered by type '{factoryType}' (not in selected types)");
                 return true;
             }
         }
 
         if (_filters.SelectedPowerCircuits.Count > 0)
         {
-            var mainCircuitKey = factory.MainPowerCircuitId.HasValue ? $"main_{factory.MainPowerCircuitId.Value}" : null;
-            var subCircuitKey = factory.SubPowerCircuitId.HasValue ? $"sub_{factory.SubPowerCircuitId.Value}" : null;
+            var mainCircuitKey = $"main_{factory.MainPowerCircuitId}";
+            var subCircuitKey = $"sub_{factory.SubPowerCircuitId}";
 
             var hasMatchingCircuit =
-                (mainCircuitKey != null && _filters.SelectedPowerCircuits.Contains(mainCircuitKey)) ||
-                (subCircuitKey != null && _filters.SelectedPowerCircuits.Contains(subCircuitKey));
+                (mainCircuitKey != null && _filters.SelectedPowerCircuits.Any(c => c.Value == mainCircuitKey)) ||
+                (subCircuitKey != null && _filters.SelectedPowerCircuits.Any(c => c.Value == subCircuitKey));
 
             if (!hasMatchingCircuit)
             {
+                Console.WriteLine($"IsFactoryFiltered: Factory {factory.Id} filtered by power circuit (main: {mainCircuitKey}, sub: {subCircuitKey})");
                 return true;
             }
         }
 
         if (_filters.SelectedFactoryStabilities.Count > 0)
         {
-            var status = GetFactoryStatus(factory);
-            if (!_filters.SelectedFactoryStabilities.Contains(status))
+            var status = GetFactoryStability(factory);
+            if (!_filters.SelectedFactoryStabilities.Any(s => s.Value == status))
             {
+                Console.WriteLine($"IsFactoryFiltered: Factory {factory.Id} filtered by status '{status}' (not in selected stabilities)");
                 return true;
             }
         }
@@ -73,9 +75,9 @@ public class FactoryStore
         return false;
     }
 
-    private string GetFactoryStatus(Factory factory)
+    private string GetFactoryStability(Factory factory)
     {
-        var percentage = factory.PercentageProducing ?? 0;
+        var percentage = factory.PercentageProducing;
         if (percentage == 100) return "Stable";
         if (percentage >= 95 && percentage < 100) return "Almost Stable";
         if (percentage >= 1 && percentage < 95) return "Unstable";
@@ -112,16 +114,11 @@ public class FactoryStore
 
             foreach (var factory in _factories)
             {
-                if (factory.MainPowerCircuitId.HasValue)
-                {
-                    mainCircuitCounts.TryGetValue(factory.MainPowerCircuitId.Value, out var count);
-                    mainCircuitCounts[factory.MainPowerCircuitId.Value] = count + 1;
-                }
-                if (factory.SubPowerCircuitId.HasValue)
-                {
-                    subCircuitCounts.TryGetValue(factory.SubPowerCircuitId.Value, out var count);
-                    subCircuitCounts[factory.SubPowerCircuitId.Value] = count + 1;
-                }
+                mainCircuitCounts.TryGetValue(factory.MainPowerCircuitId, out var count);
+                mainCircuitCounts[factory.MainPowerCircuitId] = count + 1;
+
+                subCircuitCounts.TryGetValue(factory.SubPowerCircuitId, out var count2);
+                subCircuitCounts[factory.SubPowerCircuitId] = count2 + 1;
             }
 
             var mainOptions = mainCircuitCounts
@@ -146,19 +143,19 @@ public class FactoryStore
         }
     }
 
-    public List<FactoryStatusOption> FactoryStatusOptions
+    public List<FactoryStabilityOption> FactoryStabilityOptions
     {
         get
         {
             var statusCounts = new Dictionary<string, int>();
             foreach (var factory in _factories)
             {
-                var status = GetFactoryStatus(factory);
+                var status = GetFactoryStability(factory);
                 statusCounts.TryGetValue(status, out var count);
                 statusCounts[status] = count + 1;
             }
 
-            return new List<FactoryStatusOption>
+            return new List<FactoryStabilityOption>
             {
                 new() { Title = $"Stable ({statusCounts.GetValueOrDefault("Stable", 0)})", Value = "Stable" },
                 new() { Title = $"Almost Stable ({statusCounts.GetValueOrDefault("Almost Stable", 0)})", Value = "Almost Stable" },
@@ -167,30 +164,68 @@ public class FactoryStore
             };
         }
     }
+
+
+    public IEnumerable<FactoryTypeOption> SelectedFactoryTypes
+    {
+        get => Filters.SelectedFactoryTypes;
+        set
+        {
+            Filters.SelectedFactoryTypes = value.ToList() ?? [];
+            NotifyFiltersChanged();
+        }
+    }
+
+    public IEnumerable<PowerCircuitOption> SelectedPowerCircuits
+    {
+        get => Filters.SelectedPowerCircuits;
+        set
+        {
+            Filters.SelectedPowerCircuits = value.ToList() ?? [];
+            NotifyFiltersChanged();
+        }
+    }
+
+    public IEnumerable<FactoryStabilityOption> SelectedFactoryStabilities
+    {
+        get => Filters.SelectedFactoryStabilities;
+        set
+        {
+            Filters.SelectedFactoryStabilities = value.ToList() ?? [];
+            NotifyFiltersChanged();
+        }
+    }
+
 }
 
 public class FactoryFilters
 {
-    public List<string> SelectedFactoryTypes { get; set; } = new();
-    public List<string> SelectedPowerCircuits { get; set; } = new();
-    public List<string> SelectedFactoryStabilities { get; set; } = new();
+    public List<FactoryTypeOption> SelectedFactoryTypes { get; set; } = [];
+    public List<PowerCircuitOption> SelectedPowerCircuits { get; set; } = [];
+    public List<FactoryStabilityOption> SelectedFactoryStabilities { get; set; } = [];
 }
 
 public class FactoryTypeOption
 {
     public string Title { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
+
+    public override string ToString() => Title;
 }
 
 public class PowerCircuitOption
 {
     public string Title { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
+
+    public override string ToString() => Title;
 }
 
-public class FactoryStatusOption
+public class FactoryStabilityOption
 {
     public string Title { get; set; } = string.Empty;
     public string Value { get; set; } = string.Empty;
+
+    public override string ToString() => Title;
 }
 

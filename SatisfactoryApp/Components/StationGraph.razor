@@ -1,4 +1,3 @@
-@using SatisfactoryApp.Models
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Utils
 @using Microsoft.JSInterop
@@ -229,16 +228,13 @@
 
         foreach (var uploader in StationStore.FilteredUploaders)
         {
-            if (uploader.X.HasValue && uploader.Y.HasValue)
-            {
-                var x = (uploader.X.Value - minX) * scaleX;
-                var y = mapHeight - (uploader.Y.Value - minY) * scaleY;
-                var cargoTypes = uploader.CargoTypes ?? new List<string>();
-                var color = cargoTypes.Count > 0 ? CargoColors.GetCargoColor(cargoTypes[0]) : "#FF0000";
-                var uploaderId = $"uploader_{uploader.Id ?? Guid.NewGuid().ToString()}";
-                uploaderId = SanitizeDotId(uploaderId);
-                dot += $"\n{uploaderId} [label=\"\", shape=triangle, style=filled, fillcolor=\"{color}\", color=\"#000000\", penwidth=2, pos=\"{x:F2},{y:F2}!\", width=0.3, height=0.3];";
-            }
+            var x = (uploader.X - minX) * scaleX;
+            var y = mapHeight - (uploader.Y - minY) * scaleY;
+            var cargoTypes = uploader.CargoTypes ?? new List<string>();
+            var color = cargoTypes.Count > 0 ? CargoColors.GetCargoColor(cargoTypes[0]) : "#FF0000";
+            var uploaderId = $"uploader_{uploader.Id ?? Guid.NewGuid().ToString()}";
+            uploaderId = SanitizeDotId(uploaderId);
+            dot += $"\n{uploaderId} [label=\"\", shape=triangle, style=filled, fillcolor=\"{color}\", color=\"#000000\", penwidth=2, pos=\"{x:F2},{y:F2}!\", width=0.3, height=0.3];";
         }
 
         dot += "\n}";
@@ -292,9 +288,9 @@
         height: auto;
     }
 
-    .map-image.background-only {
-        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
-        opacity: 0.4;
-    }
+        .map-image.background-only {
+            filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+            opacity: 0.4;
+        }
 </style>
 

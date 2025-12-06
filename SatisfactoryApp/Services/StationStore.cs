@@ -1,4 +1,4 @@
-using SatisfactoryApp.Models;
+using Denxorz.Satisfactory.Routes.Types;
 
 namespace SatisfactoryApp.Services;
 
@@ -23,6 +23,11 @@ public class StationStore
     public void SetUploaders(List<Uploader> uploaders)
     {
         _uploaders = uploaders;
+        _updateCounter++;
+    }
+
+    public void NotifyFiltersChanged()
+    {
         _updateCounter++;
     }
 

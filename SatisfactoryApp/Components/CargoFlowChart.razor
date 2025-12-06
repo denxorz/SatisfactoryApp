@@ -1,7 +1,7 @@
-@using SatisfactoryApp.Models
 @using SatisfactoryApp.Services
 @using MudBlazor
 @inject StationStore StationStore
+@implements IDisposable
 
 <MudCard>
     <MudCardHeader>
@@ -73,4 +73,21 @@
         }
     </MudCardContent>
 </MudCard>
+
+@code {
+    private int _lastUpdateCounter = -1;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (StationStore.UpdateCounter != _lastUpdateCounter)
+        {
+            _lastUpdateCounter = StationStore.UpdateCounter;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+    }
+}
 

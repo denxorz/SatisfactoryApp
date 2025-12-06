@@ -1,4 +1,4 @@
-@using SatisfactoryApp.Models
+@using Denxorz.Satisfactory.Routes.Types
 @using SatisfactoryApp.Utils
 
 <BaseFactoryMap Title="Factory Stability Map" GetFactoryColor="@GetFactoryColor" />
@@ -6,7 +6,7 @@
 @code {
     private string GetFactoryColor(Factory factory)
     {
-        return FactoryColors.GetFactoryColorForStability(factory.PercentageProducing ?? 0);
+        return FactoryColors.GetFactoryColorForStability(factory.PercentageProducing);
     }
 }
 

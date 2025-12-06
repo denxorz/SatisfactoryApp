@@ -1,7 +1,8 @@
-@using SatisfactoryApp.Models
+@using Denxorz.Satisfactory.Routes.Types
 @using SatisfactoryApp.Services
 @using MudBlazor
 @inject StationStore StationStore
+@implements IDisposable
 
 <MudCard>
     <MudCardHeader>
@@ -120,6 +121,20 @@
 @code {
     private bool _showStationDetailsDialog = false;
     private Station? _selectedStation;
+    private int _lastUpdateCounter = -1;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (StationStore.UpdateCounter != _lastUpdateCounter)
+        {
+            _lastUpdateCounter = StationStore.UpdateCounter;
+            StateHasChanged();
+        }
+    }
+
+    public void Dispose()
+    {
+    }
 
     private void ShowStationDetails(Station station)
     {

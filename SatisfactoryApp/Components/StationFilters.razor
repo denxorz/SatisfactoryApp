@@ -22,7 +22,8 @@
                                  Label="Cargo Type"
                                  Variant="Variant.Outlined"
                                  options="@StationStore.CargoTypeOptions.Select(o => o.Value)"
-                                 @bind-Values="_selectedCargoTypes"
+                                 Values="_selectedCargoTypes"
+                                 ValuesChanged="OnCargoTypesChanged"
                                  multiSelection="true"
                                  startAdornment="@Icons.Material.Filled.Inventory"
                                  Clearable="true" />
@@ -76,24 +77,40 @@
 </MudCard>
 
 @code {
+    private int _lastUpdateCounter = -1;
     private Services.StationFilters _filters => StationStore.Filters;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _lastUpdateCounter = StationStore.UpdateCounter;
+        }
+        
+        if (StationStore.UpdateCounter != _lastUpdateCounter)
+        {
+            _lastUpdateCounter = StationStore.UpdateCounter;
+            StateHasChanged();
+        }
+    }
+
     private string _searchText
     {
         get => _filters.SearchText;
         set
         {
             _filters.SearchText = value;
+            StationStore.NotifyFiltersChanged();
             StateHasChanged();
         }
     }
-    private List<string> _selectedCargoTypes
+    private List<string> _selectedCargoTypes => _filters.SelectedCargoTypes;
+
+    private void OnCargoTypesChanged(List<string> values)
     {
-        get => _filters.SelectedCargoTypes;
-        set
-        {
-            _filters.SelectedCargoTypes = value;
-            StateHasChanged();
-        }
+        _filters.SelectedCargoTypes = values ?? new List<string>();
+        StationStore.NotifyFiltersChanged();
+        StateHasChanged();
     }
 
     private void ToggleStationType(string stationType)
@@ -107,6 +124,7 @@
         {
             currentTypes.Add(stationType);
         }
+        StationStore.NotifyFiltersChanged();
         StateHasChanged();
     }
 
@@ -121,12 +139,14 @@
         {
             currentTypes.Add(transferType);
         }
+        StationStore.NotifyFiltersChanged();
         StateHasChanged();
     }
 
     private void ToggleShowUploaders()
     {
         _filters.ShowUploaders = !_filters.ShowUploaders;
+        StationStore.NotifyFiltersChanged();
         StateHasChanged();
     }
 }

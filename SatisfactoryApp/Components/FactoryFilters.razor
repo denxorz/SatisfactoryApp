@@ -1,5 +1,3 @@
-@using SatisfactoryApp.Services
-@using MudBlazor
 @inject FactoryStore FactoryStore
 
 <MudCard>
@@ -9,36 +7,69 @@
     <MudCardContent>
         <MudGrid>
             <MudItem xs="12" sm="4">
-                <MudAutocomplete T="string"
-                                Label="Type"
-                                Variant="Variant.Outlined"
-                                @bind-Values="FactoryStore.Filters.SelectedFactoryTypes"
-                                options="@FactoryStore.FactoryTypeOptions.Select(o => o.Value)"
-                                startAdornment="@Icons.Material.Filled.Factory"
-                                Clearable="true"
-                                multiSelection="true" />
+                <MudComboBox 
+                    T="FactoryTypeOption"
+                    @bind-SelectedValues="@FactoryStore.SelectedFactoryTypes"
+                    Variant="Variant.Filled" 
+                    MultiSelection
+                    Label="Type" 
+                    Editable
+                    Clearable
+                    SelectAll
+                    ShowCheckbox>
+                    @foreach (var item in FactoryTypeOptions)
+                    {
+                        <MudComboBoxItem Value="@item" Text="@item.ToString()"></MudComboBoxItem>
+                    }
+                </MudComboBox>
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudAutocomplete T="string"
-                                Label="Power Circuit"
-                                Variant="Variant.Outlined"
-                                @bind-Values="FactoryStore.Filters.SelectedPowerCircuits"
-                                options="@FactoryStore.PowerCircuitIdOptions.Select(o => o.Value)"
-                                startAdornment="@Icons.Material.Filled.Bolt"
-                                Clearable="true"
-                                multiSelection="true" />
+                <MudComboBox T="PowerCircuitOption"
+                             @bind-SelectedValues="@FactoryStore.SelectedPowerCircuits"
+                             Variant="Variant.Filled"
+                             MultiSelection
+                             Label="Power Circuit"
+                             Editable
+                             Clearable
+                             SelectAll
+                             ShowCheckbox>
+                    @foreach (var item in PowerCircuitIdOptions)
+                    {
+                        <MudComboBoxItem Value="@item" Text="@item.ToString()"></MudComboBoxItem>
+                    }
+                </MudComboBox>
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudAutocomplete T="string"
-                                Label="Stability"
-                                Variant="Variant.Outlined"
-                                @bind-Values="FactoryStore.Filters.SelectedFactoryStabilities"
-                                options="@FactoryStore.FactoryStatusOptions.Select(o => o.Value)"
-                                startAdornment="@Icons.Material.Filled.Settings"
-                                Clearable="true"
-                                multiSelection="true" />
+                <MudComboBox T="FactoryStabilityOption"
+                             @bind-SelectedValues="@FactoryStore.SelectedFactoryStabilities"
+                             Variant="Variant.Filled"
+                             MultiSelection
+                             Label="Stability"
+                             Editable
+                             Clearable
+                             SelectAll
+                             ShowCheckbox>
+                    @foreach (var item in FactoryStabilityOptions)
+                    {
+                        <MudComboBoxItem Value="@item" Text="@item.ToString()"></MudComboBoxItem>
+                    }
+                </MudComboBox>
             </MudItem>
         </MudGrid>
     </MudCardContent>
 </MudCard>
+
+@code {
+
+    private readonly List<FactoryTypeOption> FactoryTypeOptions = new List<FactoryTypeOption>();
+    private readonly List<PowerCircuitOption> PowerCircuitIdOptions = new List<PowerCircuitOption>();
+    private readonly List<FactoryStabilityOption> FactoryStabilityOptions = new List<FactoryStabilityOption>();
+
+    protected override void OnInitialized() 
+    {
+        FactoryTypeOptions.AddRange(FactoryStore.FactoryTypeOptions);
+        PowerCircuitIdOptions.AddRange(FactoryStore.PowerCircuitIdOptions);
+        FactoryStabilityOptions.AddRange(FactoryStore.FactoryStabilityOptions);
+    }
+}
 
