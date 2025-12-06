@@ -1,29 +1,6 @@
-﻿<MudThemeProvider Theme="@_theme" />
-<MudDialogProvider />
-<MudSnackbarProvider />
-<MudPopoverProvider />
-
-<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
+﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>
         <FocusOnNavigate RouteData="@routeData" Selector="h1" />
     </Found>
 </Router>
-
-@code {
-    private MudTheme _theme = new()
-    {
-        PaletteDark = new PaletteDark
-        {
-            Primary = "#e59345",
-            Secondary = "#e59345",
-            Surface = "#212121",
-            Background = "#212121",
-            AppbarBackground = "#212121",
-            DrawerBackground = "#212121",
-            DrawerText = "#ffffff",
-            TextPrimary = "#ffffff",
-            TextSecondary = "rgba(255,255,255,0.7)",
-        }
-    };
-}

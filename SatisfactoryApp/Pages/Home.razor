@@ -5,11 +5,9 @@
 @inject NavigationManager NavigationManager
 
 <MudTabs ActivePanelIndex="_activeTabIndex"
-         ActivePanelIndexChanged="OnTabChanged"
-         Color="Color.Default"
-         Class="mb-4 themed-tabs">
+         ActivePanelIndexChanged="OnTabChanged">
     <MudTabPanel Text="Stations & Logistics" Icon="@Icons.Material.Filled.Train">
-        <MudGrid>
+        <MudGrid Class="pa-1">
             <MudItem xs="12">
                 <StationFilters />
             </MudItem>
@@ -24,7 +22,7 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
-    <MudTabPanel Text="Factory Maps" Icon="@Icons.Material.Filled.Factory">
+    <MudTabPanel Text="Factory Maps" Icon="@Icons.Material.Filled.Factory" Class="pa-3">
         <FactoryFilters />
         <MudGrid Class="mt-4">
             <MudItem xs="12" lg="6">

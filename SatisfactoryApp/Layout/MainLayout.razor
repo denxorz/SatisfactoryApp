@@ -1,10 +1,32 @@
 ﻿@inherits LayoutComponentBase
 
-<MudLayout Class="satisfactory-theme">
+<MudThemeProvider Theme="@theme" IsDarkMode />
+<MudDialogProvider />
+<MudPopoverProvider />
+
+<MudLayout>
     <Toolbar />
-    <MudMainContent Class="satisfactory-theme">
-        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-4">
+    <MudMainContent>
+        <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-2">
             @Body
         </MudContainer>
     </MudMainContent>
 </MudLayout>
+
+@code {
+    private readonly MudTheme theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Primary = "#e59345",
+            Secondary = "#e59345",
+            Surface = "#212121",
+            // Background = "#121212",
+            AppbarBackground = "#212121",
+            DrawerBackground = "#212121",
+            DrawerText = "#ffffff",
+            TextPrimary = "#ffffff",
+        }
+    };
+}
+
