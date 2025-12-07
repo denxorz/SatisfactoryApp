@@ -1,7 +1,179 @@
+@using SatisfactoryApp.Services
+@using Denxorz.Satisfactory.Routes
+@using MudBlazor
+@using Microsoft.JSInterop
+@inject RouteCalculationService RouteCalculationService
+@inject FactoryStore FactoryStore
+@inject StationStore StationStore
+@inject IJSRuntime JSRuntime
+
 <MudAppBar Elevation="1">
     <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
     <img src="/ctor.png" alt="constructor" style="height: 40px; width: 40px; margin-right: 16px;" />
     <MudText Typo="Typo.h6">Stats of your Satisfactory</MudText>
     <MudSpacer />
+    <div class="d-flex align-center" style="gap: 8px;">
+        <InputFile OnChange="HandleFileSelect" accept=".sav" class="d-none" id="toolbar-file-input" />
+        <div class="drop-zone @(_isDragging ? "drag-over" : "") @(_isCalculating ? "calculating" : "")"
+             @ondrop="HandleDrop"
+             @ondragover="HandleDragOver"
+             @ondragleave="HandleDragLeave"
+             @ondragenter:preventDefault="true"
+             @ondragover:preventDefault="true"
+             @onclick="HandleClick"
+             id="toolbar-drop-zone">
+            @if (_isCalculating)
+            {
+                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                <MudText Typo="Typo.body2" Class="ml-2">Processing...</MudText>
+            }
+            else if (_selectedFileName != null)
+            {
+                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                <MudText Typo="Typo.body2" Class="ml-2">@_selectedFileName</MudText>
+            }
+            else
+            {
+                <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Small" />
+                <MudText Typo="Typo.body2" Class="ml-2">Drop save file here</MudText>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudTooltip Text="@_error">
+                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+            </MudTooltip>
+        }
+    </div>
 </MudAppBar>
+
+<style>
+    .drop-zone {
+        display: flex;
+        align-items: center;
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: 2px dashed rgba(255, 255, 255, 0.3);
+        cursor: pointer;
+        transition: all 0.2s;
+        min-width: 200px;
+    }
+
+    .drop-zone.drag-over {
+        border-color: var(--mud-palette-primary);
+        background-color: rgba(229, 147, 69, 0.1);
+    }
+
+    .drop-zone.calculating {
+        border-color: var(--mud-palette-primary);
+        opacity: 0.7;
+    }
+</style>
+
+@code {
+    private IBrowserFile? _selectedFile;
+    private string? _selectedFileName;
+    private bool _isCalculating;
+    private bool _isDragging;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("setupFileDropZone", DotNetObjectReference.Create(this));
+        }
+    }
+
+    private void HandleClick()
+    {
+        if (!_isCalculating)
+        {
+            JSRuntime.InvokeVoidAsync("triggerFileInput", "toolbar-file-input");
+        }
+    }
+
+    private void HandleDragOver(DragEventArgs e)
+    {
+        _isDragging = true;
+        StateHasChanged();
+    }
+
+    private void HandleDragLeave(DragEventArgs e)
+    {
+        _isDragging = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleDrop(DragEventArgs e)
+    {
+        _isDragging = false;
+        StateHasChanged();
+    }
+
+    private async Task HandleFileSelect(InputFileChangeEventArgs e)
+    {
+        _selectedFile = e.File;
+        _selectedFileName = e.File.Name;
+        _error = null;
+        await CalculateRoutes();
+    }
+
+    [JSInvokable]
+    public async Task OnFileDropped(string fileName, byte[] fileData)
+    {
+        _selectedFileName = fileName;
+        _error = null;
+        await CalculateRoutes(fileData);
+    }
+
+    [JSInvokable]
+    public void OnFileDroppedError(string errorMessage)
+    {
+        _error = errorMessage;
+        StateHasChanged();
+    }
+
+    private async Task CalculateRoutes(byte[]? bytes = null)
+    {
+        _isCalculating = true;
+        _error = null;
+        StateHasChanged();
+
+        try
+        {
+            byte[] fileBytes;
+            if (bytes != null)
+            {
+                fileBytes = bytes;
+            }
+            else if (_selectedFile != null)
+            {
+                using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                fileBytes = memoryStream.ToArray();
+            }
+            else
+            {
+                return;
+            }
+
+            var result = await RouteCalculationService.CalculateRoutesAsync(fileBytes);
+            FactoryStore.SetFactories(result.Factories);
+            StationStore.SetStations(result.Stations);
+            StationStore.SetUploaders(result.Uploaders);
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _isCalculating = false;
+            StateHasChanged();
+        }
+    }
+
+}
 

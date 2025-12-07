@@ -104,3 +104,38 @@ window.getElementBoundingClientRect = function (selector) {
   };
 };
 
+window.setupFileDropZone = function (dotNetRef) {
+  const dropZone = document.getElementById('toolbar-drop-zone');
+  if (!dropZone) return;
+
+  dropZone.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const files = e.dataTransfer.files;
+    if (files.length === 0) return;
+
+    const file = files[0];
+    if (!file.name.endsWith('.sav')) {
+      dotNetRef.invokeMethodAsync('OnFileDroppedError', 'Please drop a .sav file');
+      return;
+    }
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const bytes = Array.from(uint8Array);
+      await dotNetRef.invokeMethodAsync('OnFileDropped', file.name, bytes);
+    } catch (error) {
+      dotNetRef.invokeMethodAsync('OnFileDroppedError', error.message);
+    }
+  });
+};
+
+window.triggerFileInput = function (inputId) {
+  const input = document.getElementById(inputId);
+  if (input) {
+    input.click();
+  }
+};
+

@@ -37,9 +37,6 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
-    <MudTabPanel Text="Route Calculator" Icon="@Icons.Material.Filled.Calculate">
-        <RouteCalculatorAOT />
-    </MudTabPanel>
 </MudTabs>
 
 @code {
@@ -52,13 +49,13 @@
 
         if (query.TryGetValue("tab", out var tab) && int.TryParse(tab, out var tabIndex))
         {
-            _activeTabIndex = tabIndex is >= 0 and <= 2 ? tabIndex : 0;
+            _activeTabIndex = tabIndex is >= 0 and <= 1 ? tabIndex : 0;
         }
     }
 
     private Task OnTabChanged(int newIndex)
     {
-        _activeTabIndex = newIndex is >= 0 and <= 2 ? newIndex : 0;
+        _activeTabIndex = newIndex is >= 0 and <= 1 ? newIndex : 0;
 
         var targetUri = NavigationManager.GetUriWithQueryParameter("tab", _activeTabIndex);
         NavigationManager.NavigateTo(targetUri, replace: true);
