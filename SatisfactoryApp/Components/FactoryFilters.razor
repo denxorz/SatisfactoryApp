@@ -67,6 +67,18 @@
 
     protected override void OnInitialized() 
     {
+        FactoryStore.FactoriesChanged += OnChanged;
+        Load();
+    }
+
+    private void OnChanged()
+    {
+        Load();
+        StateHasChanged();
+    }
+
+    private void Load()
+    {
         FactoryTypeOptions.AddRange(FactoryStore.FactoryTypeOptions);
         PowerCircuitIdOptions.AddRange(FactoryStore.PowerCircuitIdOptions);
         FactoryStabilityOptions.AddRange(FactoryStore.FactoryStabilityOptions);

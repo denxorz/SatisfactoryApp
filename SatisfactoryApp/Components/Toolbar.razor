@@ -2,7 +2,6 @@
 @using Denxorz.Satisfactory.Routes
 @using MudBlazor
 @using Microsoft.JSInterop
-@inject RouteCalculationService RouteCalculationService
 @inject FactoryStore FactoryStore
 @inject StationStore StationStore
 @inject IJSRuntime JSRuntime
@@ -120,11 +119,11 @@
     }
 
     [JSInvokable]
-    public async Task OnFileDropped(string fileName, byte[] fileData)
+    public async Task OnFileDropped(string fileName)
     {
         _selectedFileName = fileName;
         _error = null;
-        await CalculateRoutes(fileData);
+        await CalculateRoutes();
     }
 
     [JSInvokable]
@@ -134,7 +133,7 @@
         StateHasChanged();
     }
 
-    private async Task CalculateRoutes(byte[]? bytes = null)
+    private async Task CalculateRoutes()
     {
         _isCalculating = true;
         _error = null;
@@ -142,24 +141,17 @@
 
         try
         {
-            byte[] fileBytes;
-            if (bytes != null)
-            {
-                fileBytes = bytes;
-            }
-            else if (_selectedFile != null)
-            {
-                using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
-                using var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                fileBytes = memoryStream.ToArray();
-            }
-            else
+            if (_selectedFile == null)
             {
                 return;
             }
 
-            var result = await RouteCalculationService.CalculateRoutesAsync(fileBytes);
+            using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+            var result = SaveDetails.LoadFromStream(memoryStream);
+
             FactoryStore.Set(result.Factories);
             StationStore.Set(result.Stations, result.Uploaders);
         }
@@ -173,6 +165,5 @@
             StateHasChanged();
         }
     }
-
 }
 

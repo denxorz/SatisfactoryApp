@@ -25,10 +25,8 @@ public class StationStore
 
         CargoTypeOptions = GetAvailableCargoTypes();
 
-        _updateCounter++;
-
         StationsChanged?.Invoke();
-        FilteredStationsChanged?.Invoke();
+        NotifyFiltersChanged();
     }
 
     public void NotifyFiltersChanged()
@@ -110,6 +108,16 @@ public class StationStore
         return true;
     }
 
+    public string SearchText
+    {
+        get => Filters.SearchText;
+        set
+        {
+            Filters.SearchText = value;
+            NotifyFiltersChanged();
+        }
+    }
+
     public IReadOnlyCollection<string> SelectedTransferTypes
     {
         get => Filters.SelectedTransferTypes;
@@ -134,12 +142,7 @@ public class StationStore
 
     public IEnumerable<CargoTypeOption> SelectedCargoTypes
     {
-        get
-        {
-            Console.WriteLine($"Getting SelectedCargoTypes: {string.Join("/", Filters.SelectedCargoTypes)}");
-            return Filters.SelectedCargoTypes;
-        }
-
+        get => Filters.SelectedCargoTypes;
         set
         {
             Filters.SelectedCargoTypes = value.ToList() ?? [];

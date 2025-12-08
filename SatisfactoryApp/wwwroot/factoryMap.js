@@ -122,10 +122,7 @@ window.setupFileDropZone = function (dotNetRef) {
     }
 
     try {
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      const bytes = Array.from(uint8Array);
-      await dotNetRef.invokeMethodAsync('OnFileDropped', file.name, bytes);
+      await dotNetRef.invokeMethodAsync('OnFileDropped', file.name);
     } catch (error) {
       dotNetRef.invokeMethodAsync('OnFileDroppedError', error.message);
     }

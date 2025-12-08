@@ -9,7 +9,7 @@
     <MudCardContent Class="pa-2">
         <MudGrid Spacing="1">
             <MudItem xs="12" sm="6">
-                <MudTextField @bind-Value="_searchText" 
+                <MudTextField @bind-Value="StationStore.SearchText"
                               Label="Search Stations" 
                               Variant="Variant.Outlined" 
                               Adornment="Adornment.Start" 
@@ -56,39 +56,23 @@
 </MudCard>
 
 @code {
-    private int _lastUpdateCounter = -1;
-    private Services.StationFilters _filters => StationStore.Filters;
-
     private readonly List<CargoTypeOption> CargoTypeOptions = [];
 
     protected override void OnInitialized()
     {
+        StationStore.StationsChanged += OnChanged;
+        Load();
+    }
+
+    private void OnChanged()
+    {
+        Load();
+        StateHasChanged();
+    }
+
+    private void Load()
+    {
         CargoTypeOptions.AddRange(StationStore.CargoTypeOptions);
-    }
-
-    protected override void OnAfterRender(bool firstRender)
-    {
-        if (firstRender)
-        {
-            _lastUpdateCounter = StationStore.UpdateCounter;
-        }
-        
-        if (StationStore.UpdateCounter != _lastUpdateCounter)
-        {
-            _lastUpdateCounter = StationStore.UpdateCounter;
-            StateHasChanged();
-        }
-    }
-
-    private string _searchText
-    {
-        get => _filters.SearchText;
-        set
-        {
-            _filters.SearchText = value;
-            StationStore.NotifyFiltersChanged();
-            StateHasChanged();
-        }
     }
 }
 

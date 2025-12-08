@@ -14,7 +14,6 @@ builder.Services.AddMudServices();
 builder.Services.AddMudExtensions();
 
 // Register custom services
-builder.Services.AddScoped<RouteCalculationService>();
 builder.Services.AddScoped<FactoryStore>();
 builder.Services.AddScoped<StationStore>();
 

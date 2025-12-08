@@ -21,8 +21,8 @@ public class FactoryStore
         _factories.Clear();
         _factories.AddRange(factories);
 
-        _updateCounter++;
         FactoriesChanged?.Invoke();
+        NotifyFiltersChanged();
     }
 
     public void NotifyFiltersChanged()

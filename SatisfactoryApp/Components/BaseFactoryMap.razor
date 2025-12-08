@@ -85,7 +85,6 @@
 
     private async Task CheckAndRenderIfNeeded()
     {
-        // Check if factories or filters were updated
         if (_graphvizLoaded && FactoryStore.UpdateCounter != _lastUpdateCounter)
         {
             _lastUpdateCounter = FactoryStore.UpdateCounter;

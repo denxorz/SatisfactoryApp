@@ -124,7 +124,7 @@
 
     protected override void OnInitialized() 
     {
-        StationStore.FilteredStationsChanged += () => StateHasChanged();
+        StationStore.FilteredStationsChanged += StateHasChanged;
     }
 
     private void ShowStationDetails(Station station)
