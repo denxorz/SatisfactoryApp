@@ -16,7 +16,7 @@ public class FactoryStore
     public event Action? FactoriesChanged;
     public event Action? FilteredFactoriesChanged;
 
-    public void SetFactories(List<Factory> factories)
+    public void Set(List<Factory> factories)
     {
         _factories.Clear();
         _factories.AddRange(factories);

@@ -160,9 +160,8 @@
             }
 
             var result = await RouteCalculationService.CalculateRoutesAsync(fileBytes);
-            FactoryStore.SetFactories(result.Factories);
-            StationStore.SetStations(result.Stations);
-            StationStore.SetUploaders(result.Uploaders);
+            FactoryStore.Set(result.Factories);
+            StationStore.Set(result.Stations, result.Uploaders);
         }
         catch (Exception ex)
         {

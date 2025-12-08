@@ -12,24 +12,23 @@ public class StationStore
     public List<Station> Stations => _stations;
     public List<Uploader> Uploaders => _uploaders;
     public StationFilters Filters => _filters;
+    public List<CargoTypeOption> CargoTypeOptions { get; private set; } = [];
     public int UpdateCounter => _updateCounter;
 
     public event Action? StationsChanged;
     public event Action? FilteredStationsChanged;
 
-    public void SetStations(List<Station> stations)
+    public void Set(List<Station> stations, List<Uploader> uploaders)
     {
         _stations = stations;
+        _uploaders = uploaders;
+
+        CargoTypeOptions = GetAvailableCargoTypes();
+
         _updateCounter++;
 
         StationsChanged?.Invoke();
         FilteredStationsChanged?.Invoke();
-    }
-
-    public void SetUploaders(List<Uploader> uploaders)
-    {
-        _uploaders = uploaders;
-        _updateCounter++;
     }
 
     public void NotifyFiltersChanged()
@@ -73,13 +72,13 @@ public class StationStore
             }
         }
 
-        if (_filters.SelectedStationTypes.Count > 0 
+        if (_filters.SelectedStationTypes.Count > 0
             && !_filters.AvailableAfterFilterStationTypes.Contains(station.Type, StringComparer.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        if (_filters.SelectedTransferTypes.Count > 0 
+        if (_filters.SelectedTransferTypes.Count > 0
             && !_filters.AvailableAfterFilterTransferTypes.Contains(station.IsUnload ? "Unload" : "Load"))
         {
             return false;
@@ -111,29 +110,6 @@ public class StationStore
         return true;
     }
 
-    public List<CargoTypeOption> CargoTypeOptions
-    {
-        get
-        {
-            var cargoTypes = new HashSet<string>();
-
-            foreach (var c in _stations.SelectMany(s => s.CargoTypes))
-            {
-                cargoTypes.Add(c);
-            }
-
-            foreach (var c in _uploaders.SelectMany(s => s.CargoTypes))
-            {
-                cargoTypes.Add(c);
-            }
-
-            return cargoTypes
-                .OrderBy(t => t)
-                .Select(t => new CargoTypeOption { Title = t, Value = t })
-                .ToList();
-        }
-    }
-
     public IReadOnlyCollection<string> SelectedTransferTypes
     {
         get => Filters.SelectedTransferTypes;
@@ -158,12 +134,36 @@ public class StationStore
 
     public IEnumerable<CargoTypeOption> SelectedCargoTypes
     {
-        get => Filters.SelectedCargoTypes;
+        get
+        {
+            Console.WriteLine($"Getting SelectedCargoTypes: {string.Join("/", Filters.SelectedCargoTypes)}");
+            return Filters.SelectedCargoTypes;
+        }
+
         set
         {
             Filters.SelectedCargoTypes = value.ToList() ?? [];
             NotifyFiltersChanged();
         }
+    }
+
+    private List<CargoTypeOption> GetAvailableCargoTypes()
+    {
+        var cargoTypes = new HashSet<string>();
+
+        foreach (var c in _stations.SelectMany(s => s.CargoTypes))
+        {
+            cargoTypes.Add(c);
+        }
+
+        foreach (var c in _uploaders.SelectMany(s => s.CargoTypes))
+        {
+            cargoTypes.Add(c);
+        }
+
+        return [.. cargoTypes
+            .OrderBy(t => t)
+            .Select(t => new CargoTypeOption { Title = t, Value = t })];
     }
 }
 
@@ -189,4 +189,3 @@ public class CargoTypeOption
 
     public override string ToString() => Title;
 }
-
