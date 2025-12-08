@@ -8,6 +8,19 @@
          ApplyEffectsToContainer="true"          
          Elevation="2"
          ActivePanelIndexChanged="OnTabChanged">
+    <MudTabPanel Text="Factory Maps" Icon="@Icons.Material.Filled.Factory" Class="pt-1">
+          <MudGrid Spacing="3">
+            <MudItem xs="12">
+                <FactoryFilters />
+            </MudItem>
+            <MudItem xs="12" lg="6">
+                <FactoryStabilityMap />
+            </MudItem>
+            <MudItem xs="12" lg="6">
+                <FactoryPowerCircuitMap />
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
     <MudTabPanel Text="Stations & Logistics" Icon="@Icons.Material.Filled.Train" Class="pt-1">
         <MudGrid Spacing="3">
             <MudItem xs="12">
@@ -21,19 +34,6 @@
             </MudItem>
             <MudItem xs="12" lg="6">
                 <StationsTable />
-            </MudItem>
-        </MudGrid>
-    </MudTabPanel>
-    <MudTabPanel Text="Factory Maps" Icon="@Icons.Material.Filled.Factory" Class="pt-1">
-          <MudGrid Spacing="3">
-            <MudItem xs="12">
-                <FactoryFilters />
-            </MudItem>
-            <MudItem xs="12" lg="6">
-                <FactoryStabilityMap />
-            </MudItem>
-            <MudItem xs="12" lg="6">
-                <FactoryPowerCircuitMap />
             </MudItem>
         </MudGrid>
     </MudTabPanel>
