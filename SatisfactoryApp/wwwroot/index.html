@@ -17,6 +17,64 @@
             text-transform: uppercase;
             font-weight: 500;
         }
+
+        body {
+            background-color: #121212;
+            margin: 0;
+        }
+
+        #app.loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .loading-progress {
+            width: 80px;
+            height: 80px;
+            transform: rotate(-90deg);
+        }
+
+        .loading-progress circle {
+            fill: none;
+            stroke-width: 4;
+            stroke-linecap: round;
+        }
+
+        .loading-progress circle:first-child {
+            stroke: rgba(229, 147, 69, 0.2);
+        }
+
+        .loading-progress circle:last-child {
+            stroke: #e59345;
+            stroke-dasharray: 251.2;
+            stroke-dashoffset: 251.2;
+            animation: loading-progress 1.5s ease-in-out infinite;
+        }
+
+        @keyframes loading-progress {
+            0% {
+                stroke-dashoffset: 251.2;
+            }
+            50% {
+                stroke-dashoffset: 62.8;
+            }
+            100% {
+                stroke-dashoffset: 251.2;
+            }
+        }
+
+        .loading-progress-text {
+            margin-top: 20px;
+            color: #e59345;
+            font-family: 'Roboto', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+        }
     </style>
     <link rel="icon" type="image/png" href="favicon.png" />
     <script src="_content/MudBlazor/MudBlazor.min.js"></script>
@@ -25,12 +83,12 @@
 </head>
 
 <body>
-    <div id="app">
-        <svg class="loading-progress">
-            <circle r="40%" cx="50%" cy="50%" />
-            <circle r="40%" cx="50%" cy="50%" />
+    <div id="app" class="loading">
+        <svg class="loading-progress" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="40" />
+            <circle cx="50" cy="50" r="40" />
         </svg>
-        <div class="loading-progress-text"></div>
+        <div class="loading-progress-text">Loading...</div>
     </div>
 
     <div id="blazor-error-ui">
@@ -40,6 +98,21 @@
     </div>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
     <script src="_content/CodeBeam.MudBlazor.Extensions/MudExtensions.min.js"></script>
+    <script>
+        (function() {
+            const app = document.getElementById('app');
+            if (app) {
+                const observer = new MutationObserver(function(mutations) {
+                    const hasLoadingElements = app.querySelector('.loading-progress') !== null;
+                    if (!hasLoadingElements) {
+                        app.classList.remove('loading');
+                        observer.disconnect();
+                    }
+                });
+                observer.observe(app, { childList: true, subtree: true });
+            }
+        })();
+    </script>
 </body>
 
 </html>
