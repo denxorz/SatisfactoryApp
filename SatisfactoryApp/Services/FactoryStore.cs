@@ -41,7 +41,6 @@ public class FactoryStore
             var factoryType = factory.Type ?? "unknown";
             if (!_filters.SelectedFactoryTypes.Any(f => f.Value == factoryType))
             {
-                Console.WriteLine($"IsFactoryFiltered: Factory {factory.Id} filtered by type '{factoryType}' (not in selected types)");
                 return true;
             }
         }
@@ -57,7 +56,6 @@ public class FactoryStore
 
             if (!hasMatchingCircuit)
             {
-                Console.WriteLine($"IsFactoryFiltered: Factory {factory.Id} filtered by power circuit (main: {mainCircuitKey}, sub: {subCircuitKey})");
                 return true;
             }
         }
@@ -67,7 +65,6 @@ public class FactoryStore
             var status = GetFactoryStability(factory);
             if (!_filters.SelectedFactoryStabilities.Any(s => s.Value == status))
             {
-                Console.WriteLine($"IsFactoryFiltered: Factory {factory.Id} filtered by status '{status}' (not in selected stabilities)");
                 return true;
             }
         }
