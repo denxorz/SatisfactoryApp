@@ -10,7 +10,7 @@
     <MudCardContent Class="pa-2">
         @if (StationStore.FilteredStations.Count > 0)
         {
-            <MudTable Items="@StationStore.FilteredStations" Hover="true" Dense="true" Striped="true">
+            <MudTable Items="@StationStore.FilteredStations" Dense="true" Striped="true">
                 <HeaderContent>
                     <MudTh></MudTh>
                     <MudTh></MudTh>
@@ -40,11 +40,11 @@
                     <MudTd>
                         @if (context.IsUnload)
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.ArrowUpward" Size="Size.Small" />
+                            <MudIcon Icon="@Icons.Material.Filled.Output" Size="Size.Small" />
                         }
                         else
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.ArrowDownward" Size="Size.Small" />
+                            <MudIcon Icon="@Icons.Material.Filled.Input" Size="Size.Small" />
                         }
                     </MudTd>
                     <MudTd>
@@ -71,14 +71,14 @@
             <MudAlert Severity="Severity.Info">No Stations Available</MudAlert>
         }
 
-        <MudDialog @bind-IsVisible="_showStationDetailsDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
+        <MudDialog @bind-Visible="_showStationDetailsDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
             <TitleContent>
                 <MudText Typo="Typo.h6">Station Details</MudText>
             </TitleContent>
             <DialogContent>
                 @if (_selectedStation != null)
                 {
-                    <MudGrid>
+                    <MudGrid Spacing="1">
                         <MudItem xs="4"><MudText><strong>Id:</strong></MudText></MudItem>
                         <MudItem xs="8"><MudText>@(_selectedStation.Id ?? "??")</MudText></MudItem>
                         <MudItem xs="4"><MudText><strong>Name:</strong></MudText></MudItem>
@@ -118,9 +118,9 @@
 </MudCard>
 
 @code {
+
     private bool _showStationDetailsDialog = false;
     private Station? _selectedStation;
-    private int _lastUpdateCounter = -1;
 
     protected override void OnInitialized() 
     {
