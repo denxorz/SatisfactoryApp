@@ -37,10 +37,25 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
+    <MudTabPanel Text="Resources" Icon="@Icons.Material.Filled.Storage" Class="pt-1">
+        <MudGrid Spacing="3">
+            <MudItem xs="12">
+                <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+                    <MudCardHeader Class="mud-primary pa-0 pl-1">
+                        <MudText Class="primary-card-header-title" Color="Color.Surface">Resources</MudText>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-2">
+                        <MudText>TODO: Amount of used vs available resources here</MudText>
+                    </MudCardContent>
+                </MudCard>
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
 </MudTabs>
 
 @code {
     private int _activeTabIndex = 0;
+    private const int MaxTabIndex = 2;
 
     protected override void OnInitialized()
     {
@@ -49,13 +64,13 @@
 
         if (query.TryGetValue("tab", out var tab) && int.TryParse(tab, out var tabIndex))
         {
-            _activeTabIndex = tabIndex is >= 0 and <= 1 ? tabIndex : 0;
+            _activeTabIndex = tabIndex is >= 0 and <= MaxTabIndex ? tabIndex : 0;
         }
     }
 
     private Task OnTabChanged(int newIndex)
     {
-        _activeTabIndex = newIndex is >= 0 and <= 1 ? newIndex : 0;
+        _activeTabIndex = newIndex is >= 0 and <= MaxTabIndex ? newIndex : 0;
 
         var targetUri = NavigationManager.GetUriWithQueryParameter("tab", _activeTabIndex);
         NavigationManager.NavigateTo(targetUri, replace: true);
