@@ -49,6 +49,7 @@ secrets.json
 
 # Local appsettings
 appsettings.Development.json
+appsettings.Production.json
 appsettings.*.Local.json
 
 # Logs

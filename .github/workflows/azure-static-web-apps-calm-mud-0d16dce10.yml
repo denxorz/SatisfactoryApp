@@ -36,6 +36,12 @@ jobs:
         run: dotnet workload restore
         working-directory: SatisfactoryApp
 
+      - name: Create production appsettings
+        if: github.ref == 'refs/heads/main' && secrets.SENTRY_DSN != ''
+        run: |
+          echo '{ "Sentry": { "Dsn": "${{ secrets.SENTRY_DSN }}" } }' > SatisfactoryApp/appsettings.Production.json
+        working-directory: SatisfactoryApp
+
       - name: Publish Blazor WebAssembly
         run: dotnet publish SatisfactoryApp.csproj -c Release -o build
         working-directory: SatisfactoryApp

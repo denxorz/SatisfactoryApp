@@ -18,4 +18,18 @@ builder.Services.AddScoped<RouteCalculationService>();
 builder.Services.AddScoped<FactoryStore>();
 builder.Services.AddScoped<StationStore>();
 
+// Configure Sentry
+var sentryDsn = builder.Configuration["Sentry:Dsn"] ?? "";
+if (!string.IsNullOrEmpty(sentryDsn))
+{
+    builder.UseSentry(options =>
+    {
+        options.Dsn = sentryDsn;
+        options.Debug = builder.HostEnvironment.IsDevelopment();
+        options.TracesSampleRate = builder.HostEnvironment.IsDevelopment() ? 1.0 : 0.1;
+        options.Environment = builder.HostEnvironment.Environment;
+        options.Release = System.Reflection.Assembly.GetExecutingAssembly().GetName().Version?.ToString();
+    });
+}
+
 await builder.Build().RunAsync();
