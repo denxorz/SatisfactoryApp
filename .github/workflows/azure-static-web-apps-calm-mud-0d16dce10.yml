@@ -37,9 +37,9 @@ jobs:
         working-directory: SatisfactoryApp
 
       - name: Create production appsettings
-        if: github.ref == 'refs/heads/main' && secrets.SENTRY_DSN != ''
+        if: github.ref == 'refs/heads/main'
         run: |
-          echo '{ "Sentry": { "Dsn": "${{ secrets.SENTRY_DSN }}" } }' > SatisfactoryApp/appsettings.Production.json
+          echo '{ "Sentry": { "Dsn": "${{ secrets.SENTRY_DSN }}" } }' > appsettings.Production.json
         working-directory: SatisfactoryApp
 
       - name: Publish Blazor WebAssembly
