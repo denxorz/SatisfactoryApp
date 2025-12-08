@@ -37,8 +37,9 @@
                 <MudChipSet @bind-SelectedValues="StationStore.SelectedTransferTypes"
                             SelectionMode="SelectionMode.MultiSelection" 
                             Color="Color.Primary">
-                    <MudChip Value="@("Load")" Icon="@Icons.Material.Filled.ArrowDownward" />
-                    <MudChip Value="@("Unload")" Icon="@Icons.Material.Filled.ArrowUpward" />
+                    <MudChip Value="@("Load")" Icon="@Icons.Material.Filled.Input" />
+                    <MudChip Value="@("Unload")" Icon="@Icons.Material.Filled.Output" />
+                    <MudChip Value="@("Uploader")" Icon="@Icons.Material.Filled.CloudUpload" />
                 </MudChipSet>
             </MudItem>
             <MudItem xs="12" sm="6">
@@ -48,7 +49,6 @@
                     <MudChip Value="@("Train")" Icon="@Icons.Material.Filled.Train" />
                     <MudChip Value="@("Truck")" Icon="@Icons.Material.Filled.LocalShipping" />
                     <MudChip Value="@("Drone")" Icon="@Icons.Material.Filled.Flight" />
-                    <MudChip Value="@("Uploader")" Icon="@Icons.Material.Filled.Upload" />
                 </MudChipSet>
             </MudItem>
         </MudGrid>
@@ -58,7 +58,6 @@
 @code {
     private int _lastUpdateCounter = -1;
     private Services.StationFilters _filters => StationStore.Filters;
-    private IReadOnlyCollection<string> _selected;
 
     private readonly List<CargoTypeOption> CargoTypeOptions = [];
 
@@ -90,13 +89,6 @@
             StationStore.NotifyFiltersChanged();
             StateHasChanged();
         }
-    }
-
-    private void ToggleShowUploaders()
-    {
-        _filters.ShowUploaders = !_filters.ShowUploaders;
-        StationStore.NotifyFiltersChanged();
-        StateHasChanged();
     }
 }
 

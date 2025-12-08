@@ -40,8 +40,6 @@
     private int _lastUpdateCounter = -1;
     private bool _graphvizLoaded = false;
 
-
-
     protected override void OnInitialized()
     {
         StationStore.FilteredStationsChanged += async () => await CheckAndRenderIfNeeded();
@@ -73,11 +71,10 @@
 
     private async Task CheckAndRenderIfNeeded()
     {
-        Console.WriteLine($"CheckAndRenderIfNeeded: GraphvizLoaded={_graphvizLoaded}, LastUpdateCounter={_lastUpdateCounter}, CurrentUpdateCounter={StationStore.UpdateCounter}, IsLoading={_isLoading}, Error={_error}");
         if (_graphvizLoaded && StationStore.UpdateCounter != _lastUpdateCounter)
         {
             _lastUpdateCounter = StationStore.UpdateCounter;
-            if (StationStore.FilteredStations.Count > 0 && !_isLoading && string.IsNullOrEmpty(_error))
+            if (!_isLoading && string.IsNullOrEmpty(_error))
             {
                 await RenderMap();
             }

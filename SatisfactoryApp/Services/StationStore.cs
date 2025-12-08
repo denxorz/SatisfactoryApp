@@ -50,9 +50,9 @@ public class StationStore
     {
         get
         {
-            if (!_filters.ShowUploaders)
+            if (_filters.SelectedTransferTypes.Count > 0 && !_filters.AvailableAfterFilterTransferTypes.Contains("Uploader"))
             {
-                return new List<Uploader>();
+                return [];
             }
 
             return _uploaders.Where(u => IsUploaderFiltered(u)).ToList();
@@ -73,22 +73,16 @@ public class StationStore
             }
         }
 
-        if (_filters.SelectedStationTypes.Count > 0)
+        if (_filters.SelectedStationTypes.Count > 0 
+            && !_filters.AvailableAfterFilterStationTypes.Contains(station.Type, StringComparer.OrdinalIgnoreCase))
         {
-            Console.WriteLine($"IsStationFiltered: {station.Type}");
-            if (!_filters.SelectedStationTypes.Contains(station.Type, StringComparer.OrdinalIgnoreCase))
-            {
-                return false;
-            }
+            return false;
         }
 
-        if (_filters.SelectedTransferTypes.Count > 0)
+        if (_filters.SelectedTransferTypes.Count > 0 
+            && !_filters.AvailableAfterFilterTransferTypes.Contains(station.IsUnload ? "Unload" : "Load"))
         {
-            var transferType = station.IsUnload ? "unload" : "load";
-            if (!_filters.SelectedTransferTypes.Contains(transferType, StringComparer.OrdinalIgnoreCase))
-            {
-                return false;
-            }
+            return false;
         }
 
         if (_filters.SelectedCargoTypes.Count > 0)
@@ -146,6 +140,7 @@ public class StationStore
         set
         {
             Filters.SelectedTransferTypes = value.ToList() ?? [];
+            Filters.AvailableAfterFilterTransferTypes = [.. Filters.AllTransferTypes.Except(_filters.SelectedTransferTypes)];
             NotifyFiltersChanged();
         }
     }
@@ -156,6 +151,7 @@ public class StationStore
         set
         {
             Filters.SelectedStationTypes = value.ToList() ?? [];
+            Filters.AvailableAfterFilterStationTypes = [.. Filters.AllStationTypes.Except(_filters.SelectedStationTypes)];
             NotifyFiltersChanged();
         }
     }
@@ -174,10 +170,16 @@ public class StationStore
 public class StationFilters
 {
     public string SearchText { get; set; } = string.Empty;
+
     public List<string> SelectedStationTypes { get; set; } = [];
+    public List<string> AvailableAfterFilterStationTypes { get; set; } = [];
+    public List<string> AllStationTypes { get; } = ["Train", "Truck", "Drone"];
+
     public List<string> SelectedTransferTypes { get; set; } = [];
+    public List<string> AvailableAfterFilterTransferTypes { get; set; } = [];
+    public List<string> AllTransferTypes { get; } = ["Load", "Unload", "Uploader"];
+
     public List<CargoTypeOption> SelectedCargoTypes { get; set; } = [];
-    public bool ShowUploaders { get; set; } = true;
 }
 
 public class CargoTypeOption
