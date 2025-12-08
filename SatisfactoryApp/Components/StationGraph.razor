@@ -5,19 +5,19 @@
 @inject StationStore StationStore
 @inject IJSRuntime JSRuntime
 
-<MudCard>
-    <MudCardHeader>
-        <MudText Typo="Typo.h6">Map</MudText>
+<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+    <MudCardHeader Class="mud-primary pa-0 pl-1">
+        <MudText Class="primary-card-header-title" Color="Color.Surface">Map</MudText>
         @if (_isLoading)
         {
-            <MudText Typo="Typo.caption" Class="text-uppercase">Loading...</MudText>
+            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">Loading...</MudText>
         }
         else if (!string.IsNullOrEmpty(_error))
         {
             <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
         }
     </MudCardHeader>
-    <MudCardContent>
+    <MudCardContent  Class="pa-0">
         <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
             <div class="map-wrapper">
                 @if (!string.IsNullOrEmpty(_mergedImageUrl))

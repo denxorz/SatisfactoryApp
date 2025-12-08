@@ -6,12 +6,11 @@
 
 <MudTabs Style="background-color: #303030 !important; background-image: none !important; opacity: 1 !important;"
          ActivePanelIndex="_activeTabIndex"
-         ApplyEffectsToContainer="true" 
-         PanelClass="pa-1"
+         ApplyEffectsToContainer="true"          
          Elevation="2"
          ActivePanelIndexChanged="OnTabChanged">
-    <MudTabPanel Text="Stations & Logistics" Icon="@Icons.Material.Filled.Train">
-        <MudGrid>
+    <MudTabPanel Text="Stations & Logistics" Icon="@Icons.Material.Filled.Train" Class="pt-1">
+        <MudGrid Spacing="3">
             <MudItem xs="12">
                 <StationFilters />
             </MudItem>
@@ -26,9 +25,11 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
-    <MudTabPanel Text="Factory Maps" Icon="@Icons.Material.Filled.Factory">
-        <FactoryFilters />
-        <MudGrid Class="mt-4">
+    <MudTabPanel Text="Factory Maps" Icon="@Icons.Material.Filled.Factory" Class="pt-1">
+          <MudGrid Spacing="3">
+            <MudItem xs="12">
+                <FactoryFilters />
+            </MudItem>
             <MudItem xs="12" lg="6">
                 <FactoryStabilityMap />
             </MudItem>

@@ -4,11 +4,11 @@
 @inject StationStore StationStore
 @implements IDisposable
 
-<MudCard>
-    <MudCardHeader>
-        <MudText Typo="Typo.h6">Stations</MudText>
+<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+    <MudCardHeader Class="mud-primary pa-0 pl-1">
+        <MudText Class="primary-card-header-title" Color="Color.Surface">Stations</MudText>
     </MudCardHeader>
-    <MudCardContent>
+    <MudCardContent Class="pa-2">
         @if (StationStore.FilteredStations.Count > 0)
         {
             <MudTable Items="@StationStore.FilteredStations" Hover="true" Dense="true" Striped="true">
