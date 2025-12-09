@@ -51,11 +51,14 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
+    <MudTabPanel Text="Instructions" Icon="@Icons.Material.Filled.Info" Class="pt-1">
+        <Instructions />
+    </MudTabPanel>
 </MudTabs>
 
 @code {
     private int _activeTabIndex = 0;
-    private const int MaxTabIndex = 2;
+    private const int MaxTabIndex = 3;
 
     protected override void OnInitialized()
     {
