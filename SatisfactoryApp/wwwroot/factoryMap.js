@@ -122,7 +122,16 @@ window.setupFileDropZone = function (dotNetRef) {
     }
 
     try {
-      await dotNetRef.invokeMethodAsync('OnFileDropped', file.name);
+      const arrayBuffer = await file.arrayBuffer();
+      const uint8Array = new Uint8Array(arrayBuffer);
+      const chunkSize = 0x8000;
+      let binaryString = '';
+      for (let i = 0; i < uint8Array.length; i += chunkSize) {
+        const chunk = uint8Array.subarray(i, i + chunkSize);
+        binaryString += String.fromCharCode.apply(null, chunk);
+      }
+      const base64String = btoa(binaryString);
+      await dotNetRef.invokeMethodAsync('OnFileDropped', file.name, base64String);
     } catch (error) {
       dotNetRef.invokeMethodAsync('OnFileDroppedError', error.message);
     }

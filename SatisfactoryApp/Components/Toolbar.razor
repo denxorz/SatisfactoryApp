@@ -7,6 +7,7 @@
 @inject IJSRuntime JSRuntime
 
 <MudAppBar Elevation="1">
+    <MudIconButton Icon="@Icons.Material.Filled.Menu" Color="Color.Inherit" Edge="Edge.Start" />
     <img src="/ctor.png" alt="constructor" style="height: 40px; width: 40px; margin-right: 16px;" />
     <MudText Typo="Typo.h6">Stats of your Satisfactory</MudText>
     <MudSpacer />
@@ -118,21 +119,23 @@
     }
 
     [JSInvokable]
-    public async Task OnFileDropped(string fileName)
+    public async Task OnFileDropped(string fileName, string base64Data)
     {
         _selectedFileName = fileName;
         _error = null;
-        await CalculateRoutes();
+        byte[] fileData = Convert.FromBase64String(base64Data);
+        await CalculateRoutes(fileData);
     }
 
     [JSInvokable]
     public void OnFileDroppedError(string errorMessage)
     {
         _error = errorMessage;
+        Console.WriteLine($"OnFileDroppedError: {_error}");
         StateHasChanged();
     }
 
-    private async Task CalculateRoutes()
+    private async Task CalculateRoutes(byte[]? bytes = null)
     {
         _isCalculating = true;
         _error = null;
@@ -140,23 +143,36 @@
 
         try
         {
-            if (_selectedFile == null)
+            SaveDetails? result = null;
+
+            byte[] fileBytes;
+            if (bytes != null)
+            {
+                fileBytes = bytes;
+
+                using var stream = new MemoryStream(fileBytes);
+                result = SaveDetails.LoadFromStream(stream);
+            }
+            else if (_selectedFile != null)
+            {
+                using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                memoryStream.Position = 0;
+                result = SaveDetails.LoadFromStream(memoryStream);
+            }
+            else
             {
                 return;
             }
 
-            using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
-            using var memoryStream = new MemoryStream();
-            await stream.CopyToAsync(memoryStream);
-            memoryStream.Position = 0;
-            var result = SaveDetails.LoadFromStream(memoryStream);
-
-            FactoryStore.Set(result.Factories);
-            StationStore.Set(result.Stations, result.Uploaders);
+            FactoryStore.Set(result!.Factories);
+            StationStore.Set(result!.Stations, result.Uploaders);
         }
         catch (Exception ex)
         {
             _error = ex.Message;
+            Console.WriteLine($"CalculateRoutes: {_error}");
         }
         finally
         {
@@ -164,5 +180,6 @@
             StateHasChanged();
         }
     }
+
 }
 
