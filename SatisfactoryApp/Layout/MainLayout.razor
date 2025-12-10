@@ -12,44 +12,45 @@
         <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="pa-2">
             @Body
         </MudContainer>
+        <MudPaper Elevation="0" Class="footer-container mt-6">
+            <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="d-flex align-center justify-space-between pa-2">
+                <MudLink Href="https://dennis.geldhof.eu/" Target="_blank">
+                    <MudText Typo="Typo.body2">Denxorz © @DateTime.Now.Year</MudText>
+                </MudLink>
+                <div class="d-flex align-center">
+                    <MudLink Href="https://github.com/denxorz/SatisfactoryApp/issues" Target="_blank" Class="d-flex align-center mr-3" Style="text-decoration: none;">
+                        <MudIcon Icon="@Icons.Material.Filled.Feedback" Size="Size.Small" Class="mr-1" />
+                        <MudText Typo="Typo.body2">Requests + Issues + Feedback</MudText>
+                    </MudLink>
+                    <MudLink Href="https://github.com/denxorz/SatisfactoryApp" Target="_blank" Class="d-flex align-center mr-3" Style="text-decoration: none;">
+                        <MudIcon Icon="@Icons.Material.Filled.BugReport" Size="Size.Small" Class="mr-1" />
+                        <MudText Typo="Typo.body2">Project on GitHub</MudText>
+                    </MudLink>
+                    <MudLink Href="https://github.com/R3dByt3/SatisfactorySaveNet" Target="_blank" Class="d-flex align-center" Style="text-decoration: none;">
+                        <MudIcon Icon="@Icons.Material.Filled.Save" Size="Size.Small" Class="mr-1" />
+                        <MudText Typo="Typo.body2">Parsing by SatisfactorySaveNet</MudText>
+                    </MudLink>
+                </div>
+            </MudContainer>
+        </MudPaper>
     </MudMainContent>
 </MudLayout>
 
-<MudPaper Elevation="1" Class="footer-container">
-    <MudContainer MaxWidth="MaxWidth.ExtraLarge" Class="d-flex align-center justify-space-between pa-2">
-        <MudLink Href="https://dennis.geldhof.eu/" Target="_blank">
-            <MudText Typo="Typo.body2">Denxorz © @DateTime.Now.Year</MudText>
-        </MudLink>
-        <div class="d-flex align-center">
-            <MudLink Href="https://github.com/denxorz/SatisfactoryApp/issues" Target="_blank" Class="d-flex align-center mr-3" Style="text-decoration: none;">
-                <MudIcon Icon="@Icons.Material.Filled.Feedback" Size="Size.Small" Class="mr-1" />
-                <MudText Typo="Typo.body2">Requests + Issues + Feedback</MudText>
-            </MudLink>
-            <MudLink Href="https://github.com/denxorz/SatisfactoryApp" Target="_blank" Class="d-flex align-center mr-3" Style="text-decoration: none;">
-                <MudIcon Icon="@Icons.Material.Filled.BugReport" Size="Size.Small" Class="mr-1" />
-                <MudText Typo="Typo.body2">Project on GitHub</MudText>
-            </MudLink>
-            <MudLink Href="https://github.com/R3dByt3/SatisfactorySaveNet" Target="_blank" Class="d-flex align-center" Style="text-decoration: none;">
-                <MudIcon Icon="@Icons.Material.Filled.Save" Size="Size.Small" Class="mr-1" />
-                <MudText Typo="Typo.body2">Parsing by SatisfactorySaveNet</MudText>
-            </MudLink>
-        </div>
-    </MudContainer>
-</MudPaper>
-
 <style>
-    .main-content {
-        padding-bottom: 64px;
+    .footer-container {
+        background-color: transparent !important;
+        margin-top: auto;
+        position: relative;
     }
     
-    .footer-container {
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
-        background-color: var(--mud-palette-appbar-background);
-        z-index: 1000;
-        border-top: 1px solid rgba(255, 255, 255, 0.12);
+    .footer-container::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 200px;
+        right: 200px;
+        height: 2px;
+        background-color: #212121;
     }
 </style>
 
