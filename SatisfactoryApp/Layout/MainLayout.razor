@@ -41,16 +41,21 @@
         background-color: transparent !important;
         margin-top: auto;
         position: relative;
+        color: var(--mud-palette-appbar-text) !important;
     }
     
     .footer-container::before {
         content: '';
         position: absolute;
         top: 0;
-        left: 200px;
-        right: 200px;
+        left: 100px;
+        right: 100px;
         height: 2px;
-        background-color: #212121;
+        background-color: var(--mud-palette-surface);
+    }
+    
+    .footer-container * {
+        color: var(--mud-palette-appbar-text) !important;
     }
 </style>
 
