@@ -7,8 +7,8 @@
 <MudTabs ActivePanelIndex="_activeTabIndex"
          ApplyEffectsToContainer="true"          
          Elevation="2"
-         ActivePanelIndexChanged="OnTabChanged">
-    <MudTabPanel Text="Factory Maps" Icon="@Icons.Material.Filled.Factory" Class="pt-1">
+         ActivePanelIndexChanged="OnTabChanged" >
+    <MudTabPanel Text="Factories" Icon="@Icons.Material.Filled.Factory" Class="pt-1">
           <MudGrid Spacing="3">
             <MudItem xs="12">
                 <FactoryFilters />
@@ -21,7 +21,7 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
-    <MudTabPanel Text="Stations & Logistics" Icon="@Icons.Material.Filled.Train" Class="pt-1">
+    <MudTabPanel Text="Stations" Icon="@Icons.Material.Filled.Train" Class="pt-1">
         <MudGrid Spacing="3">
             <MudItem xs="12">
                 <StationFilters />
@@ -37,7 +37,7 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
-    <MudTabPanel Text="Resources" Icon="@Icons.Material.Filled.Storage" Class="pt-1">
+    <MudTabPanel Text="Resources" Icon="@Icons.Material.Filled.DataUsage" Class="pt-1">
         <MudGrid Spacing="3">
             <MudItem xs="12">
                 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
@@ -51,14 +51,23 @@
             </MudItem>
         </MudGrid>
     </MudTabPanel>
-    <MudTabPanel Text="Instructions" Icon="@Icons.Material.Filled.Info" Class="pt-1">
+    <MudTabPanel Text="Instructions" Icon="@Icons.Material.Filled.HelpOutline" Class="pt-1 special-tab">
         <Instructions />
+    </MudTabPanel>
+    <MudTabPanel Text="Credits" Icon="@Icons.Material.Filled.Coffee" Class="pt-1 special-tab">
+        <Credits />
     </MudTabPanel>
 </MudTabs>
 
+<style>
+    .mud-tabs-tabbar .special-tab {
+        color: #bdbdbd !important;
+    }
+</style>
+
 @code {
     private int _activeTabIndex = 0;
-    private const int MaxTabIndex = 3;
+    private const int MaxTabIndex = 4;
 
     protected override void OnInitialized()
     {
