@@ -19,10 +19,7 @@
   </PropertyGroup>
 
   <Target Name="ReplaceBuildNumber" BeforeTargets="BeforeBuild" Condition="'$(BuildNumber)' != ''">
-    <ReplaceFileText
-      InputFileName="Layout/MainLayout.razor"
-      MatchExpression="BUILD_NUMBER_PLACEHOLDER"
-      ReplacementText="$(BuildNumber)" />
+    <ReplaceFileText InputFileName="Layout/MainLayout.razor" MatchExpression="BUILD_NUMBER_PLACEHOLDER" ReplacementText="$(BuildNumber)" />
   </Target>
 
   <UsingTask TaskName="ReplaceFileText" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
@@ -52,7 +49,7 @@
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.0" PrivateAssets="all" />
     <PackageReference Include="Microsoft.AspNetCore.WebUtilities" Version="10.0.0" />
     <PackageReference Include="MudBlazor" Version="8.15.0" />
-    <PackageReference Include="Denxorz.Satisfactory.Routes" Version="1.3.1" />
+    <PackageReference Include="Denxorz.Satisfactory.Routes" Version="1.4.1" />
     <PackageReference Include="Sentry.AspNetCore.Blazor.WebAssembly" Version="5.16.2" />
   </ItemGroup>
 

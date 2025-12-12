@@ -24,8 +24,9 @@ public static class FactoryColors
         return GetPowerCircuitColor(subPowerCircuitId);
     }
 
-    public static string GetFactoryColorForStability(int percentageProducing)
+    public static string GetFactoryColorForStability(int? percentageProducing)
     {
+        if (percentageProducing is null) return "#808080";
         if (percentageProducing == 100) return "#00FF00";
         if (percentageProducing >= 95 && percentageProducing < 100) return "#FFFF00";
         if (percentageProducing >= 1 && percentageProducing < 95) return "#FFA500";

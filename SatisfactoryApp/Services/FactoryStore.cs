@@ -75,6 +75,7 @@ public class FactoryStore
     private string GetFactoryStability(Factory factory)
     {
         var percentage = factory.PercentageProducing;
+        if (percentage is null) return "Unknown";
         if (percentage == 100) return "Stable";
         if (percentage >= 95 && percentage < 100) return "Almost Stable";
         if (percentage >= 1 && percentage < 95) return "Unstable";
@@ -152,16 +153,16 @@ public class FactoryStore
                 statusCounts[status] = count + 1;
             }
 
-            return new List<FactoryStabilityOption>
-            {
+            return
+            [
                 new() { Title = $"Stable ({statusCounts.GetValueOrDefault("Stable", 0)})", Value = "Stable" },
                 new() { Title = $"Almost Stable ({statusCounts.GetValueOrDefault("Almost Stable", 0)})", Value = "Almost Stable" },
                 new() { Title = $"Unstable ({statusCounts.GetValueOrDefault("Unstable", 0)})", Value = "Unstable" },
                 new() { Title = $"Off ({statusCounts.GetValueOrDefault("Off", 0)})", Value = "Off" },
-            };
+                new() { Title = $"Unknown ({statusCounts.GetValueOrDefault("Unknown", 0)})", Value = "Unknown" },
+            ];
         }
     }
-
 
     public IEnumerable<FactoryTypeOption> SelectedFactoryTypes
     {
