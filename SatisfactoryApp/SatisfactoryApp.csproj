@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -13,6 +13,38 @@
     <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
     <PublishTrimmed>true</PublishTrimmed>
   </PropertyGroup>
+
+  <PropertyGroup>
+    <BuildNumber Condition="'$(GITHUB_RUN_NUMBER)' != ''">$(GITHUB_RUN_NUMBER)</BuildNumber>
+  </PropertyGroup>
+
+  <Target Name="ReplaceBuildNumber" BeforeTargets="BeforeBuild" Condition="'$(BuildNumber)' != ''">
+    <ReplaceFileText
+      InputFileName="Layout/MainLayout.razor"
+      MatchExpression="BUILD_NUMBER_PLACEHOLDER"
+      ReplacementText="$(BuildNumber)" />
+  </Target>
+
+  <UsingTask TaskName="ReplaceFileText" TaskFactory="RoslynCodeTaskFactory" AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.Core.dll">
+    <ParameterGroup>
+      <InputFileName ParameterType="System.String" Required="true" />
+      <MatchExpression ParameterType="System.String" Required="true" />
+      <ReplacementText ParameterType="System.String" Required="true" />
+    </ParameterGroup>
+    <Task>
+      <Using Namespace="System" />
+      <Using Namespace="System.IO" />
+      <Code Type="Fragment" Language="cs">
+        <![CDATA[
+          if (File.Exists(InputFileName)) {
+            string content = File.ReadAllText(InputFileName);
+            content = content.Replace(MatchExpression, ReplacementText);
+            File.WriteAllText(InputFileName, content);
+          }
+        ]]>
+      </Code>
+    </Task>
+  </UsingTask>
 
   <ItemGroup>
     <PackageReference Include="CodeBeam.MudBlazor.Extensions" Version="8.3.0" />
