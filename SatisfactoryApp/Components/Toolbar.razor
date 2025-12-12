@@ -4,137 +4,72 @@
 @using Microsoft.JSInterop
 @inject FactoryStore FactoryStore
 @inject StationStore StationStore
-@inject IJSRuntime JSRuntime
 
 <MudAppBar Elevation="1">
     <img src="/ctor.png" alt="constructor" style="height: 40px; width: 40px; margin-right: 16px;" />
     <MudText Typo="Typo.h6">Stats of your Satisfactory</MudText>
     <MudSpacer />
-    <div class="d-flex align-center" style="gap: 8px;">
-        <InputFile OnChange="HandleFileSelect" accept=".sav" class="d-none" id="toolbar-file-input" />
-        <div class="drop-zone @(_isDragging ? "drag-over" : "") @(_isCalculating ? "calculating" : "")"
-             @ondrop="HandleDrop"
-             @ondragover="HandleDragOver"
-             @ondragleave="HandleDragLeave"
-             @ondragenter:preventDefault="true"
-             @ondragover:preventDefault="true"
-             @onclick="HandleClick"
-             id="toolbar-drop-zone">
-            @if (_isCalculating)
-            {
-                <MudProgressCircular Size="Size.Small" Indeterminate="true" />
-                <MudText Typo="Typo.body2" Class="ml-2">Processing...</MudText>
-            }
-            else if (_selectedFileName != null)
-            {
-                <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
-                <MudText Typo="Typo.body2" Class="ml-2">@_selectedFileName</MudText>
-            }
-            else
-            {
-                <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Small" />
-                <MudText Typo="Typo.body2" Class="ml-2">Drop save file here</MudText>
-            }
-        </div>
-        @if (!string.IsNullOrEmpty(_error))
-        {
-            <MudTooltip Text="@_error">
-                <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
-            </MudTooltip>
-        }
-    </div>
+    <MudFileUpload T="IReadOnlyList<IBrowserFile>"
+                   @ref="@_fileUpload"
+                   OnFilesChanged="OnInputFileChanged"
+                   Hidden="@false"
+                   InputClass="file-upload-input"
+                   tabindex="-1"
+                   @ondrop="@ClearDragClass"
+                   @ondragenter="@SetDragClass"
+                   @ondragleave="@ClearDragClass"
+                   @ondragend="@ClearDragClass">
+        <ActivatorContent>
+            <MudPaper Outlined="true" Class="@_dragClass" Width="200px">
+                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                    @if (_isCalculating)
+                    {
+                        <MudProgressCircular Size="Size.Small" Indeterminate="true" />
+                        <MudText Typo="Typo.body2">Processing...</MudText>
+                    }
+                    else if (_selectedFile is not null)
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">@_selectedFile?.Name</MudText>
+                    }
+                    else
+                    {
+                        <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Small" />
+                        <MudText Typo="Typo.body2">Drop save file here</MudText>
+                    }
+                </MudStack>
+            </MudPaper>
+        </ActivatorContent>
+    </MudFileUpload>
+    @if (!string.IsNullOrEmpty(_error))
+    {
+        <MudTooltip Text="@_error">
+            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+        </MudTooltip>
+    }
 </MudAppBar>
 
 <style>
-    .drop-zone {
-        display: flex;
-        align-items: center;
-        padding: 8px 16px;
-        border-radius: 4px;
-        border: 2px dashed rgba(255, 255, 255, 0.3);
-        cursor: pointer;
-        transition: all 0.2s;
-        min-width: 200px;
-    }
-
-    .drop-zone.drag-over {
-        border-color: var(--mud-palette-primary);
-        background-color: rgba(229, 147, 69, 0.1);
-    }
-
-    .drop-zone.calculating {
-        border-color: var(--mud-palette-primary);
-        opacity: 0.7;
+    .file-upload-input {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 10;
+        opacity: 0;
     }
 </style>
 
 @code {
+    private const string DefaultDragClass = "relative rounded-lg border-2 border-dashed py-2 px-3 mud-width-full";
+    private string _dragClass = DefaultDragClass;
+    private MudFileUpload<IReadOnlyList<IBrowserFile>>? _fileUpload;
     private IBrowserFile? _selectedFile;
-    private string? _selectedFileName;
     private bool _isCalculating;
     private bool _isDragging;
     private string? _error;
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            await JSRuntime.InvokeVoidAsync("setupFileDropZone", DotNetObjectReference.Create(this));
-        }
-    }
-
-    private void HandleClick()
-    {
-        if (!_isCalculating)
-        {
-            JSRuntime.InvokeVoidAsync("triggerFileInput", "toolbar-file-input");
-        }
-    }
-
-    private void HandleDragOver(DragEventArgs e)
-    {
-        _isDragging = true;
-        StateHasChanged();
-    }
-
-    private void HandleDragLeave(DragEventArgs e)
-    {
-        _isDragging = false;
-        StateHasChanged();
-    }
-
-    private async Task HandleDrop(DragEventArgs e)
-    {
-        _isDragging = false;
-        StateHasChanged();
-    }
-
-    private async Task HandleFileSelect(InputFileChangeEventArgs e)
-    {
-        _selectedFile = e.File;
-        _selectedFileName = e.File.Name;
-        _error = null;
-        await CalculateRoutes();
-    }
-
-    [JSInvokable]
-    public async Task OnFileDropped(string fileName, string base64Data)
-    {
-        _selectedFileName = fileName;
-        _error = null;
-        byte[] fileData = Convert.FromBase64String(base64Data);
-        await CalculateRoutes(fileData);
-    }
-
-    [JSInvokable]
-    public void OnFileDroppedError(string errorMessage)
-    {
-        _error = errorMessage;
-        Console.WriteLine($"OnFileDroppedError: {_error}");
-        StateHasChanged();
-    }
-
-    private async Task CalculateRoutes(byte[]? bytes = null)
+    private async Task CalculateRoutes()
     {
         _isCalculating = true;
         _error = null;
@@ -142,30 +77,17 @@
 
         try
         {
-            SaveDetails? result = null;
-
-            byte[] fileBytes;
-            if (bytes != null)
-            {
-                fileBytes = bytes;
-
-                using var stream = new MemoryStream(fileBytes);
-                result = SaveDetails.LoadFromStream(stream);
-            }
-            else if (_selectedFile != null)
-            {
-                using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
-                using var memoryStream = new MemoryStream();
-                await stream.CopyToAsync(memoryStream);
-                await Task.Delay(2000);
-
-                result = SaveDetails.LoadFromStream(memoryStream);
-            }
-            else
+            if (_selectedFile == null)
             {
                 return;
             }
 
+            using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            memoryStream.Position = 0;
+
+            var result = SaveDetails.LoadFromStream(memoryStream);
             FactoryStore.Set(result!.Factories);
             StationStore.Set(result!.Stations, result.Uploaders);
         }
@@ -181,5 +103,23 @@
         }
     }
 
+    private async Task ClearAsync()
+    {
+        await (_fileUpload?.ClearAsync() ?? Task.CompletedTask);
+        ClearDragClass();
+    }
+
+    private Task OpenFilePickerAsync()
+        => _fileUpload?.OpenFilePickerAsync() ?? Task.CompletedTask;
+
+    private async Task OnInputFileChanged(InputFileChangeEventArgs e)
+    {
+        ClearDragClass();
+        _selectedFile = e.File;
+        await CalculateRoutes();
+    }
+
+    private void SetDragClass() => _dragClass = $"{DefaultDragClass} mud-border-primary";
+    private void ClearDragClass() => _dragClass = DefaultDragClass;
 }
 
