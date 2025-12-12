@@ -157,6 +157,7 @@
                 using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
                 using var memoryStream = new MemoryStream();
                 await stream.CopyToAsync(memoryStream);
+                await Task.Delay(2000);
 
                 result = SaveDetails.LoadFromStream(memoryStream);
             }
