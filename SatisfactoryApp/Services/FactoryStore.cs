@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Denxorz.Satisfactory.Routes.Types;
 using SatisfactoryApp.Utils;
 
@@ -6,20 +7,25 @@ namespace SatisfactoryApp.Services;
 public class FactoryStore
 {
     private readonly List<Factory> _factories = [];
+    private readonly List<PowerCircuit> _powerCircuits = [];
     private readonly FactoryFilters _filters = new();
     private int _updateCounter = 0;
 
     public List<Factory> Factories => _factories;
+    public List<PowerCircuit> PowerCircuits => _powerCircuits;
     public FactoryFilters Filters => _filters;
     public int UpdateCounter => _updateCounter;
 
     public event Action? FactoriesChanged;
     public event Action? FilteredFactoriesChanged;
 
-    public void Set(List<Factory> factories)
+    public void Set(List<Factory> factories, List<PowerCircuit> powerCircuits)
     {
         _factories.Clear();
         _factories.AddRange(factories);
+
+        _powerCircuits.Clear();
+        _powerCircuits.AddRange(powerCircuits);
 
         FactoriesChanged?.Invoke();
         NotifyFiltersChanged();
@@ -119,21 +125,23 @@ public class FactoryStore
                 subCircuitCounts[factory.SubPowerCircuitId] = count2 + 1;
             }
 
-            var mainOptions = mainCircuitCounts
-                .OrderBy(kvp => kvp.Key)
-                .Select(kvp => new PowerCircuitOption
+            var mainOptions = _powerCircuits
+                .Where(c => c.ParentCircuitId is null)
+                .OrderBy(c => c.Id)
+                .Select(c => new PowerCircuitOption
                 {
-                    Title = CircuitNames.GetMainCircuitFilterName(kvp.Key, kvp.Value),
-                    Value = $"main_{kvp.Key}"
+                    Title = CircuitNames.GetFilterName(c, mainCircuitCounts.TryGetValue(c.Id, out var count) ? count : 0),
+                    Value = $"main_{c.Id}"
                 })
                 .ToList();
 
-            var subOptions = subCircuitCounts
-                .OrderBy(kvp => kvp.Key)
-                .Select(kvp => new PowerCircuitOption
+            var subOptions = _powerCircuits
+                .Where(c => c.ParentCircuitId is not null)
+                .OrderBy(c => c.Id)
+                .Select(c => new PowerCircuitOption
                 {
-                    Title = CircuitNames.GetSubCircuitFilterName(kvp.Key, kvp.Value),
-                    Value = $"sub_{kvp.Key}"
+                    Title = CircuitNames.GetFilterName(c, subCircuitCounts.TryGetValue(c.Id, out var count) ? count : 0),
+                    Value = $"sub_{c.Id}"
                 })
                 .ToList();
 

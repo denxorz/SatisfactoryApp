@@ -1,31 +1,37 @@
+using Denxorz.Satisfactory.Routes.Types;
 namespace SatisfactoryApp.Utils;
 
 public static class CircuitNames
 {
-    public static string GetMainCircuitName(int? circuitId)
+    public static string GetFilterName(PowerCircuit circuit, int count)
     {
-        if (circuitId == null) return "-";
-        if (circuitId == -1) return "None/Fracking";
-        return circuitId.Value.ToString();
+        return $"{GetName(circuit)} ({count})";
     }
 
-    public static string GetSubCircuitName(int? circuitId)
+    public static string GetName(PowerCircuit? circuit)
     {
-        if (circuitId == null) return "-";
-        if (circuitId == -1) return "Fracking";
-        return circuitId.Value.ToString();
-    }
+        if (circuit is null)
+        {
+            return $"None";
+        }
 
-    public static string GetMainCircuitFilterName(int circuitId, int count)
-    {
-        if (circuitId == -1) return $"None/Fracking ({count})";
-        return $"Main {circuitId} ({count})";
-    }
+        if (circuit.Id == -1)
+        {
+            if (circuit.ParentCircuitId is not null)
+            {
+                return $"Fracking";
+            }
+            return $"None/Fracking";
+        }
 
-    public static string GetSubCircuitFilterName(int circuitId, int count)
-    {
-        if (circuitId == -1) return $"Fracking ({count})";
-        return $"Sub {circuitId} ({count})";
+        return string.Join(" ",
+            new List<string?>()
+            {
+                $"[{circuit.Id.ToString()}]",
+                circuit.ParentCircuitId is null ? "Main" : null,                
+                circuit.Name
+            }
+            .Where(testc => testc is not null));
     }
 }
 

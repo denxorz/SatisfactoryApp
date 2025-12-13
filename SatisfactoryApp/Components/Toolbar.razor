@@ -88,8 +88,8 @@
             memoryStream.Position = 0;
 
             var result = SaveDetails.LoadFromStream(memoryStream);
-            FactoryStore.Set(result!.Factories);
-            StationStore.Set(result!.Stations, result.Uploaders);
+            FactoryStore.Set(result.Factories, result.PowerCircuits);
+            StationStore.Set(result.Stations, result.Uploaders);
         }
         catch (Exception ex)
         {

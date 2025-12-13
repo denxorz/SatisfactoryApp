@@ -22,8 +22,8 @@
             <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">
                 Selected: @(_selectedFactory?.Type ?? "-") |
                 @(_selectedFactory?.PercentageProducing ?? 0)% |
-                Main:@CircuitNames.GetMainCircuitName(_selectedFactory?.MainPowerCircuitId) |
-                Sub:@CircuitNames.GetSubCircuitName(_selectedFactory?.SubPowerCircuitId)
+                Main:@_mainPowerCircuitName |
+                Sub:@_subPowerCircuitName
             </MudText>
         }
     </MudCardHeader>
@@ -51,6 +51,8 @@
     private string? _error;
     private string? _mergedImageUrl;
     private Factory? _selectedFactory;
+    private string? _mainPowerCircuitName;
+    private string? _subPowerCircuitName;
     private int _lastUpdateCounter = -1;
     private bool _graphvizLoaded = false;
 
@@ -220,16 +222,31 @@
 
         foreach (var factory in FactoryStore.NonFilteredFactories)
         {
-                var distance = Math.Sqrt(Math.Pow(factoryX - factory.X, 2) + Math.Pow(factoryY - factory.Y, 2));
-                if (distance < clickRadius && distance < closestDistance)
-                {
-                    closestDistance = distance;
-                    closestFactory = factory;
-                }
+            var distance = Math.Sqrt(Math.Pow(factoryX - factory.X, 2) + Math.Pow(factoryY - factory.Y, 2));
+            if (distance < clickRadius && distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestFactory = factory;
+            }
         }
 
         _selectedFactory = closestFactory;
+        SetPowerCircuitNames();
         StateHasChanged();
+    }
+
+    private void SetPowerCircuitNames()
+    {
+        if (_selectedFactory != null)
+        {
+            _mainPowerCircuitName = CircuitNames.GetName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.MainPowerCircuitId));
+            _subPowerCircuitName = CircuitNames.GetName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.SubPowerCircuitId));
+        }
+        else
+        {
+            _mainPowerCircuitName = null;
+            _subPowerCircuitName = null;
+        }
     }
 
     private class BoundingClientRect
