@@ -1,0 +1,89 @@
+@using SatisfactoryApp.Services
+@using Denxorz.Satisfactory.Routes.Types
+@using SatisfactoryApp.Utils
+@using MudBlazor
+@inject FactoryStore FactoryStore
+@implements IDisposable
+
+<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+    <MudCardHeader Class="mud-primary pa-0 pl-1">
+        <MudText Class="primary-card-header-title" Color="Color.Surface">Power Circuits</MudText>
+    </MudCardHeader>
+    <MudCardContent Class="pa-2">
+        <MudTable Items="@_powerCircuitStats" Hover="true" Dense="true" Striped="true">
+            <HeaderContent>
+                <MudTh>Name</MudTh>
+                <MudTh align="right">Total</MudTh>
+                <MudTh align="right">Stable</MudTh>
+                <MudTh align="right">Variable power</MudTh>
+            </HeaderContent>
+            <RowTemplate>
+                <MudTd DataLabel="Name">
+                    <MudText>@context.CircuitName</MudText>
+                </MudTd>
+                <MudTd DataLabel="Total" align="right">@context.TotalFactories</MudTd>
+                <MudTd DataLabel="Stable" align="right">@context.StableFactories</MudTd>
+                <MudTd DataLabel="Variable power" align="right">@context.SpecialFactories</MudTd>
+            </RowTemplate>
+        </MudTable>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<PowerCircuitStat> _powerCircuitStats = [];
+
+    protected override void OnInitialized()
+    {
+        FactoryStore.FactoriesChanged += UpdateStats;
+        UpdateStats();
+    }
+
+    public void Dispose()
+    {
+        FactoryStore.FactoriesChanged -= UpdateStats;
+    }
+
+    private void UpdateStats()
+    {
+        var stats = new Dictionary<int, PowerCircuitStat>();
+
+        foreach (var c in FactoryStore.PowerCircuits)
+        {
+            bool isMainCircuit = c.ParentCircuitId is null;
+            var factories = FactoryStore.Factories
+                .Where(f => isMainCircuit ? f.MainPowerCircuitId == c.Id : f.SubPowerCircuitId == c.Id)
+                .ToList();
+
+            stats[c.Id] = new PowerCircuitStat
+                {
+                    CircuitId = c.Id,
+                    CircuitName = CircuitNames.GetName(c),
+                    TotalFactories = factories.Count,
+                    StableFactories = factories.Count(f => f.PercentageProducing == 100),
+                    SpecialFactories = factories.Count(IsSpecialFactory),
+                };
+        }
+
+        _powerCircuitStats = stats.Values
+            .OrderBy(s => s.CircuitId)
+            .ToList();
+
+        StateHasChanged();
+    }
+
+    private static bool IsSpecialFactory(Factory factory)
+    {
+        var specialTypes = new[] { "Converter", "HadronCollider", "QuantumEncoder" };
+        return factory.Type != null && specialTypes.Contains(factory.Type);
+    }
+
+    private class PowerCircuitStat
+    {
+        public int CircuitId { get; set; }
+        public string CircuitName { get; set; } = string.Empty;
+        public int TotalFactories { get; set; }
+        public int SpecialFactories { get; set; }
+        public int StableFactories { get; set; }
+    }
+}
+

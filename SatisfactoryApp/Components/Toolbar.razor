@@ -60,7 +60,7 @@
     }
 </style>
 
-@code {
+    @code {
     private const string DefaultDragClass = "relative rounded-lg border-2 border-dashed py-2 px-3 mud-width-full";
     private string _dragClass = DefaultDragClass;
     private MudFileUpload<IReadOnlyList<IBrowserFile>>? _fileUpload;
@@ -86,7 +86,6 @@
             using var memoryStream = new MemoryStream();
             await stream.CopyToAsync(memoryStream);
             memoryStream.Position = 0;
-
             var result = SaveDetails.LoadFromStream(memoryStream);
             FactoryStore.Set(result.Factories, result.PowerCircuits);
             StationStore.Set(result.Stations, result.Uploaders);
