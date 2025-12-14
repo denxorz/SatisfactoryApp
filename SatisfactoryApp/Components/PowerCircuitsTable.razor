@@ -23,8 +23,12 @@
                     <MudText>@context.CircuitName</MudText>
                 </MudTd>
                 <MudTd DataLabel="Total" align="right">@context.Total</MudTd>
-                <MudTd DataLabel="Stable" align="right">@context.Stable</MudTd>
-                <MudTd DataLabel="Variable power" align="right">@context.Special</MudTd>
+                <MudTd DataLabel="Stable" align="right">
+                    <MudText Color="@(context.Stable != context.Total ? Color.Primary : Color.Default)">@context.Stable</MudText>
+                </MudTd>
+                <MudTd DataLabel="Variable power" align="right">
+                    <MudText Color="@(context.Special > 0 ? Color.Primary : Color.Default)">@context.Special</MudText>
+                </MudTd>
                 <MudTd DataLabel="Priority" align="right">@context.Priority</MudTd>
             </RowTemplate>
         </MudTable>
