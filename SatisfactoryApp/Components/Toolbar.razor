@@ -82,10 +82,8 @@
                 return;
             }
 
-            using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
-            using var memoryStream = new MemoryStream();
-            await stream.CopyToAsync(memoryStream);
-            memoryStream.Position = 0;
+            using var memoryStream = await OpenFileAndCopyToMemoryStreamAsync();
+
             var result = SaveDetails.LoadFromStream(memoryStream);
             FactoryStore.Set(result.Factories, result.PowerCircuits);
             StationStore.Set(result.Stations, result.Uploaders);
@@ -100,6 +98,16 @@
             _isCalculating = false;
             StateHasChanged();
         }
+    }
+
+    private async Task<MemoryStream> OpenFileAndCopyToMemoryStreamAsync()
+    {
+        using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
+        var memoryStream = new MemoryStream();
+        await stream.CopyToAsync(memoryStream);
+        memoryStream.Position = 0;
+
+        return memoryStream;
     }
 
     private async Task ClearAsync()
