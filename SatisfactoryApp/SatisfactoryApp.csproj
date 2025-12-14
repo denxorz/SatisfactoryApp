@@ -9,9 +9,12 @@
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
     <RunAOTCompilation>true</RunAOTCompilation>
+    <WasmStripILAfterAOT>true</WasmStripILAfterAOT>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>browser-wasm</RuntimeIdentifier>
     <PublishTrimmed>true</PublishTrimmed>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <InvariantTimezone>true</InvariantTimezone>
   </PropertyGroup>
 
   <PropertyGroup>
