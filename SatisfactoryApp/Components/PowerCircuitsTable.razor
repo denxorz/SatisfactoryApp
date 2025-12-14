@@ -10,20 +10,22 @@
         <MudText Class="primary-card-header-title" Color="Color.Surface">Power Circuits</MudText>
     </MudCardHeader>
     <MudCardContent Class="pa-2">
-        <MudTable Items="@_powerCircuitStats" Hover="true" Dense="true" Striped="true">
+        <MudTable Items="@_powerCircuitStats" Hover="true" Dense="true">
             <HeaderContent>
                 <MudTh>Name</MudTh>
                 <MudTh align="right">Total</MudTh>
                 <MudTh align="right">Stable</MudTh>
                 <MudTh align="right">Variable power</MudTh>
+                <MudTh align="right">Priority</MudTh>
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Name">
                     <MudText>@context.CircuitName</MudText>
                 </MudTd>
-                <MudTd DataLabel="Total" align="right">@context.TotalFactories</MudTd>
-                <MudTd DataLabel="Stable" align="right">@context.StableFactories</MudTd>
-                <MudTd DataLabel="Variable power" align="right">@context.SpecialFactories</MudTd>
+                <MudTd DataLabel="Total" align="right">@context.Total</MudTd>
+                <MudTd DataLabel="Stable" align="right">@context.Stable</MudTd>
+                <MudTd DataLabel="Variable power" align="right">@context.Special</MudTd>
+                <MudTd DataLabel="Priority" align="right">@context.Priority</MudTd>
             </RowTemplate>
         </MudTable>
     </MudCardContent>
@@ -58,9 +60,10 @@
                 {
                     CircuitId = c.Id,
                     CircuitName = CircuitNames.GetName(c),
-                    TotalFactories = factories.Count,
-                    StableFactories = factories.Count(f => f.PercentageProducing == 100),
-                    SpecialFactories = factories.Count(IsSpecialFactory),
+                    Total = factories.Count,
+                    Stable = factories.Count(f => f.PercentageProducing == 100),
+                    Special = factories.Count(IsSpecialFactory),
+                    Priority = c.Priority
                 };
         }
 
@@ -81,9 +84,10 @@
     {
         public int CircuitId { get; set; }
         public string CircuitName { get; set; } = string.Empty;
-        public int TotalFactories { get; set; }
-        public int SpecialFactories { get; set; }
-        public int StableFactories { get; set; }
+        public int Total { get; set; }
+        public int Stable { get; set; }
+        public int Special { get; set; }
+        public int? Priority { get; set; }
     }
 }
 

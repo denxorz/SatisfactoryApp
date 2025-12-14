@@ -12,24 +12,24 @@ public static class CircuitNames
     {
         if (circuit is null)
         {
-            return $"None";
+            return $"[no name]";
         }
 
         if (circuit.Id == -1)
         {
             if (circuit.ParentCircuitId is not null)
             {
-                return $"Fracking";
+                return $"[fracking]";
             }
-            return $"None/Fracking";
+            return $"[no name / fracking]";
         }
 
         return string.Join(" ",
             new List<string?>()
             {
-                $"[{circuit.Id.ToString()}]",
+                $"[{circuit.Id}]",
                 circuit.ParentCircuitId is null ? "Main" : null,                
-                circuit.Name
+                circuit.Name ?? "[no name]"
             }
             .Where(testc => testc is not null));
     }
