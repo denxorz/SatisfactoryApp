@@ -16,6 +16,7 @@ builder.Services.AddMudExtensions();
 // Register custom services
 builder.Services.AddScoped<FactoryStore>();
 builder.Services.AddScoped<StationStore>();
+builder.Services.AddScoped<ResourceStore>();
 
 // Configure Sentry
 var sentryDsn = builder.Configuration["Sentry:Dsn"] ?? "";

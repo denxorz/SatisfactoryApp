@@ -1,0 +1,287 @@
+@using Denxorz.Satisfactory.Routes.Types
+@using SatisfactoryApp.Services
+@using SatisfactoryApp.Utils
+@using Microsoft.JSInterop
+@using MudBlazor
+@inject ResourceStore ResourceStore
+@inject IJSRuntime JSRuntime
+
+<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+    <MudCardHeader Class="mud-primary pa-0 pl-1">
+        <MudText Class="primary-card-header-title" Color="Color.Surface">Resources Map</MudText>
+        @if (_isLoading)
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">Loading...</MudText>
+        }
+        else if (!string.IsNullOrEmpty(_error))
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
+        }
+        else
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">
+                <span> | Selected: @(_selectedResource?.Type ?? "-") | Left: @(_selectedResourceFlowLeft)</span>
+            </MudText>
+        }
+    </MudCardHeader>
+    <MudCardContent Class="pa-0">
+        <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
+            <div class="map-wrapper resources-map-wrapper">
+                @if (!string.IsNullOrEmpty(_mergedImageUrl))
+                {
+                    <img src="@_mergedImageUrl" alt="Resources Map with Background" class="map-image" />
+                }
+                else
+                {
+                    <img src="/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                }
+            </div>
+        </div>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private bool _isLoading;
+    private string? _error;
+    private string? _mergedImageUrl;
+    private Resource? _selectedResource;
+    private float? _selectedResourceFlowLeft;
+    private int _lastUpdateCounter = -1;
+    private bool _graphvizLoaded = false;
+
+    protected override void OnInitialized()
+    {
+        ResourceStore.ResourcesChanged += async () => await CheckAndRenderIfNeeded();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _isLoading = true;
+                StateHasChanged();
+                await JSRuntime.InvokeVoidAsync("loadGraphviz");
+                _graphvizLoaded = true;
+                _isLoading = false;
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                _error = "Failed to load graph renderer: " + ex.Message;
+                _isLoading = false;
+                StateHasChanged();
+            }
+        }
+
+        await CheckAndRenderIfNeeded();
+    }
+
+    private async Task CheckAndRenderIfNeeded()
+    {
+        if (_graphvizLoaded && ResourceStore.UpdateCounter != _lastUpdateCounter)
+        {
+            _lastUpdateCounter = ResourceStore.UpdateCounter;
+            if (!_isLoading && string.IsNullOrEmpty(_error))
+            {
+                await RenderMap();
+            }
+        }
+    }
+
+    private async Task RenderMap()
+    {
+        try
+        {
+            _isLoading = true;
+            StateHasChanged();
+
+            var resources = ResourceStore.Resources;
+
+            var dotContent = CreateDotContent(resources);
+
+            var svg = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContent);
+
+            await MergeImages(svg);
+
+            _isLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to render graph: " + ex.Message;
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string CreateDotContent(List<Resource> resources)
+    {
+        const int minX = -320000;
+        const int maxX = 380000;
+        const int minY = -250000;
+        const int maxY = 450000;
+        const int mapWidth = 30;
+        const int mapHeight = 30;
+
+        var scaleX = (mapWidth - 2.0) / (maxX - minX);
+        var scaleY = (mapHeight - 2.0) / (maxY - minY);
+
+        var dot = $@"digraph G {{
+  layout=neato;
+  size=""{mapWidth},{mapHeight}"";
+  bgcolor=transparent;
+  node [shape=circle, style=filled, penwidth=1, width=0.15, height=0.15, fontsize=8, fontname=""Arial"", label=""""];
+  edge [fontname=""Arial"", penwidth=2];
+  graph [ranksep=0, nodesep=0, splines=curved];
+";
+
+        const double cornerSize = 0.001;
+        dot += $"\n_tl [label=\"\", pos=\"0,{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_tr [label=\"\", pos=\"{mapWidth},{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_bl [label=\"\", pos=\"0,0!\", width={cornerSize}, height={cornerSize}];";
+        dot += $"\n_br [label=\"\", pos=\"{mapWidth},0!\", width={cornerSize}, height={cornerSize}];";
+
+        for (int index = 0; index < resources.Count; index++)
+        {
+            var resource = resources[index];
+
+            var x = (resource.X - minX) * scaleX;
+            var y = mapHeight - (resource.Y - minY) * scaleY - 5;
+            var color = GetResourceColor(resource);
+
+            string borderColor;
+            int penwidth;
+            if (resource.Max == resource.Flow)
+            {
+                borderColor = "#FF0000";
+                penwidth = 3;
+            }
+            else if (resource.Flow > 0)
+            {
+                borderColor = "#FFA500";
+                penwidth = 2;
+            }
+            else
+            {
+                borderColor = "#000000";
+                penwidth = 1;
+            }
+
+            var resourceId = $"resource_{index}";
+            dot += $"\n{resourceId} [shape=\"circle\", fillcolor=\"{color}\", color=\"{borderColor}\", penwidth={penwidth}, pos=\"{x:F2},{y:F2}!\"];";
+        }
+
+        dot += "\n}";
+        return dot;
+    }
+
+    private string GetResourceColor(Resource resource)
+    {
+        return ResourceColors.GetResourceColor(resource.Type);
+    }
+
+    private async Task MergeImages(string svg)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("mergeResourceMapImages", svg, DotNetObjectReference.Create(this));
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to merge images: " + ex.Message;
+        }
+    }
+
+    [JSInvokable]
+    public void SetMergedImageUrl(string url)
+    {
+        _mergedImageUrl = url;
+        StateHasChanged();
+    }
+
+    private async Task HandleMapClick(MouseEventArgs e)
+    {
+        if (_mergedImageUrl == null) return;
+
+        var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", ".resources-map-wrapper");
+        if (rect == null) return;
+
+        var clickX = e.ClientX - rect.Left;
+        var clickY = e.ClientY - rect.Top;
+
+        const int minX = -320000;
+        const int maxX = 435000;
+        const int minY = -372000;
+        const int maxY = 372000;
+
+        var scaleX = (maxX - minX) / rect.Width;
+        var scaleY = (maxY - minY) / rect.Height;
+
+        var resourceX = clickX * scaleX + minX;
+        var resourceY = clickY * scaleY + minY;
+
+        const int clickRadius = 5000;
+        Resource? closestResource = null;
+        double closestDistance = double.MaxValue;
+
+        foreach (var resource in ResourceStore.Resources)
+        {
+            var distance = Math.Sqrt(Math.Pow(resourceX - resource.X, 2) + Math.Pow(resourceY - resource.Y, 2));
+            if (distance < clickRadius && distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestResource = resource;
+            }
+        }
+
+        _selectedResource = closestResource;
+        if (closestResource != null)
+        {
+            var max = closestResource.Max;
+            var flow = closestResource.Flow;
+            _selectedResourceFlowLeft = max - flow;
+        }
+        else
+        {
+            _selectedResourceFlowLeft = null;
+        }
+        StateHasChanged();
+    }
+
+    private class BoundingClientRect
+    {
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
+
+    private class ResourceTypeStat
+    {
+        public string Type { get; set; } = string.Empty;
+        public float TotalLeft { get; set; }
+    }
+}
+
+<style>
+    .map-wrapper {
+        position: relative;
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+    }
+
+    .map-image {
+        object-fit: contain;
+        transition: opacity 0.2s;
+        width: 100%;
+        height: auto;
+    }
+
+    .map-image.background-only {
+        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+        opacity: 0.4;
+    }
+</style>

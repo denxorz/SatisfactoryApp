@@ -92,6 +92,63 @@ function loadAndMergeSvgs(svgFiltered, svgNonFiltered, ctx, canvas, dotNetRef) {
     });
 }
 
+window.mergeResourceMapImages = async function (svg, dotNetRef) {
+  try {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const bgImg = new Image();
+    bgImg.crossOrigin = 'anonymous';
+
+    bgImg.onload = () => {
+      canvas.width = bgImg.width;
+      canvas.height = bgImg.height;
+
+      ctx.filter = 'grayscale(0.4) contrast(0.8) brightness(1.1)';
+      ctx.globalAlpha = 0.4;
+      ctx.drawImage(bgImg, 0, 0, canvas.width, canvas.height);
+
+      ctx.globalAlpha = 1.0;
+      ctx.filter = 'none';
+      loadAndMergeResourceSvg(svg, ctx, canvas, dotNetRef);
+    };
+
+    bgImg.onerror = (error) => {
+      console.error('Failed to load biome map image:', error);
+      canvas.width = 1920;
+      canvas.height = 1080;
+      loadAndMergeResourceSvg(svg, ctx, canvas, dotNetRef);
+    };
+
+    bgImg.src = '/1920px-Biome_Map.jpg';
+  } catch (error) {
+    console.error('Failed to merge images:', error);
+  }
+};
+
+function loadAndMergeResourceSvg(svgContent, ctx, canvas, dotNetRef) {
+  const svgBlob = new Blob([svgContent], { type: 'image/svg+xml' });
+  const svgUrl = URL.createObjectURL(svgBlob);
+  const svgImg = new Image();
+  svgImg.crossOrigin = 'anonymous';
+
+  svgImg.onload = () => {
+    URL.revokeObjectURL(svgUrl);
+    ctx.drawImage(svgImg, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob);
+        dotNetRef.invokeMethodAsync('SetMergedImageUrl', url);
+      }
+    }, 'image/png');
+  };
+  svgImg.onerror = (error) => {
+    console.error('Failed to load SVG image:', error);
+  };
+  svgImg.src = svgUrl;
+}
+
 window.getElementBoundingClientRect = function (selector) {
   const element = document.querySelector(selector);
   if (!element) return null;

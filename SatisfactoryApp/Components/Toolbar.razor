@@ -4,6 +4,7 @@
 @using Microsoft.JSInterop
 @inject FactoryStore FactoryStore
 @inject StationStore StationStore
+@inject ResourceStore ResourceStore
 
 <MudAppBar Elevation="1">
     <img src="/ctor.png" alt="constructor" style="height: 40px; width: 40px; margin-right: 16px;" />
@@ -87,6 +88,7 @@
             var result = SaveDetails.LoadFromStream(memoryStream);
             FactoryStore.Set(result.Factories, result.PowerCircuits);
             StationStore.Set(result.Stations, result.Uploaders);
+            ResourceStore.Set(result.Resources);
         }
         catch (Exception ex)
         {
