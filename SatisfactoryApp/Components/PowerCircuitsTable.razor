@@ -65,7 +65,7 @@
                     CircuitId = c.Id,
                     CircuitName = CircuitNames.GetName(c),
                     Total = factories.Count,
-                    Stable = factories.Count(f => f.PercentageProducing == 100),
+                    Stable = factories.Count(f => f.PercentageProducing == 100 || f.PercentageProducing is null),
                     Special = factories.Count(IsSpecialFactory),
                     Priority = c.Priority
                 };
