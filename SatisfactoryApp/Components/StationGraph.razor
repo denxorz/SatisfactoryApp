@@ -317,25 +317,26 @@
 
     .legend-overlay {
         position: absolute;
-        bottom: 12px;
-        right: 12px;
-        background: rgba(255, 255, 255, 0.9);
-        border: 1px solid #ccc;
-        border-radius: 4px;
+        bottom: 16px;
+        right: 16px;
+        background: rgba(10, 10, 10, 0.65);
+        border: 1px solid #e59345;
+        border-radius: 6px;
         padding: 8px 10px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        min-width: 140px;
+        gap: 4px;
+        min-width: 170px;
+        backdrop-filter: blur(4px);
     }
 
     .legend-item {
         display: flex;
         align-items: center;
         gap: 8px;
-        font-size: 14px;
-        color: #111;
+        font-size: 12px;
+        color: #f5f5f5;
     }
 
     .legend-icon {
