@@ -45,7 +45,7 @@ public class ResourceStore
         if (_filters.SelectedLeftoverRanges.Count > 0)
         {
             var leftover = resource.Max - resource.Flow;
-            var inAnyRange = _filters.SelectedLeftoverRanges
+            var inAnyRange = _filters.AvailableAfterFilterLeftoverOptions
                 .Any(r => leftover >= r.Min && leftover <= r.Max);
             if (!inAnyRange)
             {
@@ -55,8 +55,7 @@ public class ResourceStore
 
         if (_filters.SelectedMaxValues.Count > 0)
         {
-            var maxValue = (int)resource.Max;
-            if (!_filters.SelectedMaxValues.Contains(maxValue))
+            if (!_filters.AvailableAfterFilterMaxValues.Contains(resource.Max))
             {
                 return false;
             }
@@ -78,13 +77,13 @@ public class ResourceStore
                 counts[type] = count + 1;
             }
 
-            return SatisfactoryApp.Utils.Resources.Types
-                .Select(type => new ResourceTypeOption
-                {
-                    Title = $"{type} ({counts.GetValueOrDefault(type, 0)})",
-                    Value = type
-                })
-                .ToList();
+            return Utils.Resources.Types
+                    .Select(type => new ResourceTypeOption
+                    {
+                        Title = $"{type} ({counts.GetValueOrDefault(type, 0)})",
+                        Value = type
+                    })
+                    .ToList();
         }
     }
 
@@ -98,7 +97,7 @@ public class ResourceStore
         }
     }
 
-    public IReadOnlyList<LeftoverRangeOption> LeftoverOptions { get; } =
+    public IReadOnlyList<LeftoverRangeOption> AllLeftoverOptions { get; } =
     [
         new() { Title = "Left 0 - 299", Min = 0, Max = 299 },
         new() { Title = "Left 300 - 599", Min = 300, Max = 599 },
@@ -112,6 +111,7 @@ public class ResourceStore
         set
         {
             Filters.SelectedLeftoverRanges = value?.ToList() ?? [];
+            Filters.AvailableAfterFilterLeftoverOptions = [.. AllLeftoverOptions.Except(_filters.SelectedLeftoverRanges)];
             NotifyChanged();
         }
     }
@@ -122,6 +122,7 @@ public class ResourceStore
         set
         {
             Filters.SelectedMaxValues = value?.ToList() ?? [];
+            Filters.AvailableAfterFilterMaxValues = [.. ((int[])[200, 600, 1200]).Except(_filters.SelectedMaxValues)];
             NotifyChanged();
         }
     }
@@ -131,7 +132,9 @@ public class ResourceFilters
 {
     public List<ResourceTypeOption> SelectedResourceTypes { get; set; } = [];
     public List<LeftoverRangeOption> SelectedLeftoverRanges { get; set; } = [];
+    public List<LeftoverRangeOption> AvailableAfterFilterLeftoverOptions { get; set; } = [];
     public List<int> SelectedMaxValues { get; set; } = [];
+    public List<int> AvailableAfterFilterMaxValues { get; set; } = [];
 }
 
 public class ResourceTypeOption

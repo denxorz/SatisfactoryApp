@@ -18,7 +18,7 @@
                              Clearable
                              SelectAll
                              ShowCheckbox>
-                    @foreach (var item in ResourceStore.ResourceTypeOptions)
+                    @foreach (var item in ResourceTypeOptions)
                     {
                         <MudComboBoxItem Value="@item" Text="@item.ToString()"></MudComboBoxItem>
                     }
@@ -29,7 +29,7 @@
                             @bind-SelectedValues="ResourceStore.SelectedLeftoverRanges"
                             SelectionMode="SelectionMode.MultiSelection"
                             Color="Color.Primary">
-                    @foreach (var range in ResourceStore.LeftoverOptions)
+                    @foreach (var range in ResourceStore.AllLeftoverOptions)
                     {
                         <MudChip Value="@range">@range.Title</MudChip>
                     }
@@ -49,4 +49,25 @@
     </MudCardContent>
 </MudCard>
 
+@code {
+    private readonly List<ResourceTypeOption> ResourceTypeOptions = [];
+
+    protected override void OnInitialized()
+    {
+        ResourceStore.ResourcesChanged += OnChanged;
+        Load();
+    }
+
+    private void OnChanged()
+    {
+        Load();
+        StateHasChanged();
+    }
+
+    private void Load()
+    {
+        ResourceTypeOptions.Clear();
+        ResourceTypeOptions.AddRange(ResourceStore.ResourceTypeOptions);
+    }
+}
 

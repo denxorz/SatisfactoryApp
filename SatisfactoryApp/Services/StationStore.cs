@@ -10,6 +10,7 @@ public class StationStore
     private int _updateCounter = 0;
 
     public List<Station> Stations => _stations;
+    public List<Station> FilteredStations => [.. _stations.Where(IsIncluded)];
     public List<Uploader> Uploaders => _uploaders;
     public StationFilters Filters => _filters;
     public List<CargoTypeOption> CargoTypeOptions { get; private set; } = [];
@@ -35,14 +36,6 @@ public class StationStore
         FilteredStationsChanged?.Invoke();
     }
 
-    public List<Station> FilteredStations
-    {
-        get
-        {
-            return _stations.Where(s => IsStationFiltered(s)).ToList();
-        }
-    }
-
     public List<Uploader> FilteredUploaders
     {
         get
@@ -52,11 +45,11 @@ public class StationStore
                 return [];
             }
 
-            return _uploaders.Where(u => IsUploaderFiltered(u)).ToList();
+            return [.. _uploaders.Where(IsUploaderFiltered)];
         }
     }
 
-    private bool IsStationFiltered(Station station)
+    private bool IsIncluded(Station station)
     {
         if (!string.IsNullOrEmpty(_filters.SearchText))
         {
