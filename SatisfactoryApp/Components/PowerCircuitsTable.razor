@@ -20,7 +20,7 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Name">
-                    <MudText Color="@(context.IsStable ? Color.Success : Color.Primary)">@context.CircuitName</MudText>
+                    <MudText Color="@(context.IsStable ? Color.Success : Color.Primary)" Style="@($"font-weight:{(context.IsMain ? "bold" : "normal")}")">@context.CircuitName</MudText>
                 </MudTd>
                 <MudTd DataLabel="Total" align="right">@context.Total</MudTd>
                 <MudTd DataLabel="Stable" align="right">
@@ -67,6 +67,7 @@
                 {
                     CircuitId = c.Id,
                     CircuitName = CircuitNames.GetName(c),
+                    IsMain = isMainCircuit,
                     Total = factories.Count,
                     NotStable = notStable,
                     VariablePower = variablePower,
@@ -97,6 +98,7 @@
         public int VariablePower { get; set; }
         public int? Priority { get; set; }
         public bool IsStable { get; set; }
+        public bool IsMain { get; set; }
     }
 }
 
