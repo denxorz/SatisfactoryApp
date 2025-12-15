@@ -29,7 +29,7 @@
     </MudCardHeader>
     <MudCardContent Class="pa-0">
         <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
-            <div class="map-wrapper">
+            <div class="map-wrapper @_wrapperCssClass">
                 @if (!string.IsNullOrEmpty(_mergedImageUrl))
                 {
                     <img src="@_mergedImageUrl" alt="@Title with Background" class="map-image" />
@@ -55,6 +55,7 @@
     private string? _subPowerCircuitName;
     private int _lastUpdateCounter = -1;
     private bool _graphvizLoaded = false;
+    private readonly string _wrapperCssClass = $"map-wrapper-{Guid.NewGuid():N}";
 
     protected override void OnInitialized()
     {
@@ -199,7 +200,7 @@
     {
         if (_mergedImageUrl == null) return;
 
-        var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", ".map-wrapper");
+        var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{_wrapperCssClass}");
         if (rect == null) return;
 
         var clickX = e.ClientX - rect.Left;
