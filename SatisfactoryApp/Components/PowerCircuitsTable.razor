@@ -27,7 +27,7 @@
                     <MudText Color="@(context.NotStable != 0 ? Color.Primary : Color.Default)">(@context.NotStable / @context.Total)</MudText>
                 </MudTd>
                 <MudTd DataLabel="Variable power" align="right">
-                    <MudText Color="@(context.VariablePower > 0 ? Color.Primary : Color.Default)">( @context.VariablePower  / @context.Total)</MudText>
+                    <MudText Color="@(context.VariablePower > 0 ? Color.Primary : Color.Default)">(@context.VariablePower / @context.Total)</MudText>
                 </MudTd>
                 <MudTd DataLabel="Priority" align="right">@context.Priority</MudTd>
             </RowTemplate>
