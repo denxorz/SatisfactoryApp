@@ -1,7 +1,24 @@
 namespace SatisfactoryApp.Utils;
 
-public static class ResourceColors
+public static class Resources
 {
+    public static IReadOnlyList<string> Types { get; } =
+    [
+        "Iron",
+        "Copper",
+        "Limestone",
+        "Coal",
+        "Caterium",
+        "Quartz",
+        "Sulfur",
+        "Bauxite",
+        "Uranium",
+        "Sam",
+        "Oil",
+        "Water",
+        "Nitrogengas"
+    ];
+
     public static string GetResourceColor(string? resourceType)
     {
         return resourceType switch

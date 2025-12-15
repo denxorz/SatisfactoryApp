@@ -34,7 +34,7 @@
 
     private void UpdateResourceTypeStats()
     {
-        var stats = ResourceStore.Resources
+        var stats = ResourceStore.FilteredResources
             .GroupBy(r => r.Type ?? "Unknown")
             .Select(g => new ResourceTypeStat
             {

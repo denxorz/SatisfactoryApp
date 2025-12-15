@@ -112,7 +112,7 @@
             _isLoading = true;
             StateHasChanged();
 
-            var resources = ResourceStore.Resources;
+            var resources = ResourceStore.FilteredResources;
 
             var dotContent = CreateDotContent(resources);
 
@@ -194,7 +194,7 @@
 
     private string GetResourceColor(Resource resource)
     {
-        return ResourceColors.GetResourceColor(resource.Type);
+        return Resources.GetResourceColor(resource.Type);
     }
 
     private async Task MergeImages(string svg)
@@ -241,7 +241,7 @@
         Resource? closestResource = null;
         double closestDistance = double.MaxValue;
 
-        foreach (var resource in ResourceStore.Resources)
+        foreach (var resource in ResourceStore.FilteredResources)
         {
             var distance = Math.Sqrt(Math.Pow(resourceX - resource.X, 2) + Math.Pow(resourceY - resource.Y, 2));
             if (distance < clickRadius && distance < closestDistance)

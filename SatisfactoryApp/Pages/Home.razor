@@ -42,10 +42,13 @@
     </MudTabPanel>
     <MudTabPanel Text="Resources" Icon="@Icons.Material.Filled.DataUsage" Class="pt-1">
         <MudGrid Spacing="3">
-            <MudItem xs="9">
+            <MudItem xs="12">
+                <ResourceFilters />
+            </MudItem>
+            <MudItem xs="12" lg="9">
                 <ResourcesMap />
             </MudItem>
-            <MudItem xs="3">
+            <MudItem xs="12" lg="3">
                 <ResourcesSummaryTable />
             </MudItem>
         </MudGrid>
