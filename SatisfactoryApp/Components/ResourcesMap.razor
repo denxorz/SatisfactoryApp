@@ -27,13 +27,12 @@
     <MudCardContent Class="pa-0">
         <div class="map-container" @onclick="HandleMapClick">
             <div class="map-wrapper resources-map-wrapper">
-                @if (!string.IsNullOrEmpty(_mergedImageUrl))
+                <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                @if (!string.IsNullOrEmpty(_svgContent))
                 {
-                    <img src="@_mergedImageUrl" alt="Resources Map with Background" class="map-image" />
-                }
-                else
-                {
-                    <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                    <div class="map-svg-overlay">
+                        @((MarkupString)_svgContent)
+                    </div>
                 }
             </div>
 
@@ -58,7 +57,7 @@
 @code {
     private bool _isLoading;
     private string? _error;
-    private string? _mergedImageUrl;
+    private string? _svgContent;
     private Resource? _selectedResource;
     private float? _selectedResourceFlowLeft;
     private int _lastUpdateCounter = -1;
@@ -118,7 +117,7 @@
 
             var svg = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContent);
 
-            await MergeImages(svg);
+            _svgContent = svg;
 
             _isLoading = false;
             StateHasChanged();
@@ -197,28 +196,9 @@
         return Resources.GetResourceColor(resource.Type);
     }
 
-    private async Task MergeImages(string svg)
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("mergeResourceMapImages", svg, DotNetObjectReference.Create(this));
-        }
-        catch (Exception ex)
-        {
-            _error = "Failed to merge images: " + ex.Message;
-        }
-    }
-
-    [JSInvokable]
-    public void SetMergedImageUrl(string url)
-    {
-        _mergedImageUrl = url;
-        StateHasChanged();
-    }
-
     private async Task HandleMapClick(MouseEventArgs e)
     {
-        if (_mergedImageUrl == null) return;
+        if (string.IsNullOrEmpty(_svgContent)) return;
 
         var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", ".resources-map-wrapper");
         if (rect == null) return;
@@ -347,5 +327,16 @@
 
     .legend-dot.available {
         border: 2px solid #000000;
+    }
+
+    .map-svg-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .map-svg-overlay svg {
+        width: 100%;
+        height: 100%;
     }
 </style>

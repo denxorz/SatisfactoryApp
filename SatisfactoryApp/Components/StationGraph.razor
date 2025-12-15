@@ -20,13 +20,12 @@
     <MudCardContent  Class="pa-0">
         <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
             <div class="map-wrapper">
-                @if (!string.IsNullOrEmpty(_mergedImageUrl))
+                <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                @if (!string.IsNullOrEmpty(_svgContent))
                 {
-                    <img src="@_mergedImageUrl" alt="Station Network Graph with Background" class="map-image" />
-                }
-                else
-                {
-                    <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                    <div class="svg-overlay">
+                        @((MarkupString)_svgContent)
+                    </div>
                 }
             </div>
         </div>
@@ -36,7 +35,7 @@
 @code {
     private bool _isLoading;
     private string? _error;
-    private string? _mergedImageUrl;
+    private string? _svgContent;
     private int _lastUpdateCounter = -1;
     private bool _graphvizLoaded = false;
 
@@ -92,7 +91,7 @@
 
             var svg = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContent);
 
-            await MergeImages(svg);
+            _svgContent = svg;
 
             _isLoading = false;
             StateHasChanged();
@@ -258,24 +257,6 @@
         return sanitized.StartsWith("_") ? $"station_{sanitized}" : sanitized;
     }
 
-    private async Task MergeImages(string svgContent)
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("mergeFactoryMapImages", svgContent, svgContent, DotNetObjectReference.Create(this));
-        }
-        catch (Exception ex)
-        {
-            _error = "Failed to merge images: " + ex.Message;
-        }
-    }
-
-    [JSInvokable]
-    public void SetMergedImageUrl(string url)
-    {
-        _mergedImageUrl = url;
-        StateHasChanged();
-    }
 
     private async Task HandleMapClick(MouseEventArgs e)
     {
@@ -301,6 +282,20 @@
     .map-image.background-only {
         filter: grayscale(0.4) contrast(0.8) brightness(1.1);
         opacity: 0.4;
+    }
+
+    .svg-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+
+    .svg-overlay svg {
+        width: 100%;
+        height: 100%;
     }
 </style>
 

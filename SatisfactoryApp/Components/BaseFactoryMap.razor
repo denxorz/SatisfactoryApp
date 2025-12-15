@@ -30,13 +30,21 @@
     <MudCardContent Class="pa-0">
         <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
             <div class="map-wrapper @_wrapperCssClass">
-                @if (!string.IsNullOrEmpty(_mergedImageUrl))
+                <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                @if (!string.IsNullOrEmpty(_svgNonFiltered) || !string.IsNullOrEmpty(_svgFiltered))
                 {
-                    <img src="@_mergedImageUrl" alt="@Title with Background" class="map-image" />
-                }
-                else
-                {
-                    <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                    @if (!string.IsNullOrEmpty(_svgNonFiltered))
+                    {
+                        <div class="map-svg-overlay">
+                            @((MarkupString)_svgNonFiltered)
+                        </div>
+                    }
+                    @if (!string.IsNullOrEmpty(_svgFiltered))
+                    {
+                        <div class="map-svg-overlay map-svg-overlay-filtered">
+                            @((MarkupString)_svgFiltered)
+                        </div>
+                    }
                 }
             </div>
         </div>
@@ -49,7 +57,8 @@
 
     private bool _isLoading;
     private string? _error;
-    private string? _mergedImageUrl;
+    private string? _svgFiltered;
+    private string? _svgNonFiltered;
     private Factory? _selectedFactory;
     private string? _mainPowerCircuitName;
     private string? _subPowerCircuitName;
@@ -114,7 +123,8 @@
             var svgFiltered = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContentFiltered);
             var svgNonFiltered = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContentNonFiltered);
 
-            await MergeImages(svgFiltered, svgNonFiltered);
+            _svgFiltered = svgFiltered;
+            _svgNonFiltered = svgNonFiltered;
 
             _isLoading = false;
             StateHasChanged();
@@ -177,28 +187,9 @@
         return circleTypes.Contains(factoryType) ? "triangle" : "circle";
     }
 
-    private async Task MergeImages(string svgFiltered, string svgNonFiltered)
-    {
-        try
-        {
-            await JSRuntime.InvokeVoidAsync("mergeFactoryMapImages", svgFiltered, svgNonFiltered, DotNetObjectReference.Create(this));
-        }
-        catch (Exception ex)
-        {
-            _error = "Failed to merge images: " + ex.Message;
-        }
-    }
-
-    [JSInvokable]
-    public void SetMergedImageUrl(string url)
-    {
-        _mergedImageUrl = url;
-        StateHasChanged();
-    }
-
     private async Task HandleMapClick(MouseEventArgs e)
     {
-        if (_mergedImageUrl == null) return;
+        if (string.IsNullOrEmpty(_svgNonFiltered) && string.IsNullOrEmpty(_svgFiltered)) return;
 
         var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{_wrapperCssClass}");
         if (rect == null) return;
@@ -274,9 +265,24 @@
         height: auto;
     }
 
-        .map-image.background-only {
-            filter: grayscale(0.4) contrast(0.8) brightness(1.1);
-            opacity: 0.4;
-        }
+    .map-image.background-only {
+        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+        opacity: 0.4;
+    }
+
+    .map-svg-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+    .map-svg-overlay svg {
+        width: 100%;
+        height: 100%;
+    }
+
+    .map-svg-overlay-filtered {
+        opacity: 0.3;
+    }
 </style>
 
