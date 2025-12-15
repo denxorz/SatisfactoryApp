@@ -25,7 +25,7 @@
         }
     </MudCardHeader>
     <MudCardContent Class="pa-0">
-        <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
+        <div class="map-container" @onclick="HandleMapClick">
             <div class="map-wrapper resources-map-wrapper">
                 @if (!string.IsNullOrEmpty(_mergedImageUrl))
                 {
@@ -35,6 +35,21 @@
                 {
                     <img src="/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
                 }
+            </div>
+
+            <div class="legend-overlay">
+                <div class="legend-item">
+                    <span class="legend-dot depleted"></span>
+                    <span>Depleted</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot inuse"></span>
+                    <span>In use</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-dot available"></span>
+                    <span>Not used</span>
+                </div>
             </div>
         </div>
     </MudCardContent>
@@ -266,9 +281,15 @@
 }
 
 <style>
+    .map-container {
+        position: relative;
+        overflow: hidden;
+        min-height: 400px;
+        cursor: pointer;
+    }
+
     .map-wrapper {
         position: relative;
-        cursor: pointer;
         width: 100%;
         height: 100%;
     }
@@ -283,5 +304,48 @@
     .map-image.background-only {
         filter: grayscale(0.4) contrast(0.8) brightness(1.1);
         opacity: 0.4;
+    }
+
+    .legend-overlay {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 140px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #111;
+    }
+
+    .legend-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #808080;
+        display: inline-block;
+    }
+
+    .legend-dot.depleted {
+        border: 2px solid #FF0000;
+    }
+
+    .legend-dot.inuse {
+        border: 2px solid #FFA500;
+    }
+
+    .legend-dot.available {
+        border: 2px solid #000000;
     }
 </style>
