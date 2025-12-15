@@ -23,6 +23,7 @@
             <MudCardContent Class="pa-3">              
                     Examples: "Iron Ore Mine [out 500 iron]" "Rockets [out 5 TBR]".<br />
                     The type will be fuzzy matched on the types of the content of the station. If the station is empty, a fuzzy match is done on all possible types.<br />
+                    If the in/out amount is not stable, it can be prefixed with a ~. For example: "Wires [out ~50 QuickWire]"<br />
                     This applies to Train/Truck/Drone stations.<br />               
             </MudCardContent>
         </MudCard>
@@ -77,7 +78,11 @@
                 <MudText Class="primary-card-header-title" Color="Color.Surface">5. Power circuits are named after the B side of the switch</MudText>
             </MudCardHeader>
             <MudCardContent Class="pa-3">
-                When a circuit is attached to a Switch, the circuit attached the B side will get the name of the switch.
+                When a circuit is attached to a Switch, the circuit attached the B side will get the name of the switch.<br />
+                <br />
+                <MudPaper Elevation="2" Class="pa-2" Style="border: 2px solid var(--mud-palette-divider); display: inline-block;">
+                    <img src="/statis1-5. circuit names.drawio.png" alt="Instructions Page 2" style="width: 100%; height: auto; max-width: 600px; display: block;" />
+                </MudPaper>
             </MudCardContent>
         </MudCard>
     </MudItem>

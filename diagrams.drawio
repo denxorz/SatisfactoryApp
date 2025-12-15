@@ -1,0 +1,104 @@
+<mxfile host="Electron" agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/29.0.3 Chrome/140.0.7339.249 Electron/38.7.0 Safari/537.36" version="29.0.3" pages="3">
+  <diagram name="2. stationNames" id="bYK3oAoaNeTea36ZKpaB">
+    <mxGraphModel dx="1844" dy="1099" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="kzgXpyY0lDnv23z63opt-5" value="MyFactory" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 8;align=center;labelPosition=center;verticalLabelPosition=top;verticalAlign=bottom;" parent="1" vertex="1">
+          <mxGeometry x="20" y="40" width="590" height="120" as="geometry" />
+        </mxCell>
+        <mxCell id="kzgXpyY0lDnv23z63opt-1" value="MyFactory [in 40 plastic]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="80" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kzgXpyY0lDnv23z63opt-12" value="MyFactory [in 60 rubber]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="230" y="80" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kzgXpyY0lDnv23z63opt-17" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="kzgXpyY0lDnv23z63opt-13" target="kzgXpyY0lDnv23z63opt-14" edge="1">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="505" y="210" />
+              <mxPoint x="735" y="210" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="kzgXpyY0lDnv23z63opt-13" value="MyFactory [out 6 circuit]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="420" y="80" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="kzgXpyY0lDnv23z63opt-14" value="Computers [in 6 circuit]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="650" y="40" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Yi2K6GXOxOuotSUdLI-g-1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="kzgXpyY0lDnv23z63opt-15" target="kzgXpyY0lDnv23z63opt-12" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kzgXpyY0lDnv23z63opt-15" value="RubberFactory [out 200 rubber]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="410" y="280" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="Yi2K6GXOxOuotSUdLI-g-2" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" parent="1" source="kzgXpyY0lDnv23z63opt-16" target="kzgXpyY0lDnv23z63opt-1" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="kzgXpyY0lDnv23z63opt-16" value="PlasticMachine [out 99 plastic]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="40" y="220" width="170" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="BEBXHzIrusTaWRXiv45n" name="3. route">
+    <mxGraphModel dx="1844" dy="1099" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="X2vSs65Ii0eshoFf211i-1" value="MyFactory [in 40 plastic]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="590" y="50" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X2vSs65Ii0eshoFf211i-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="X2vSs65Ii0eshoFf211i-2" target="X2vSs65Ii0eshoFf211i-1" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X2vSs65Ii0eshoFf211i-2" value="PlasticMachine [out 9 plastic]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="350" y="150" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="X2vSs65Ii0eshoFf211i-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" parent="1" source="X2vSs65Ii0eshoFf211i-3" target="X2vSs65Ii0eshoFf211i-2" edge="1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="X2vSs65Ii0eshoFf211i-3" value="Plastic Fields [out 31 plastic]" style="rounded=1;whiteSpace=wrap;html=1;" parent="1" vertex="1">
+          <mxGeometry x="60" y="80" width="170" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram id="h4YooGpEr2Gy5KVUUD0X" name="5. circuit names">
+    <mxGraphModel dx="1844" dy="1099" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="3x7440ADb5VopO67bjKj-1" value="PlasticMachine" style="rounded=0;whiteSpace=wrap;html=1;dashed=1;dashPattern=8 8;align=center;labelPosition=center;verticalLabelPosition=top;verticalAlign=bottom;" vertex="1" parent="1">
+          <mxGeometry x="500" y="20" width="200" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="3x7440ADb5VopO67bjKj-5" value="Constructor" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="40" width="90" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="3x7440ADb5VopO67bjKj-13" value="A" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" edge="1" parent="1" source="3x7440ADb5VopO67bjKj-8" target="3x7440ADb5VopO67bjKj-12">
+          <mxGeometry x="0.875" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="3x7440ADb5VopO67bjKj-8" value="Power plant" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="100" y="60" width="170" height="60" as="geometry" />
+        </mxCell>
+        <mxCell id="3x7440ADb5VopO67bjKj-16" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="3x7440ADb5VopO67bjKj-12" target="3x7440ADb5VopO67bjKj-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="3x7440ADb5VopO67bjKj-17" value="B" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="1" source="3x7440ADb5VopO67bjKj-12" target="3x7440ADb5VopO67bjKj-15">
+          <mxGeometry x="-0.8462" y="10" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
+        <mxCell id="3x7440ADb5VopO67bjKj-12" value="[Switch]&lt;br&gt;PlasticMachine" style="shape=hexagon;perimeter=hexagonPerimeter2;whiteSpace=wrap;html=1;fixedSize=1;" vertex="1" parent="1">
+          <mxGeometry x="340" y="50" width="120" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="3x7440ADb5VopO67bjKj-15" value="Assembler" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="560" y="110" width="90" height="60" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
