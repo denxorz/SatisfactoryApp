@@ -50,7 +50,7 @@ window.mergeFactoryMapImages = async function (svgFiltered, svgNonFiltered, dotN
       loadAndMergeSvgs(svgFiltered, svgNonFiltered, ctx, canvas, dotNetRef);
     };
 
-    bgImg.src = '/1920px-Biome_Map.jpg';
+    bgImg.src = '/images/1920px-Biome_Map.jpg';
   } catch (error) {
     console.error('Failed to merge images:', error);
   }
@@ -121,7 +121,7 @@ window.mergeResourceMapImages = async function (svg, dotNetRef) {
       loadAndMergeResourceSvg(svg, ctx, canvas, dotNetRef);
     };
 
-    bgImg.src = '/1920px-Biome_Map.jpg';
+    bgImg.src = '/images/1920px-Biome_Map.jpg';
   } catch (error) {
     console.error('Failed to merge images:', error);
   }
