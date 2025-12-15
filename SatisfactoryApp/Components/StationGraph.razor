@@ -18,7 +18,7 @@
         }
     </MudCardHeader>
     <MudCardContent  Class="pa-0">
-        <div style="position: relative; overflow: hidden; min-height: 400px; cursor: pointer;" @onclick="HandleMapClick">
+        <div class="map-container" @onclick="HandleMapClick">
             <div class="map-wrapper">
                 <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
                 @if (!string.IsNullOrEmpty(_svgContent))
@@ -27,6 +27,17 @@
                         @((MarkupString)_svgContent)
                     </div>
                 }
+            </div>
+
+            <div class="legend-overlay">
+                <div class="legend-item">
+                    <span class="legend-icon station"></span>
+                    <span>Station</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-icon uploader"></span>
+                    <span>Uploader</span>
+                </div>
             </div>
         </div>
     </MudCardContent>
@@ -265,9 +276,15 @@
 }
 
 <style>
+    .map-container {
+        position: relative;
+        overflow: hidden;
+        min-height: 400px;
+        cursor: pointer;
+    }
+
     .map-wrapper {
         position: relative;
-        cursor: pointer;
         width: 100%;
         height: 100%;
     }
@@ -296,6 +313,49 @@
     .svg-overlay svg {
         width: 100%;
         height: 100%;
+    }
+
+    .legend-overlay {
+        position: absolute;
+        bottom: 12px;
+        right: 12px;
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        padding: 8px 10px;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        min-width: 140px;
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 14px;
+        color: #111;
+    }
+
+    .legend-icon {
+        display: inline-block;
+    }
+
+    .legend-icon.station {
+        width: 14px;
+        height: 14px;
+        background: #212121;
+        border: 2px solid #e59345;
+        box-sizing: border-box;
+    }
+
+    .legend-icon.uploader {
+        width: 0;
+        height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-bottom: 14px solid #000000;
     }
 </style>
 
