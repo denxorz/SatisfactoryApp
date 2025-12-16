@@ -61,9 +61,9 @@
 
 @code {
 
-    private readonly List<FactoryTypeOption> FactoryTypeOptions = [];
-    private readonly List<PowerCircuitOption> PowerCircuitIdOptions = [];
-    private readonly List<FactoryStabilityOption> FactoryStabilityOptions = [];
+    private List<FactoryTypeOption> FactoryTypeOptions = [];
+    private List<PowerCircuitOption> PowerCircuitIdOptions = [];
+    private List<FactoryStabilityOption> FactoryStabilityOptions = [];
 
     protected override void OnInitialized() 
     {
@@ -79,8 +79,8 @@
 
     private void Load()
     {
-        FactoryTypeOptions.AddRange(FactoryStore.FactoryTypeOptions);
-        PowerCircuitIdOptions.AddRange(FactoryStore.PowerCircuitIdOptions);
-        FactoryStabilityOptions.AddRange(FactoryStore.FactoryStabilityOptions);
+        FactoryTypeOptions = FactoryStore.FactoryTypeOptions;
+        PowerCircuitIdOptions = FactoryStore.PowerCircuitIdOptions;
+        FactoryStabilityOptions = FactoryStore.FactoryStabilityOptions;
     }
 }

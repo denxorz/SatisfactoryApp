@@ -56,7 +56,7 @@
 </MudCard>
 
 @code {
-    private readonly List<CargoTypeOption> CargoTypeOptions = [];
+    private List<CargoTypeOption> CargoTypeOptions = [];
 
     protected override void OnInitialized()
     {
@@ -72,6 +72,6 @@
 
     private void Load()
     {
-        CargoTypeOptions.AddRange(StationStore.CargoTypeOptions);
+        CargoTypeOptions = StationStore.CargoTypeOptions;
     }
 }
