@@ -79,7 +79,7 @@
                          @if (_selectedFactory.PercentageProducing is not null)
                         {<div class="tooltip-row">
                             <span class="tooltip-label">Running at:</span>
-                            <span class="tooltip-value">@(_selectedFactory.PercentageProducing.ToString("F1"))%</span>
+                            <span class="tooltip-value">@(_selectedFactory.PercentageProducing.Value.ToString("F1"))%</span>
                         </div>
                         }
                         @if (!string.IsNullOrEmpty(_mainPowerCircuitName))
