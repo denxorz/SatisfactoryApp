@@ -25,7 +25,7 @@
         }
     </MudCardHeader>
     <MudCardContent Class="pa-0">
-        <div class="map-container" @onclick="HandleMapClick">
+        <div class="map-container @_containerCssClass" @onclick="HandleMapClick">
             <div class="map-wrapper resources-map-wrapper">
                 <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
                 @if (!string.IsNullOrEmpty(_svgContent))
@@ -50,6 +50,27 @@
                     <span>Not used</span>
                 </div>
             </div>
+
+            @if (_showTooltip && _selectedResource != null)
+            {
+                <div class="factory-tooltip" style="left: @($"{_tooltipX}px"); top: @($"{_tooltipY}px")">
+                    <div class="tooltip-content">
+                        <div class="tooltip-header">@(_selectedResource.Type ?? "Unknown")</div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Max:</span>
+                            <span class="tooltip-value">@(_selectedResource.Max.ToString("F1"))</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Used:</span>
+                            <span class="tooltip-value">@(_selectedResource.Flow.ToString("F1"))</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Left:</span>
+                            <span class="tooltip-value">@((_selectedResource.Max - _selectedResource.Flow).ToString("F1"))</span>
+                        </div>
+                    </div>
+                </div>
+            }
         </div>
     </MudCardContent>
 </MudCard>
@@ -62,6 +83,10 @@
     private float? _selectedResourceFlowLeft;
     private int _lastUpdateCounter = -1;
     private bool _graphvizLoaded = false;
+    private readonly string _containerCssClass = $"map-container-{Guid.NewGuid():N}";
+    private bool _showTooltip = false;
+    private double _tooltipX = 0;
+    private double _tooltipY = 0;
 
     protected override void OnInitialized()
     {
@@ -237,10 +262,33 @@
             var max = closestResource.Max;
             var flow = closestResource.Flow;
             _selectedResourceFlowLeft = max - flow;
+
+            var containerRect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{_containerCssClass}");
+            if (containerRect != null)
+            {
+                var containerClickX = e.ClientX - containerRect.Left;
+                var containerClickY = e.ClientY - containerRect.Top;
+
+                var rawX = containerClickX + 15;
+                var rawY = containerClickY - 10;
+
+                const double margin = 8;
+                const double tooltipWidth = 260;
+                const double tooltipHeight = 120;
+
+                var maxTooltipX = Math.Max(margin, containerRect.Width - tooltipWidth - margin);
+                var maxTooltipY = Math.Max(margin, containerRect.Height - tooltipHeight - margin);
+                var minTooltipY = margin + tooltipHeight;
+
+                _tooltipX = Math.Min(Math.Max(rawX, margin), maxTooltipX);
+                _tooltipY = Math.Min(Math.Max(rawY, minTooltipY), maxTooltipY);
+                _showTooltip = true;
+            }
         }
         else
         {
             _selectedResourceFlowLeft = null;
+            _showTooltip = false;
         }
         StateHasChanged();
     }
@@ -339,5 +387,55 @@
     .map-svg-overlay svg {
         width: 100%;
         height: 100%;
+    }
+
+    .factory-tooltip {
+        position: absolute;
+        z-index: 1000;
+        pointer-events: none;
+        transform: translateY(-100%);
+    }
+
+    .tooltip-content {
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid #e59345;
+        border-radius: 6px;
+        padding: 10px 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        min-width: 200px;
+        max-width: 300px;
+    }
+
+    .tooltip-header {
+        font-weight: bold;
+        font-size: 14px;
+        color: #e59345;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(229, 147, 69, 0.3);
+    }
+
+    .tooltip-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+        font-size: 12px;
+    }
+
+    .tooltip-row:last-child {
+        margin-bottom: 0;
+    }
+
+    .tooltip-label {
+        color: #b0b0b0;
+        margin-right: 12px;
+    }
+
+    .tooltip-value {
+        color: #f5f5f5;
+        font-weight: 500;
+        text-align: right;
     }
 </style>
