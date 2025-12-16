@@ -5,6 +5,8 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
+    <BlazorWebAssemblyInitialHeapSize>134217728</BlazorWebAssemblyInitialHeapSize>
+    <BlazorWebAssemblyMaximumHeapSize>2147483648</BlazorWebAssemblyMaximumHeapSize>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)' == 'Release'">
