@@ -76,10 +76,12 @@
                 <div class="factory-tooltip" style="left: @($"{_tooltipX}px"); top: @($"{_tooltipY}px")">
                     <div class="tooltip-content">
                         <div class="tooltip-header">@(_selectedFactory.Type ?? "Unknown")</div>
-                        <div class="tooltip-row">
+                         @if (_selectedFactory.PercentageProducing is not null)
+                        {<div class="tooltip-row">
                             <span class="tooltip-label">Running at:</span>
-                            <span class="tooltip-value">@(_selectedFactory.PercentageProducing?.ToString("F1") ?? "N/A")%</span>
+                            <span class="tooltip-value">@(_selectedFactory.PercentageProducing.ToString("F1"))%</span>
                         </div>
+                        }
                         @if (!string.IsNullOrEmpty(_mainPowerCircuitName))
                         {
                             <div class="tooltip-row">
