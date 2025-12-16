@@ -3,6 +3,7 @@
 @using SatisfactoryApp.Utils
 @using Microsoft.JSInterop
 @using MudBlazor
+@implements IDisposable
 @inject StationStore StationStore
 @inject IJSRuntime JSRuntime
 
@@ -87,7 +88,17 @@
 
     protected override void OnInitialized()
     {
-        StationStore.FilteredStationsChanged += async () => await CheckAndRenderIfNeeded();
+        StationStore.FilteredStationsChanged += OnFilteredStationsChanged;
+    }
+
+    private async void OnFilteredStationsChanged()
+    {
+        await CheckAndRenderIfNeeded();
+    }
+
+    public void Dispose()
+    {
+        StationStore.FilteredStationsChanged -= OnFilteredStationsChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

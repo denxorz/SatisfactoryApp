@@ -3,6 +3,7 @@
 @using SatisfactoryApp.Utils
 @using Microsoft.JSInterop
 @using MudBlazor
+@implements IDisposable
 @inject ResourceStore ResourceStore
 @inject IJSRuntime JSRuntime
 
@@ -90,7 +91,17 @@
 
     protected override void OnInitialized()
     {
-        ResourceStore.ResourcesChanged += async () => await CheckAndRenderIfNeeded();
+        ResourceStore.ResourcesChanged += OnResourcesChanged;
+    }
+
+    private async void OnResourcesChanged()
+    {
+        await CheckAndRenderIfNeeded();
+    }
+
+    public void Dispose()
+    {
+        ResourceStore.ResourcesChanged -= OnResourcesChanged;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
