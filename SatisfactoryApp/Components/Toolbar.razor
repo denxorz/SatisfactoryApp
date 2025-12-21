@@ -3,6 +3,8 @@
 @using MudBlazor
 @using Microsoft.JSInterop
 @using Microsoft.AspNetCore.WebUtilities
+@using Microsoft.AspNetCore.Components
+@implements IDisposable
 @inject FactoryStore FactoryStore
 @inject StationStore StationStore
 @inject ResourceStore ResourceStore
@@ -51,10 +53,10 @@
                         <MudProgressCircular Size="Size.Small" Indeterminate="true" />
                         <MudText Typo="Typo.body2">Processing...</MudText>
                     }
-                    else if (_selectedFile is not null)
+                    else if (_selectedFile is not null || !string.IsNullOrEmpty(_loadedFileName))
                     {
                         <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
-                        <MudText Typo="Typo.body2">@_selectedFile?.Name</MudText>
+                        <MudText Typo="Typo.body2">@(_selectedFile?.Name ?? _loadedFileName)</MudText>
                     }
                     else
                     {
@@ -92,18 +94,49 @@
     private bool _isCalculating;
     private string? _error;
     private bool _testModeEnabled;
+    private string? _loadedFileName;
 
     protected override async Task OnInitializedAsync()
     {
+        NavigationManager.LocationChanged += OnLocationChanged;
+        await CheckAndLoadTestDataAsync();
+    }
+
+    private async void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        await CheckAndLoadTestDataAsync();
+    }
+
+    private async Task CheckAndLoadTestDataAsync()
+    {
         var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
         var queryParams = QueryHelpers.ParseQuery(uri.Query);
+        
         _testModeEnabled = queryParams.TryGetValue("test", out var testValue) && 
                           testValue.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
         
-        if (_testModeEnabled)
+        var exampleModeEnabled = queryParams.TryGetValue("example", out var exampleValue) && 
+                                exampleValue.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+        
+        if (_testModeEnabled || exampleModeEnabled)
         {
             await LoadTestDataAsync();
+            if (exampleModeEnabled)
+            {
+                _loadedFileName = "Sample map";
+            }
         }
+        else
+        {
+            _loadedFileName = null;
+        }
+        
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
     }
 
     private async Task LoadTestDataAsync()
@@ -118,7 +151,10 @@
             FactoryStore.Set(factories, powerCircuits);
             StationStore.Set(stations, uploaders);
             ResourceStore.Set(resources);
-            _selectedFile = null;
+            if (string.IsNullOrEmpty(_loadedFileName))
+            {
+                _selectedFile = null;
+            }
             _error = null;
         }
         catch (Exception ex)
@@ -191,6 +227,7 @@
     {
         ClearDragClass();
         _selectedFile = e.File;
+        _loadedFileName = null;
         await CalculateRoutes();
     }
 

@@ -1,4 +1,6 @@
 @using MudBlazor
+@using Microsoft.AspNetCore.WebUtilities
+@inject NavigationManager NavigationManager
 
 <MudGrid Spacing="3">
     <MudItem xs="12">
@@ -10,6 +12,15 @@
                 Welcome to Stats of your Satisfactory! This tool helps you analyze your factories and get the most out of them.<br />
                 <br />
                 Listed below are some expectations the current version of the tool uses.<br />
+                <br />
+                <MudButton Variant="Variant.Outlined" 
+                           Color="Color.Primary" 
+                           StartIcon="@Icons.Material.Filled.PlayArrow"
+                           OnClick="LoadExampleData"
+                           Style="margin-top: 8px;">
+                    Show me an example save game!
+                </MudButton>
+                <br />
                 <br />
                 Thanks for using the tool and happy building!
             </MudCardContent>
@@ -87,4 +98,28 @@
         </MudCard>
     </MudItem>
 </MudGrid>
+
+@code {
+    private void LoadExampleData()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var queryParams = QueryHelpers.ParseQuery(uri.Query);
+        
+        var basePath = uri.GetLeftPart(UriPartial.Path);
+        var newQuery = QueryHelpers.AddQueryString(basePath, "example", "true");
+        
+        if (queryParams.Count > 0)
+        {
+            foreach (var param in queryParams)
+            {
+                if (param.Key != "example")
+                {
+                    newQuery = QueryHelpers.AddQueryString(newQuery, param.Key, param.Value.ToString());
+                }
+            }
+        }
+        
+        NavigationManager.NavigateTo(newQuery);
+    }
+}
 
