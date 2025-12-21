@@ -1,6 +1,7 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using SatisfactoryApp.Services
 @using MudBlazor
+@implements IDisposable
 @inject ResourceStore ResourceStore
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
@@ -46,6 +47,11 @@
 
         _resourceTypeStats = stats;
         StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        ResourceStore.ResourcesChanged -= UpdateResourceTypeStats;
     }
 
     private class ResourceTypeStat

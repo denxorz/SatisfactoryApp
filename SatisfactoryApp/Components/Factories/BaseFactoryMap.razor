@@ -3,6 +3,7 @@
 @using SatisfactoryApp.Utils
 @using Microsoft.JSInterop
 @using MudBlazor
+@implements IDisposable
 @inject FactoryStore FactoryStore
 @inject IJSRuntime JSRuntime
 
@@ -76,11 +77,12 @@
                 <div class="factory-tooltip" style="left: @($"{_tooltipX}px"); top: @($"{_tooltipY}px")">
                     <div class="tooltip-content">
                         <div class="tooltip-header">@(_selectedFactory.Type ?? "Unknown")</div>
-                         @if (_selectedFactory.PercentageProducing is not null)
-                        {<div class="tooltip-row">
-                            <span class="tooltip-label">Running at:</span>
-                            <span class="tooltip-value">@(_selectedFactory.PercentageProducing.Value.ToString("F1"))%</span>
-                        </div>
+                        @if (_selectedFactory.PercentageProducing is not null)
+                        {
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Running at:</span>
+                                <span class="tooltip-value">@(_selectedFactory.PercentageProducing.Value.ToString("F1"))%</span>
+                            </div>
                         }
                         @if (!string.IsNullOrEmpty(_mainPowerCircuitName))
                         {
@@ -126,9 +128,17 @@
     private double _tooltipX = 0;
     private double _tooltipY = 0;
 
+    private Action? _checkAndRenderHandler;
+
     protected override void OnInitialized()
     {
-        FactoryStore.FilteredFactoriesChanged += async () => await CheckAndRenderIfNeeded();
+        _checkAndRenderHandler = () => _ = CheckAndRenderIfNeeded();
+        FactoryStore.FilteredFactoriesChanged += _checkAndRenderHandler;
+    }
+
+    public void Dispose()
+    {
+        FactoryStore.FilteredFactoriesChanged -= _checkAndRenderHandler;
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -367,10 +377,10 @@
         height: auto;
     }
 
-    .map-image.background-only {
-        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
-        opacity: 0.4;
-    }
+        .map-image.background-only {
+            filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+            opacity: 0.4;
+        }
 
     .map-svg-overlay {
         position: absolute;
@@ -378,10 +388,10 @@
         pointer-events: none;
     }
 
-    .map-svg-overlay svg {
-        width: 100%;
-        height: 100%;
-    }
+        .map-svg-overlay svg {
+            width: 100%;
+            height: 100%;
+        }
 
     .map-svg-overlay-filtered {
         opacity: 0.3;
@@ -415,37 +425,37 @@
         display: inline-block;
     }
 
-    .legend-icon.factory {
-        width: 14px;
-        height: 14px;
-        border-radius: 50%;
-        border: 1px solid #000000;
-        box-sizing: border-box;
-    }
+        .legend-icon.factory {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 1px solid #000000;
+            box-sizing: border-box;
+        }
 
-    .legend-icon.factory.stable {
-        background: #00FF00;
-    }
+            .legend-icon.factory.stable {
+                background: #00FF00;
+            }
 
-    .legend-icon.factory.almost-stable {
-        background: #FFFF00;
-    }
+            .legend-icon.factory.almost-stable {
+                background: #FFFF00;
+            }
 
-    .legend-icon.factory.unstable {
-        background: #FFA500;
-    }
+            .legend-icon.factory.unstable {
+                background: #FFA500;
+            }
 
-    .legend-icon.factory.off {
-        background: #FF0000;
-    }
+            .legend-icon.factory.off {
+                background: #FF0000;
+            }
 
-    .legend-icon.uploader {
-        width: 0;
-        height: 0;
-        border-left: 7px solid transparent;
-        border-right: 7px solid transparent;
-        border-bottom: 14px solid #00FF00;
-    }
+        .legend-icon.uploader {
+            width: 0;
+            height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-bottom: 14px solid #00FF00;
+        }
 
     .factory-tooltip {
         position: absolute;
@@ -482,9 +492,9 @@
         font-size: 12px;
     }
 
-    .tooltip-row:last-child {
-        margin-bottom: 0;
-    }
+        .tooltip-row:last-child {
+            margin-bottom: 0;
+        }
 
     .tooltip-label {
         color: #b0b0b0;

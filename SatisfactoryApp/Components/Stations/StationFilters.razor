@@ -1,5 +1,6 @@
 @using SatisfactoryApp.Services
 @using MudBlazor
+@implements IDisposable
 @inject StationStore StationStore
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
@@ -73,5 +74,10 @@
     private void Load()
     {
         CargoTypeOptions = StationStore.CargoTypeOptions;
+    }
+
+    public void Dispose()
+    {
+        StationStore.StationsChanged -= OnChanged;
     }
 }

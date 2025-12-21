@@ -1,6 +1,7 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using SatisfactoryApp.Services
 @using MudBlazor
+@implements IDisposable
 @inject StationStore StationStore
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
@@ -163,6 +164,11 @@
             .ToList();
 
         return destinationStations;
+    }
+
+    public void Dispose()
+    {
+        StationStore.FilteredStationsChanged -= StateHasChanged;
     }
 }
 

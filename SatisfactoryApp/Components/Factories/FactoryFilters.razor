@@ -1,3 +1,4 @@
+@implements IDisposable
 @inject FactoryStore FactoryStore
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
@@ -82,5 +83,10 @@
         FactoryTypeOptions = FactoryStore.FactoryTypeOptions;
         PowerCircuitIdOptions = FactoryStore.PowerCircuitIdOptions;
         FactoryStabilityOptions = FactoryStore.FactoryStabilityOptions;
+    }
+
+    public void Dispose()
+    {
+        FactoryStore.FactoriesChanged -= OnChanged;
     }
 }

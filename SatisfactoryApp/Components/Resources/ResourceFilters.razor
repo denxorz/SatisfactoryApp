@@ -1,5 +1,6 @@
 @using SatisfactoryApp.Services
 @using MudBlazor
+@implements IDisposable
 @inject ResourceStore ResourceStore
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
@@ -67,6 +68,11 @@
     private void Load()
     {
         ResourceTypeOptions = ResourceStore.ResourceTypeOptions;
+    }
+
+    public void Dispose()
+    {
+        ResourceStore.ResourcesChanged -= OnChanged;
     }
 }
 
