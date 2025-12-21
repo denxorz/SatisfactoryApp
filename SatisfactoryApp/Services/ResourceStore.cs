@@ -122,7 +122,7 @@ public class ResourceStore
         set
         {
             Filters.SelectedMaxValues = value?.ToList() ?? [];
-            Filters.AvailableAfterFilterMaxValues = [.. ((int[])[200, 600, 1200]).Except(_filters.SelectedMaxValues)];
+            Filters.AvailableAfterFilterMaxValues = [.. ((int[])[300, 600, 1200]).Except(_filters.SelectedMaxValues)];
             NotifyChanged();
         }
     }
