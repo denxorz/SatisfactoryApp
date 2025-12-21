@@ -1,5 +1,7 @@
-@using SatisfactoryApp.Services
 @using MudBlazor
+@using SatisfactoryApp.Services
+@using SatisfactoryApp.Services.Resources
+
 @implements IDisposable
 @inject ResourceStore ResourceStore
 
@@ -19,7 +21,7 @@
                              Clearable
                              SelectAll
                              ShowCheckbox>
-                    @foreach (var item in ResourceTypeOptions)
+                    @foreach (var item in ResourceStore.ResourceTypeOptions)
                     {
                         <MudComboBoxItem Value="@item" Text="@item.ToString()"></MudComboBoxItem>
                     }

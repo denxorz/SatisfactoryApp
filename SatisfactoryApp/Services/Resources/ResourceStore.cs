@@ -1,7 +1,6 @@
 using Denxorz.Satisfactory.Routes.Types;
-using SatisfactoryApp.Utils;
 
-namespace SatisfactoryApp.Services;
+namespace SatisfactoryApp.Services.Resources;
 
 public class ResourceStore
 {
@@ -78,11 +77,7 @@ public class ResourceStore
             }
 
             return Utils.Resources.Types
-                    .Select(type => new ResourceTypeOption
-                    {
-                        Title = $"{type} ({counts.GetValueOrDefault(type, 0)})",
-                        Value = type
-                    })
+                    .Select(type => new ResourceTypeOption($"{type} ({counts.GetValueOrDefault(type, 0)})", type))
                     .ToList();
         }
     }
@@ -99,10 +94,10 @@ public class ResourceStore
 
     public IReadOnlyList<LeftoverRangeOption> AllLeftoverOptions { get; } =
     [
-        new() { Title = "Left 0 - 299", Min = 0, Max = 299 },
-        new() { Title = "Left 300 - 599", Min = 300, Max = 599 },
-        new() { Title = "Left 600 - 999", Min = 600, Max = 999 },
-        new() { Title = "Left 1000 - 1200", Min = 1000, Max = 1200 },
+        new("Left 0 - 299", 0, 299),
+        new("Left 300 - 599", 300, 599),
+        new("Left 600 - 999", 600, 999),
+        new("Left 1000 - 1200", 1000, 1200),
     ];
 
     public IReadOnlyCollection<LeftoverRangeOption> SelectedLeftoverRanges
@@ -126,30 +121,4 @@ public class ResourceStore
             NotifyChanged();
         }
     }
-}
-
-public class ResourceFilters
-{
-    public List<ResourceTypeOption> SelectedResourceTypes { get; set; } = [];
-    public List<LeftoverRangeOption> SelectedLeftoverRanges { get; set; } = [];
-    public List<LeftoverRangeOption> AvailableAfterFilterLeftoverOptions { get; set; } = [];
-    public List<int> SelectedMaxValues { get; set; } = [];
-    public List<int> AvailableAfterFilterMaxValues { get; set; } = [];
-}
-
-public class ResourceTypeOption
-{
-    public string Title { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
-
-    public override string ToString() => Title;
-}
-
-public class LeftoverRangeOption
-{
-    public string Title { get; set; } = string.Empty;
-    public float Min { get; set; }
-    public float Max { get; set; }
-
-    public override string ToString() => Title;
 }

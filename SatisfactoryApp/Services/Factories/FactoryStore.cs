@@ -1,8 +1,7 @@
-using System.Collections.Generic;
 using Denxorz.Satisfactory.Routes.Types;
 using SatisfactoryApp.Utils;
 
-namespace SatisfactoryApp.Services;
+namespace SatisfactoryApp.Services.Factories;
 
 public class FactoryStore
 {
@@ -104,7 +103,7 @@ public class FactoryStore
 
             return factoryTypeCounts
                 .OrderBy(kvp => kvp.Key)
-                .Select(kvp => new FactoryTypeOption { Title = $"{kvp.Key} ({kvp.Value})", Value = kvp.Key })
+                .Select(kvp => new FactoryTypeOption($"{kvp.Key} ({kvp.Value})", kvp.Key))
                 .ToList();
         }
     }
@@ -128,21 +127,13 @@ public class FactoryStore
             var mainOptions = _powerCircuits
                 .Where(c => c.ParentCircuitId is null)
                 .OrderBy(c => c.Id)
-                .Select(c => new PowerCircuitOption
-                {
-                    Title = CircuitNames.GetFilterName(c, mainCircuitCounts.TryGetValue(c.Id, out var count) ? count : 0),
-                    Value = $"main_{c.Id}"
-                })
+                .Select(c => new PowerCircuitOption(CircuitNames.GetFilterName(c, mainCircuitCounts.TryGetValue(c.Id, out var count) ? count : 0), $"main_{c.Id}"))
                 .ToList();
 
             var subOptions = _powerCircuits
                 .Where(c => c.ParentCircuitId is not null)
                 .OrderBy(c => c.Id)
-                .Select(c => new PowerCircuitOption
-                {
-                    Title = CircuitNames.GetFilterName(c, subCircuitCounts.TryGetValue(c.Id, out var count) ? count : 0),
-                    Value = $"sub_{c.Id}"
-                })
+                .Select(c => new PowerCircuitOption(CircuitNames.GetFilterName(c, subCircuitCounts.TryGetValue(c.Id, out var count) ? count : 0), $"sub_{c.Id}"))
                 .ToList();
 
             return mainOptions.Concat(subOptions).ToList();
@@ -163,11 +154,11 @@ public class FactoryStore
 
             return
             [
-                new() { Title = $"Stable ({statusCounts.GetValueOrDefault("Stable", 0)})", Value = "Stable" },
-                new() { Title = $"Almost Stable ({statusCounts.GetValueOrDefault("Almost Stable", 0)})", Value = "Almost Stable" },
-                new() { Title = $"Unstable ({statusCounts.GetValueOrDefault("Unstable", 0)})", Value = "Unstable" },
-                new() { Title = $"Off ({statusCounts.GetValueOrDefault("Off", 0)})", Value = "Off" },
-                new() { Title = $"Unknown ({statusCounts.GetValueOrDefault("Unknown", 0)})", Value = "Unknown" },
+                new($"Stable ({statusCounts.GetValueOrDefault("Stable", 0)})", "Stable"),
+                new($"Almost Stable ({statusCounts.GetValueOrDefault("Almost Stable", 0)})", "Almost Stable"),
+                new($"Unstable ({statusCounts.GetValueOrDefault("Unstable", 0)})", "Unstable"),
+                new($"Off ({statusCounts.GetValueOrDefault("Off", 0)})", "Off"),
+                new($"Unknown ({statusCounts.GetValueOrDefault("Unknown", 0)})", "Unknown"),
             ];
         }
     }
@@ -203,35 +194,3 @@ public class FactoryStore
     }
 
 }
-
-public class FactoryFilters
-{
-    public List<FactoryTypeOption> SelectedFactoryTypes { get; set; } = [];
-    public List<PowerCircuitOption> SelectedPowerCircuits { get; set; } = [];
-    public List<FactoryStabilityOption> SelectedFactoryStabilities { get; set; } = [];
-}
-
-public class FactoryTypeOption
-{
-    public string Title { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
-
-    public override string ToString() => Title;
-}
-
-public class PowerCircuitOption
-{
-    public string Title { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
-
-    public override string ToString() => Title;
-}
-
-public class FactoryStabilityOption
-{
-    public string Title { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
-
-    public override string ToString() => Title;
-}
-

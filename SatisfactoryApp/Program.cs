@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using MudExtensions.Services;
 using SatisfactoryApp;
-using SatisfactoryApp.Services;
+using SatisfactoryApp.Services.Factories;
+using SatisfactoryApp.Services.Resources;
+using SatisfactoryApp.Services.Stations;
 
 var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");

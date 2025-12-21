@@ -1,6 +1,6 @@
 using Denxorz.Satisfactory.Routes.Types;
 
-namespace SatisfactoryApp.Services;
+namespace SatisfactoryApp.Services.Stations;
 
 public class StationStore
 {
@@ -159,29 +159,6 @@ public class StationStore
 
         return [.. cargoTypes
             .OrderBy(t => t)
-            .Select(t => new CargoTypeOption { Title = t, Value = t })];
+            .Select(t => new CargoTypeOption(t, t))];
     }
-}
-
-public class StationFilters
-{
-    public string SearchText { get; set; } = string.Empty;
-
-    public List<string> SelectedStationTypes { get; set; } = [];
-    public List<string> AvailableAfterFilterStationTypes { get; set; } = [];
-    public List<string> AllStationTypes { get; } = ["Train", "Truck", "Drone"];
-
-    public List<string> SelectedTransferTypes { get; set; } = [];
-    public List<string> AvailableAfterFilterTransferTypes { get; set; } = [];
-    public List<string> AllTransferTypes { get; } = ["Load", "Unload", "Uploader"];
-
-    public List<CargoTypeOption> SelectedCargoTypes { get; set; } = [];
-}
-
-public class CargoTypeOption
-{
-    public string Title { get; set; } = string.Empty;
-    public string Value { get; set; } = string.Empty;
-
-    public override string ToString() => Title;
 }
