@@ -2,14 +2,37 @@
 @using Denxorz.Satisfactory.Routes
 @using MudBlazor
 @using Microsoft.JSInterop
+@using Microsoft.AspNetCore.WebUtilities
 @inject FactoryStore FactoryStore
 @inject StationStore StationStore
 @inject ResourceStore ResourceStore
+@inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
+@inject NavigationManager NavigationManager
 
 <MudAppBar Elevation="1">
     <img src="/images/ctor.png" alt="constructor" style="height: 40px; width: 40px; margin-right: 16px;" />
     <MudText Typo="Typo.h6">Stats of your Satisfactory</MudText>
     <MudSpacer />
+    @if (_testModeEnabled)
+    {
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Secondary" 
+                   StartIcon="@Icons.Material.Filled.Science"
+                   OnClick="LoadTestDataAsync"
+                   Disabled="@_isCalculating"
+                   Style="margin-right: 8px;">
+            Load Test Data
+        </MudButton>
+        <MudButton Variant="Variant.Outlined" 
+                   Color="Color.Primary" 
+                   StartIcon="@Icons.Material.Filled.Save"
+                   OnClick="SaveStoresToJsonAsync"
+                   Disabled="@_isCalculating"
+                   Style="margin-right: 8px;">
+            Save to JSON
+        </MudButton>
+    }
     <MudFileUpload T="IReadOnlyList<IBrowserFile>"
                    @ref="@_fileUpload"
                    OnFilesChanged="OnInputFileChanged"
@@ -67,8 +90,48 @@
     private MudFileUpload<IReadOnlyList<IBrowserFile>>? _fileUpload;
     private IBrowserFile? _selectedFile;
     private bool _isCalculating;
-    private bool _isDragging;
     private string? _error;
+    private bool _testModeEnabled;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+        var queryParams = QueryHelpers.ParseQuery(uri.Query);
+        _testModeEnabled = queryParams.TryGetValue("test", out var testValue) && 
+                          testValue.ToString().Equals("true", StringComparison.OrdinalIgnoreCase);
+        
+        if (_testModeEnabled)
+        {
+            await LoadTestDataAsync();
+        }
+    }
+
+    private async Task LoadTestDataAsync()
+    {
+        try
+        {
+            _isCalculating = true;
+            _error = null;
+            StateHasChanged();
+
+            var (factories, powerCircuits, stations, uploaders, resources) = await TestDataService.GetTestDataAsync(HttpClient);
+            FactoryStore.Set(factories, powerCircuits);
+            StationStore.Set(stations, uploaders);
+            ResourceStore.Set(resources);
+            _selectedFile = null;
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            Console.WriteLine($"LoadTestData: {_error}");
+        }
+        finally
+        {
+            _isCalculating = false;
+            StateHasChanged();
+        }
+    }
 
     private async Task CalculateRoutes()
     {
@@ -104,6 +167,9 @@
 
     private async Task<MemoryStream> OpenFileAndCopyToMemoryStreamAsync()
     {
+        if (_selectedFile == null)
+            throw new InvalidOperationException("No file selected");
+
         using var stream = _selectedFile.OpenReadStream(maxAllowedSize: 100_000_000);
         var memoryStream = new MemoryStream();
         await stream.CopyToAsync(memoryStream);
@@ -130,5 +196,31 @@
 
     private void SetDragClass() => _dragClass = $"{DefaultDragClass} mud-border-primary";
     private void ClearDragClass() => _dragClass = DefaultDragClass;
+
+    private async Task SaveStoresToJsonAsync()
+    {
+        try
+        {
+            _isCalculating = true;
+            _error = null;
+            StateHasChanged();
+
+            var jsonContent = TestDataService.ExportToJson(FactoryStore, StationStore, ResourceStore);
+            var filename = $"satisfactory-data-{DateTime.Now:yyyyMMdd-HHmmss}.json";
+            
+            await JSRuntime.InvokeVoidAsync("downloadJsonFile", jsonContent, filename);
+            _error = null;
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+            Console.WriteLine($"SaveStoresToJson: {_error}");
+        }
+        finally
+        {
+            _isCalculating = false;
+            StateHasChanged();
+        }
+    }
 }
 

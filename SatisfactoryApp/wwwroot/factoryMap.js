@@ -30,3 +30,15 @@ window.getElementBoundingClientRect = function (selector) {
     height: rect.height
   };
 };
+
+window.downloadJsonFile = function (jsonContent, filename) {
+  const blob = new Blob([jsonContent], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(url);
+};
