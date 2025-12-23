@@ -11,33 +11,85 @@
         <MudText Class="primary-card-header-title" Color="Color.Surface">Power Circuits</MudText>
     </MudCardHeader>
     <MudCardContent Class="pa-2">
-        <MudTable Items="@_powerCircuitStats" Hover="true" Dense="true">
-            <HeaderContent>
-                <MudTh>Name</MudTh>
-                <MudTh align="right">Total</MudTh>
-                <MudTh align="right">Not running at 100%</MudTh>
-                <MudTh align="right">Variable power</MudTh>
-                <MudTh align="right">Priority</MudTh>
-            </HeaderContent>
-            <RowTemplate>
-                <MudTd DataLabel="Name">
-                    <MudText Color="@(context.IsStable ? Color.Success : Color.Primary)" Style="@($"font-weight:{(context.IsMain ? "bold" : "normal")}")">@context.CircuitName</MudText>
-                </MudTd>
-                <MudTd DataLabel="Total" align="right">@context.Total</MudTd>
-                <MudTd DataLabel="Stable" align="right">
-                    <MudText Color="@(context.NotStable != 0 ? Color.Primary : Color.Default)">(@context.NotStable / @context.Total)</MudText>
-                </MudTd>
-                <MudTd DataLabel="Variable power" align="right">
-                    <MudText Color="@(context.VariablePower > 0 ? Color.Primary : Color.Default)">(@context.VariablePower / @context.Total)</MudText>
-                </MudTd>
-                <MudTd DataLabel="Priority" align="right">@context.Priority</MudTd>
-            </RowTemplate>
-        </MudTable>
+        <MudDataGrid @ref="_dataGrid" Items="@_powerSubCircuitStats" Hover Dense Groupable GroupExpanded>
+            <Columns>
+                <PropertyColumn Property="@(x => x.ParentCircuitId)" Title="Group" Grouping Sortable="false" Hidden />
+                <PropertyColumn Property="@(x => x.IsStable)" Title="">
+                    <CellTemplate>
+                        <MudTooltip Text="@($"Power usage is stable: {(context.Item.IsStable ? "Yes" : "No")}")">
+                            <MudIcon Icon="@(Icons.Material.Filled.CheckCircle)" Color="Color.Success" Disabled="!context.Item.IsStable" Size="Size.Small" Class=@($"ml-4 mr-1 {(!context.Item.IsStable ? "disabled-faded-icon" : "")}") />
+                        </MudTooltip>
+                        <MudTooltip Text="@($"{context.Item.NotStable} not running at 100%")">
+                            <MudIcon Icon="@(Icons.Material.Filled.Warning)" Color="Color.Primary" Disabled="context.Item.NotStable == 0" Size="Size.Small" Class=@($"mr-1 {(context.Item.NotStable == 0 ? "disabled-faded-icon" : "")}") />
+                        </MudTooltip>
+                        <MudTooltip Text="@($"{context.Item.VariablePower} have variable power usage")">
+                            <MudIcon Icon="@(Icons.Material.Filled.ShowChart)" Color="Color.Primary" Disabled="context.Item.VariablePower == 0" Size="Size.Small" Class=@($"mr-1 {(context.Item.VariablePower == 0 ? "disabled-faded-icon" : "")}") />
+                        </MudTooltip>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="@(x => x.CircuitName)" Title="Name">
+                    <CellTemplate>
+                        <MudText Color="@(context.Item.IsStable? Color.Default: Color.Primary)">@context.Item.CircuitName</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="@(x => x.Total)" Title="Total" align="right" />
+                <PropertyColumn Property="@(x => x.NotStable)" Title="Not running at 100%" align="right">
+                    <CellTemplate>
+                        <MudText Color="@(context.Item.NotStable != 0 ? Color.Primary : Color.Default)">(@context.Item.NotStable / @context.Item.Total)</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="@(x => x.VariablePower)" Title="Variable power" align="right">
+                    <CellTemplate>
+                        <MudText Color="@(context.Item.VariablePower > 0 ? Color.Primary : Color.Default)">(@context.Item.VariablePower / @context.Item.Total)</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="@(x => x.Priority)" Title="Priority" align="right" />
+            </Columns>
+            <GroupTemplate>
+                <span style="font-weight:bold">
+                    @if (context.DataGrid.FilteredItems.Any())
+                    {
+                        var mainCircuit = _powerMainCircuitStats[context.Grouping.First().ParentCircuitId ?? 0];
+
+                        <div class="d-flex align-center">
+                            <MudTooltip Text="@($"Power usage is stable: {(mainCircuit.IsStable ? "Yes" : "No")}")">
+                                <MudIcon Icon="@(Icons.Material.Filled.CheckCircle)" Color="Color.Success" Disabled="!mainCircuit.IsStable" Size="Size.Small" Class=@($"mr-1 {(!mainCircuit.IsStable ? "disabled-faded-icon" : "")}") />
+                            </MudTooltip>
+                            <MudTooltip Text="@($"{mainCircuit.NotStable} not running at 100%")">
+                                <MudIcon Icon="@(Icons.Material.Filled.Warning)" Color="Color.Primary" Disabled="mainCircuit.NotStable == 0" Size="Size.Small" Class=@($"mr-1 {(mainCircuit.NotStable == 0 ? "disabled-faded-icon" : "")}") />
+                            </MudTooltip>
+                            <MudTooltip Text="@($"{mainCircuit.VariablePower} have variable power usage")">
+                                <MudIcon Icon="@(Icons.Material.Filled.ShowChart)" Color="Color.Primary" Disabled="mainCircuit.VariablePower == 0" Size="Size.Small" Class=@($"mr-1 {(mainCircuit.VariablePower == 0 ? "disabled-faded-icon" : "")}") />
+                            </MudTooltip>
+                            <span class="ml-6">[@mainCircuit.CircuitId]</span>
+                            <span class="ml-6">Total: @mainCircuit.Total</span>
+                            <span class="ml-6">Not running at 100%: @mainCircuit.NotStable</span>
+                            <span class="ml-6">Variable power: @mainCircuit.VariablePower</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <span style="font-weight:bold">??</span>
+                    }
+                </span>
+            </GroupTemplate>
+        </MudDataGrid>
     </MudCardContent>
 </MudCard>
 
+<style>
+    .disabled-faded-icon {
+        color: var(--mud-palette-background-grey, #2b2b2b) !important;
+        fill: var(--mud-palette-background-grey, #2b2b2b) !important;
+        opacity: 0.90 !important;
+    }
+</style>
+
 @code {
-    private List<PowerCircuitStat> _powerCircuitStats = [];
+    private MudDataGrid<PowerCircuitStat>? _dataGrid;
+    private List<PowerCircuitStat> _powerSubCircuitStats = [];
+    private Dictionary<int, PowerCircuitStat> _powerMainCircuitStats = [];
+    private int _groupRenderIndex = 0;
 
     protected override void OnInitialized()
     {
@@ -52,7 +104,8 @@
 
     private void UpdateStats()
     {
-        var stats = new Dictionary<int, PowerCircuitStat>();
+        var statsMain = new Dictionary<int, PowerCircuitStat>();
+        var statsSub = new Dictionary<int, PowerCircuitStat>();
 
         foreach (var c in FactoryStore.PowerCircuits)
         {
@@ -64,23 +117,44 @@
             var notStable = factories.Count(f => f.PercentageProducing is not null && f.PercentageProducing != 100);
             var variablePower = factories.Count(IsSpecialFactory);
 
-            stats[c.Id] = new PowerCircuitStat
+            if (isMainCircuit)
+            {
+                statsMain[c.Id] = new PowerCircuitStat
                 {
                     CircuitId = c.Id,
                     CircuitName = CircuitNames.GetName(c),
-                    IsMain = isMainCircuit,
                     Total = factories.Count,
                     NotStable = notStable,
                     VariablePower = variablePower,
                     Priority = c.Priority,
-                    IsStable = notStable == 0 && variablePower== 0
+                    IsStable = notStable == 0 && variablePower == 0
                 };
+            }
+            else
+            {
+                statsSub[c.Id] = new PowerCircuitStat
+                {
+                    CircuitId = c.Id,
+                    CircuitName = CircuitNames.GetName(c),
+                    ParentCircuitId = c.ParentCircuitId,
+                    Total = factories.Count,
+                    NotStable = notStable,
+                    VariablePower = variablePower,
+                    Priority = c.Priority,
+                    IsStable = notStable == 0 && variablePower == 0
+                };
+            }
         }
 
-        _powerCircuitStats = stats.Values
+        _powerMainCircuitStats = statsMain.Values
+            .OrderBy(s => s.CircuitId)
+            .ToDictionary(s => s.CircuitId, s => s);
+
+        _powerSubCircuitStats = statsSub.Values
             .OrderBy(s => s.CircuitId)
             .ToList();
 
+        _groupRenderIndex = 0;
         StateHasChanged();
     }
 
@@ -89,6 +163,35 @@
         var specialTypes = new[] { "Converter", "HadronCollider", "QuantumEncoder", "TrainStation", "ResourceSink", "GeneratorGeoThermal" };
         return factory.Type != null && specialTypes.Contains(factory.Type);
     }
+
+    private string GetMainCircuitNameFromParentId(string? parentId)
+    {
+        if (!string.IsNullOrEmpty(parentId) && int.TryParse(parentId, out var parentIdInt) && _powerMainCircuitStats.ContainsKey(parentIdInt))
+        {
+            return _powerMainCircuitStats[parentIdInt].CircuitName;
+        }
+        return parentId ?? "Unknown";
+    }
+
+    // private string? GetParentIdForCurrentGroup()
+    // {
+    //     try
+    //     {
+    //         var distinctParentIds = _powerSubCircuitStats
+    //             .Where(item => item.ParentCircuitId is not null)
+    //             .Select(item => item.ParentCircuitId)
+    //             .Distinct()
+    //             .OrderBy(id => id)
+    //             .ToList();
+
+    //         if (_groupRenderIndex >= 0 && _groupRenderIndex < distinctParentIds.Count)
+    //         {
+    //             return distinctParentIds[_groupRenderIndex];
+    //         }
+    //     }
+    //     catch { }
+    //     return null;
+    // }
 
     private class PowerCircuitStat
     {
@@ -99,7 +202,7 @@
         public int VariablePower { get; set; }
         public int? Priority { get; set; }
         public bool IsStable { get; set; }
-        public bool IsMain { get; set; }
+        public int? ParentCircuitId { get; set; }
     }
 }
 

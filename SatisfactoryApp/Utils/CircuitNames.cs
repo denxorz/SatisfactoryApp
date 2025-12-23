@@ -5,7 +5,7 @@ public static class CircuitNames
 {
     public static string GetFilterName(PowerCircuit circuit, int count)
     {
-        return $"{GetName(circuit)} ({count})";
+        return $"{GetIdAndName(circuit)} ({count})";
     }
 
     public static string GetName(PowerCircuit? circuit)
@@ -26,8 +26,18 @@ public static class CircuitNames
 
         if (circuit.ParentCircuitId is null)
         {
-            return $"[{circuit.Id}] Main";
+            return $"Main";
         }
-        return $"[{circuit.Id}] {circuit.Name ?? ""}";
+        return circuit.Name ?? "[no name]";
+    }
+
+    public static string GetIdAndName(PowerCircuit? circuit)
+    {
+        if (circuit is null|| circuit.Id == -1)
+        {
+            return GetName(circuit);
+        }
+
+        return $"[{circuit.Id}] {GetName(circuit)}";
     }
 }
