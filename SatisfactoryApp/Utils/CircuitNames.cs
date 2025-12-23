@@ -33,7 +33,7 @@ public static class CircuitNames
 
     public static string GetIdAndName(PowerCircuit? circuit)
     {
-        if (circuit is null|| circuit.Id == -1)
+        if (circuit is null || circuit.Id == -1)
         {
             return GetName(circuit);
         }

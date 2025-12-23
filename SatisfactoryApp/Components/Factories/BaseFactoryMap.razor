@@ -114,6 +114,8 @@
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public Func<Factory, string> GetFactoryColor { get; set; } = null!;
 
+    private static readonly string[] variablePowerTypes = new[] { "Converter", "HadronCollider", "QuantumEncoder", "TrainStation", "ResourceSink", "GeneratorGeoThermal" };
+    
     private bool _isLoading;
     private string? _error;
     private string? _svgFiltered;
@@ -254,13 +256,11 @@
 
     private string GetFactoryShape(string? factoryType)
     {
-
         return IsVariablePower(factoryType) ? "triangle" : "circle";
     }
 
     private bool IsVariablePower(string? factoryType)
     {
-        var variablePowerTypes = new[] { "Converter", "HadronCollider", "QuantumEncoder", "TrainStation", "ResourceSink", "GeneratorGeoThermal" };
         return variablePowerTypes.Contains(factoryType);
     }
 
@@ -338,7 +338,7 @@
     {
         if (_selectedFactory != null)
         {
-            _mainPowerCircuitName = CircuitNames.GetName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.MainPowerCircuitId));
+            _mainPowerCircuitName = CircuitNames.GetIdAndName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.MainPowerCircuitId));
             _subPowerCircuitName = CircuitNames.GetName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.SubPowerCircuitId));
         }
         else
