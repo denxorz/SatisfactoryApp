@@ -24,7 +24,7 @@ using Microsoft.AspNetCore.Components
     {
         <MudButton Variant="Variant.Outlined" 
                    Color="Color.Secondary" 
-                   StartIcon="@Icons.Material.Filled.Science"
+                   StartIcon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Science"
                    OnClick="LoadTestDataAsync"
                    Disabled="@_isCalculating"
                    Style="margin-right: 8px;">
@@ -32,7 +32,7 @@ using Microsoft.AspNetCore.Components
         </MudButton>
         <MudButton Variant="Variant.Outlined" 
                    Color="Color.Primary" 
-                   StartIcon="@Icons.Material.Filled.Save"
+                   StartIcon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Save"
                    OnClick="SaveStoresToJsonAsync"
                    Disabled="@_isCalculating"
                    Style="margin-right: 8px;">
@@ -59,12 +59,12 @@ using Microsoft.AspNetCore.Components
                     }
                     else if (_selectedFile is not null || !string.IsNullOrEmpty(_loadedFileName))
                     {
-                        <MudIcon Icon="@Icons.Material.Filled.CheckCircle" Color="Color.Success" Size="Size.Small" />
+                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.CheckCircle" Color="Color.Success" Size="Size.Small" />
                         <MudText Typo="Typo.body2">@(_selectedFile?.Name ?? _loadedFileName)</MudText>
                     }
                     else
                     {
-                        <MudIcon Icon="@Icons.Material.Filled.CloudUpload" Size="Size.Small" />
+                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.CloudUpload" Size="Size.Small" />
                         <MudText Typo="Typo.body2">Drop save file here</MudText>
                     }
                 </MudStack>
@@ -74,7 +74,7 @@ using Microsoft.AspNetCore.Components
     @if (!string.IsNullOrEmpty(_error))
     {
         <MudTooltip Text="@_error">
-            <MudIcon Icon="@Icons.Material.Filled.Error" Color="Color.Error" Size="Size.Small" />
+            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Error" Color="Color.Error" Size="Size.Small" />
         </MudTooltip>
     }
 </MudAppBar>

@@ -24,29 +24,29 @@
                     <MudTd>
                         @if (context.Type == "train")
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.Train" Size="Size.Small" />
+                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Train" Size="Size.Small" />
                         }
                         else if (context.Type == "truck")
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.LocalShipping" Size="Size.Small" />
+                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping" Size="Size.Small" />
                         }
                         else if (context.Type == "drone")
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.Flight" Size="Size.Small" />
+                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight" Size="Size.Small" />
                         }
                         else
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.Help" Size="Size.Small" />
+                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Help" Size="Size.Small" />
                         }
                     </MudTd>
                     <MudTd>
                         @if (context.IsUnload)
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.Output" Size="Size.Small" />
+                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Output" Size="Size.Small" />
                         }
                         else
                         {
-                            <MudIcon Icon="@Icons.Material.Filled.Input" Size="Size.Small" />
+                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Input" Size="Size.Small" />
                         }
                     </MudTd>
                     <MudTd>

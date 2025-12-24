@@ -16,7 +16,7 @@
                               Label="Search Stations" 
                               Variant="Variant.Outlined" 
                               Adornment="Adornment.Start" 
-                              AdornmentIcon="@Icons.Material.Filled.Search"
+                              AdornmentIcon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Search"
                               Immediate="true"
                               Clearable="true" />
             </MudItem>
@@ -40,18 +40,18 @@
                 <MudChipSet @bind-SelectedValues="StationStore.SelectedTransferTypes"
                             SelectionMode="SelectionMode.MultiSelection" 
                             Color="Color.Primary">
-                    <MudChip Value="@("Load")" Icon="@Icons.Material.Filled.Input" />
-                    <MudChip Value="@("Unload")" Icon="@Icons.Material.Filled.Output" />
-                    <MudChip Value="@("Uploader")" Icon="@Icons.Material.Filled.CloudUpload" />
+                    <MudChip Value="@("Load")" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Input" />
+                    <MudChip Value="@("Unload")" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Output" />
+                    <MudChip Value="@("Uploader")" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.CloudUpload" />
                 </MudChipSet>
             </MudItem>
             <MudItem xs="12" sm="6">
                 <MudChipSet @bind-SelectedValues="StationStore.SelectedStationTypes"
                             SelectionMode="SelectionMode.MultiSelection"
                             Color="Color.Primary">
-                    <MudChip Value="@("Train")" Icon="@Icons.Material.Filled.Train" />
-                    <MudChip Value="@("Truck")" Icon="@Icons.Material.Filled.LocalShipping" />
-                    <MudChip Value="@("Drone")" Icon="@Icons.Material.Filled.Flight" />
+                    <MudChip Value="@("Train")" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Train" />
+                    <MudChip Value="@("Truck")" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping" />
+                    <MudChip Value="@("Drone")" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight" />
                 </MudChipSet>
             </MudItem>
         </MudGrid>
