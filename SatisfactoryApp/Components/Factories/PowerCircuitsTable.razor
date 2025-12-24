@@ -14,7 +14,7 @@
         <MudDataGrid @ref="_dataGrid" Items="@_powerSubCircuitStats" Hover Dense Groupable GroupExpanded>
             <Columns>
                 <PropertyColumn Property="@(x => x.ParentCircuitId)" Title="Group" Grouping Sortable="false" Hidden />
-                <PropertyColumn Property="@(x => x.IsStable)" Title="">
+                <PropertyColumn Property="@(x => x.IsStable)" Title="" Groupable="false">
                     <CellTemplate>
                         <MudTooltip Text="@($"Power usage is stable: {(context.Item.IsStable ? "Yes" : "No")}")">
                             <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.CheckCircle)" Color="Color.Success" Disabled="!context.Item.IsStable" Size="Size.Small" Class=@($"ml-4 mr-1 {(!context.Item.IsStable ? "disabled-faded-icon" : "")}") />
@@ -33,23 +33,23 @@
                         </MudTooltip>
                     </CellTemplate>
                 </PropertyColumn>
-                <PropertyColumn Property="@(x => x.CircuitName)" Title="Name">
+                <PropertyColumn Property="@(x => x.CircuitName)" Title="Name" Groupable="false">
                     <CellTemplate>
                         <MudText Color="@(context.Item.IsStable? Color.Default: Color.Primary)">@context.Item.CircuitName</MudText>
                     </CellTemplate>
                 </PropertyColumn>
-                <PropertyColumn Property="@(x => x.Total)" Title="Total" align="right" />
-                <PropertyColumn Property="@(x => x.NumberOfNotStable)" Title="Not running at 100%" align="right">
+                <PropertyColumn Property="@(x => x.Total)" Title="Total" align="right" Groupable="false" />
+                <PropertyColumn Property="@(x => x.NumberOfNotStable)" Title="Not running at 100%" align="right" Groupable="false">
                     <CellTemplate>
                         <MudText Color="@(context.Item.NumberOfNotStable != 0 ? Color.Primary : Color.Default)">(@context.Item.NumberOfNotStable / @context.Item.Total)</MudText>
                     </CellTemplate>
                 </PropertyColumn>
-                <PropertyColumn Property="@(x => x.NumberOfVariablePower)" Title="Variable power" align="right">
+                <PropertyColumn Property="@(x => x.NumberOfVariablePower)" Title="Variable power" align="right" Groupable="false">
                     <CellTemplate>
                         <MudText Color="@(context.Item.NumberOfVariablePower > 0 ? Color.Primary : Color.Default)">(@context.Item.NumberOfVariablePower / @context.Item.Total)</MudText>
                     </CellTemplate>
                 </PropertyColumn>
-                <PropertyColumn Property="@(x => x.Priority)" Title="Priority" align="right" />
+                <PropertyColumn Property="@(x => x.Priority)" Title="Priority" align="right" Groupable="false" />
             </Columns>
             <GroupTemplate>
                 <span style="font-weight:bold">
