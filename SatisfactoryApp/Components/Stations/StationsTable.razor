@@ -10,68 +10,64 @@
         <MudText Class="primary-card-header-title" Color="Color.Surface">Stations</MudText>
     </MudCardHeader>
     <MudCardContent Class="pa-2">
-        @if (StationStore.FilteredStations.Count > 0)
-        {
-            <MudTable Items="@StationStore.FilteredStations" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh></MudTh>
-                    <MudTh></MudTh>
-                    <MudTh>Station</MudTh>
-                    <MudTh>Cargo</MudTh>
-                    <MudTh>Vehicles</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>
-                        @if (context.Type == "train")
-                        {
-                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Train" Size="Size.Small" />
-                        }
-                        else if (context.Type == "truck")
-                        {
-                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping" Size="Size.Small" />
-                        }
-                        else if (context.Type == "drone")
-                        {
-                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight" Size="Size.Small" />
-                        }
-                        else
-                        {
-                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Help" Size="Size.Small" />
-                        }
-                    </MudTd>
-                    <MudTd>
-                        @if (context.IsUnload)
-                        {
-                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Output" Size="Size.Small" />
-                        }
-                        else
-                        {
-                            <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Input" Size="Size.Small" />
-                        }
-                    </MudTd>
-                    <MudTd>
-                        <MudText>@(context.ShortName ?? context.Name ?? "Unknown")</MudText>
-                    </MudTd>
-                    <MudTd>
-                        <MudText>
-                            @GetCargoFlowText(context)
-                        </MudText>
-                    </MudTd>
-                    <MudTd>
-                        <MudText>@(context.Transporters?.Count ?? 0)</MudText>
-                    </MudTd>
-                    <MudTd DataLabel="">
-                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => ShowStationDetails(context))">
+        <MudDataGrid Items="@StationStore.FilteredStations" Hover Dense Groupable GroupExpanded>
+            <Columns>
+                <PropertyColumn Property="x => x.Type" Title="" Groupable="false" CellStyle="width: 200px">
+                    <CellTemplate>
+                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail" Size="Size.Small" Color="Color.Info" Class=@($"ml-4 {(context.Item.Type != "train" ? "disabled-faded-icon" : "")}") />
+                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping" Size="Size.Small" Color="Color.Info" Class=@($"{(context.Item.Type != "truck" ? "disabled-faded-icon" : "")}") />
+                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight" Size="Size.Small" Color="Color.Info" Class=@($"{(context.Item.Type != "drone" ? "disabled-faded-icon" : "")}") />
+                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Input" Size="Size.Small" Color="Color.Tertiary"  Class=@($"{(context.Item.IsUnload ? "disabled-faded-icon" : "")}") />
+                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Output" Size="Size.Small" Color="Color.Primary" Class=@($"{(!context.Item.IsUnload ? "disabled-faded-icon" : "")}") />
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="x => x.ShortName" Title="Station" Grouping Hidden />
+                <PropertyColumn Property="x => x.CargoFlows" Title="Cargo" Groupable="false">
+                    <CellTemplate>
+                        <MudText>@GetCargoFlowText(context.Item)</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="@(x => x.Transporters != null ? x.Transporters.Count : 0)" Title="Vehicles" align="right" Groupable="false">
+                    <CellTemplate>
+                        <MudText>@(context.Item.Transporters?.Count ?? 0)</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn Title="" Sortable="false" Groupable="false">
+                    <CellTemplate>
+                        <MudButton Size="Size.Small" Variant="Variant.Text" OnClick="@(() => ShowStationDetails(context.Item))">
                             Details
                         </MudButton>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
-        }
-        else
-        {
-            <MudAlert Severity="Severity.Info">No Stations Available</MudAlert>
-        }
+                    </CellTemplate>
+                </TemplateColumn>
+            </Columns>
+            <GroupTemplate>
+                <span style="font-weight:bold">
+                    @if (context.DataGrid.FilteredItems.Any())
+                    {
+                        var station = context.Grouping.First();
+
+                        var hasTrains = context.Grouping.Any(s => s.Type == "train");
+                        var hasTrucks = context.Grouping.Any(s => s.Type == "truck");
+                        var hasDrones = context.Grouping.Any(s => s.Type == "drone");
+                        var hasLoad = context.Grouping.Any(s => !s.IsUnload);
+                        var hasUnload = context.Grouping.Any(s => s.IsUnload);
+
+                        <div class="d-flex align-center">
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail)" Disabled="!hasTrains" Size="Size.Small" Color="Color.Info" Class=@($"mr-1 {(!hasTrains ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping)" Disabled="!hasTrucks" Size="Size.Small" Color="Color.Info" Class=@($"mr-1 {(!hasTrucks ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight)" Disabled="!hasDrones" Size="Size.Small" Color="Color.Info" Class=@($"mr-1 {(!hasDrones ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Input)" Disabled="!hasLoad" Size="Size.Small" Color="Color.Tertiary" Class=@($"mr-1 {(!hasLoad ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Output)" Disabled="!hasUnload" Size="Size.Small" Color="Color.Primary" Class=@($"mr-1 {(!hasUnload ? "disabled-faded-icon" : "")}") />
+                            <span class="ml-4">@station.ShortName</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <span style="font-weight:bold">??</span>
+                    }
+                </span>
+            </GroupTemplate>
+        </MudDataGrid>
 
         <MudDialog @bind-Visible="_showStationDetailsDialog" Options="@(new DialogOptions { MaxWidth = MaxWidth.Medium, FullWidth = true })">
             <TitleContent>
@@ -98,7 +94,7 @@
                                     @foreach (var vehicle in _selectedStation.Transporters)
                                     {
                                         <li>
-                                            @(vehicle.Name ?? vehicle.Id) 
+                                            @(vehicle.Name ?? vehicle.Id)
                                             (Destinations: @string.Join(", ", GetDestinations(vehicle, _selectedStation.Id)))
                                         </li>
                                     }
@@ -119,12 +115,20 @@
     </MudCardContent>
 </MudCard>
 
+<style>
+    .disabled-faded-icon {
+        color: var(--mud-palette-background-grey, #2b2b2b) !important;
+        fill: var(--mud-palette-background-grey, #2b2b2b) !important;
+        opacity: 0.90 !important;
+    }
+</style>
+
 @code {
 
     private bool _showStationDetailsDialog = false;
     private Station? _selectedStation;
 
-    protected override void OnInitialized() 
+    protected override void OnInitialized()
     {
         StationStore.FilteredStationsChanged += StateHasChanged;
     }

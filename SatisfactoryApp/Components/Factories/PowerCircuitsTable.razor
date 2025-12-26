@@ -17,19 +17,19 @@
                 <PropertyColumn Property="@(x => x.IsStable)" Title="" Groupable="false">
                     <CellTemplate>
                         <MudTooltip Text="@($"Power usage is stable: {(context.Item.IsStable ? "Yes" : "No")}")">
-                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.CheckCircle)" Color="Color.Success" Disabled="!context.Item.IsStable" Size="Size.Small" Class=@($"ml-4 mr-1 {(!context.Item.IsStable ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.CheckCircle)" Color="Color.Success" Disabled="!context.Item.IsStable" Size="Size.Small" Class=@($"ml-4 {(!context.Item.IsStable ? "disabled-faded-icon" : "")}") />
                         </MudTooltip>
                         <MudTooltip Text="@($"{context.Item.NumberOfNotStable} not running at 100%")">
-                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Warning)" Color="Color.Primary" Disabled="context.Item.NumberOfNotStable == 0" Size="Size.Small" Class=@($"mr-1 {(context.Item.NumberOfNotStable == 0 ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Warning)" Color="Color.Primary" Disabled="context.Item.NumberOfNotStable == 0" Size="Size.Small" Class=@($"{(context.Item.NumberOfNotStable == 0 ? "disabled-faded-icon" : "")}") />
                         </MudTooltip>
                         <MudTooltip Text="@($"{context.Item.NumberOfVariablePower} have variable power usage")">
-                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.ShowChart)" Color="Color.Primary" Disabled="context.Item.NumberOfVariablePower == 0" Size="Size.Small" Class=@($"mr-1 {(context.Item.NumberOfVariablePower == 0 ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.ShowChart)" Color="Color.Primary" Disabled="context.Item.NumberOfVariablePower == 0" Size="Size.Small" Class=@($"{(context.Item.NumberOfVariablePower == 0 ? "disabled-faded-icon" : "")}") />
                         </MudTooltip>
                         <MudTooltip Text="@($"{context.Item.NumberOfPowerStorage} power storages")">
-                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Battery6Bar)" Color="Color.Info" Disabled="context.Item.NumberOfPowerStorage == 0" Size="Size.Small" Class=@($"mr-1 {(context.Item.NumberOfPowerStorage == 0 ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Battery6Bar)" Color="Color.Info" Disabled="context.Item.NumberOfPowerStorage == 0" Size="Size.Small" Class=@($"{(context.Item.NumberOfPowerStorage == 0 ? "disabled-faded-icon" : "")}") />
                         </MudTooltip>
                         <MudTooltip Text="@($"{context.Item.NumberOfPowerGenerator} generators")">
-                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.EvStation)" Color="Color.Info" Disabled="context.Item.NumberOfPowerGenerator == 0" Size="Size.Small" Class=@($"mr-1 {(context.Item.NumberOfPowerGenerator == 0 ? "disabled-faded-icon" : "")}") />
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.EvStation)" Color="Color.Info" Disabled="context.Item.NumberOfPowerGenerator == 0" Size="Size.Small" Class=@($"{(context.Item.NumberOfPowerGenerator == 0 ? "disabled-faded-icon" : "")}") />
                         </MudTooltip>
                     </CellTemplate>
                 </PropertyColumn>
@@ -101,7 +101,6 @@
     private MudDataGrid<PowerCircuitStat>? _dataGrid;
     private List<PowerCircuitStat> _powerSubCircuitStats = [];
     private Dictionary<int, PowerCircuitStat> _powerMainCircuitStats = [];
-    private int _groupRenderIndex = 0;
 
     protected override void OnInitialized()
     {
@@ -172,7 +171,6 @@
             .OrderBy(s => s.CircuitId)
             .ToList();
 
-        _groupRenderIndex = 0;
         StateHasChanged();
     }
 
@@ -201,7 +199,7 @@
         return parentId ?? "Unknown";
     }
 
-    private class PowerCircuitStat
+    private sealed class PowerCircuitStat
     {
         public int CircuitId { get; set; }
         public string CircuitName { get; set; } = string.Empty;
