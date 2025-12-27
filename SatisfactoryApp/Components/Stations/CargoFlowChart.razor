@@ -1,6 +1,7 @@
 @using MudBlazor
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Services.Stations
+@using SatisfactoryApp.Models
 @implements IDisposable
 @inject StationStore StationStore
 
@@ -9,64 +10,30 @@
         <MudText Class="primary-card-header-title" Color="Color.Surface">Cargo Flow</MudText>
     </MudCardHeader>
     <MudCardContent Class="pa-2">
-        @{
-            var flowData = new Dictionary<string, (double consumed, double produced, double delta)>();
-            
-            foreach (var station in StationStore.FilteredStations)
-            {
-                if (station.CargoFlows == null) continue;
-                
-                foreach (var flow in station.CargoFlows)
-                {
-                    if (flow == null || string.IsNullOrEmpty(flow.Type) || !flow.FlowPerMinute.HasValue) continue;
-                    
-                    var type = flow.Type;
-                    if (!flowData.ContainsKey(type))
-                    {
-                        flowData[type] = (0, 0, 0);
-                    }
-                    
-                    var current = flowData[type];
-                    if (flow.IsUnload)
-                    {
-                        flowData[type] = (current.consumed + flow.FlowPerMinute.Value, current.produced, current.delta - flow.FlowPerMinute.Value);
-                    }
-                    else
-                    {
-                        flowData[type] = (current.consumed, current.produced + flow.FlowPerMinute.Value, current.delta + flow.FlowPerMinute.Value);
-                    }
-                }
-            }
-            
-            var sortedFlowData = flowData.OrderBy(kvp => kvp.Key).ToList();
-        }
-        
-        @if (sortedFlowData.Count > 0)
+        @if (GetCargoFlowData().Count > 0)
         {
-            <MudTable Items="@sortedFlowData" Hover="true" Dense="true" Striped="true">
-                <HeaderContent>
-                    <MudTh>Cargo Type</MudTh>
-                    <MudTh align="right">Produced</MudTh>
-                    <MudTh align="right">Consumed</MudTh>
-                    <MudTh align="right">Available</MudTh>
-                </HeaderContent>
-                <RowTemplate>
-                    <MudTd>
-                        <MudText>@context.Key</MudText>
-                    </MudTd>
-                    <MudTd align="right">
-                        <MudText Color="Color.Success">@context.Value.produced.ToString("F0")</MudText>
-                    </MudTd>
-                    <MudTd align="right">
-                        <MudText Color="Color.Warning">@context.Value.consumed.ToString("F0")</MudText>
-                    </MudTd>
-                    <MudTd align="right">
-                        <MudText Color="@(context.Value.delta >= 0 ? Color.Success : Color.Error)">
-                            @context.Value.delta.ToString("F0")
-                        </MudText>
-                    </MudTd>
-                </RowTemplate>
-            </MudTable>
+            <MudDataGrid Items="@GetCargoFlowData()" Hover Dense>
+                <Columns>
+                    <PropertyColumn Property="x => x.CargoType" Title="Cargo Type" />
+                    <PropertyColumn Property="x => x.Produced" Title="Produced" align="right" Groupable="false">
+                        <CellTemplate>
+                            <MudText Color="Color.Success">@context.Item.Produced.ToString("F0")</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Consumed" Title="Consumed" align="right" Groupable="false">
+                        <CellTemplate>
+                            <MudText Color="Color.Warning">@context.Item.Consumed.ToString("F0")</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                    <PropertyColumn Property="x => x.Available" Title="Available" align="right" Groupable="false">
+                        <CellTemplate>
+                            <MudText Color="@(context.Item.Available >= 0 ? Color.Success : Color.Error)">
+                                @context.Item.Available.ToString("F0")
+                            </MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
+                </Columns>
+            </MudDataGrid>
         }
         else
         {
@@ -79,6 +46,47 @@
     protected override void OnInitialized()
     {
         StationStore.FilteredStationsChanged += StateHasChanged;
+    }
+
+    private List<CargoFlowSummary> GetCargoFlowData()
+    {
+        var flowData = new Dictionary<string, (double consumed, double produced)>();
+        
+        foreach (var station in StationStore.FilteredStations)
+        {
+            if (station.CargoFlows == null) continue;
+            
+            foreach (var flow in station.CargoFlows)
+            {
+                if (flow == null || string.IsNullOrEmpty(flow.Type) || !flow.FlowPerMinute.HasValue) continue;
+                
+                var type = flow.Type;
+                if (!flowData.ContainsKey(type))
+                {
+                    flowData[type] = (0, 0);
+                }
+                
+                var current = flowData[type];
+                if (flow.IsUnload)
+                {
+                    flowData[type] = (current.consumed + flow.FlowPerMinute.Value, current.produced);
+                }
+                else
+                {
+                    flowData[type] = (current.consumed, current.produced + flow.FlowPerMinute.Value);
+                }
+            }
+        }
+        
+        return flowData
+            .OrderBy(kvp => kvp.Key)
+            .Select(kvp => new CargoFlowSummary
+            {
+                CargoType = kvp.Key,
+                Produced = kvp.Value.produced,
+                Consumed = kvp.Value.consumed
+            })
+            .ToList();
     }
 
     public void Dispose()
