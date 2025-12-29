@@ -10,7 +10,7 @@
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
     <MudCardHeader Class="mud-primary pa-0 pl-1">
-        <MudText Class="primary-card-header-title" Color="Color.Surface">@Title</MudText>
+        <MudText Class="primary-card-header-title" Color="Color.Surface">Factory ClockSpeed Map</MudText>
         @if (_isLoading)
         {
             <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">Loading...</MudText>
@@ -23,9 +23,8 @@
         {
             <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">
                 Selected: @(_selectedFactory?.Type ?? "-") |
-                @(_selectedFactory?.PercentageProducing ?? 0)% |
-                Main:@_mainPowerCircuitName |
-                Sub:@_subPowerCircuitName
+                ClockSpeed: @(_selectedFactory?.ClockSpeed?.ToString("F1") ?? "-")% |
+                Has Sloop: @(_selectedFactory?.HasSloop ?? false ? "Yes" : "No")
             </MudText>
         }
     </MudCardHeader>
@@ -52,24 +51,36 @@
 
             <div class="legend-overlay">
                 <div class="legend-item">
-                    <span class="legend-icon factory stable"></span>
-                    <span>Stable (100%)</span>
+                    <span class="legend-icon factory" style="background: #1A237E; border: 1px solid #000000;"></span>
+                    <span>0%</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-icon factory almost-stable"></span>
-                    <span>Almost Stable (> 95%)</span>
+                    <span class="legend-icon factory" style="background: #1565C0; border: 1px solid #000000;"></span>
+                    <span>72%</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-icon factory unstable"></span>
-                    <span>Unstable</span>
+                    <span class="legend-icon factory" style="background: #00838F; border: 1px solid #000000;"></span>
+                    <span>143%</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-icon factory off"></span>
-                    <span>Off</span>
+                    <span class="legend-icon factory" style="background: #E0E0E0; border: 1px solid #000000;"></span>
+                    <span>178%</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-icon uploader"></span>
-                    <span>Variable power</span>
+                    <span class="legend-icon factory" style="background: #FFEB3B; border: 1px solid #000000;"></span>
+                    <span>215%</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-icon factory" style="background: #FF9800; border: 1px solid #000000;"></span>
+                    <span>233%</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-icon factory" style="background: #D32F2F; border: 1px solid #000000;"></span>
+                    <span>250%</span>
+                </div>
+                <div class="legend-item">
+                    <span class="legend-icon factory" style="background: #00FF00; border: 3px solid #FF0000;"></span>
+                    <span>Has Sloop</span>
                 </div>
             </div>
 
@@ -78,30 +89,13 @@
                 <div class="factory-tooltip" style="left: @($"{_tooltipX}px"); top: @($"{_tooltipY}px")">
                     <div class="tooltip-content">
                         <div class="tooltip-header">@(_selectedFactory.Type ?? "Unknown")</div>
-                        @if (_selectedFactory.PercentageProducing is not null)
-                        {
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">Running at:</span>
-                                <span class="tooltip-value">@(_selectedFactory.PercentageProducing.Value.ToString("F1"))%</span>
-                            </div>
-                        }
-                        @if (!string.IsNullOrEmpty(_mainPowerCircuitName))
-                        {
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">Main Circuit:</span>
-                                <span class="tooltip-value">@_mainPowerCircuitName</span>
-                            </div>
-                        }
-                        @if (!string.IsNullOrEmpty(_subPowerCircuitName))
-                        {
-                            <div class="tooltip-row">
-                                <span class="tooltip-label">Sub Circuit:</span>
-                                <span class="tooltip-value">@_subPowerCircuitName</span>
-                            </div>
-                        }
                         <div class="tooltip-row">
-                            <span class="tooltip-label">Is variable power:</span>
-                            <span class="tooltip-value">@IsVariablePower(_selectedFactory.Type)</span>
+                            <span class="tooltip-label">ClockSpeed:</span>
+                            <span class="tooltip-value">@(_selectedFactory.ClockSpeed?.ToString("F1") ?? "-")%</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Has Sloop:</span>
+                            <span class="tooltip-value">@(_selectedFactory.HasSloop ? "Yes" : "No")</span>
                         </div>
                     </div>
                 </div>
@@ -111,10 +105,6 @@
 </MudCard>
 
 @code {
-    [Parameter] public string Title { get; set; } = string.Empty;
-    [Parameter] public Func<Factory, string> GetFactoryColor { get; set; } = null!;
-    [Parameter] public Func<Factory, string>? GetFactoryBorderColor { get; set; }
-
     private static readonly string[] variablePowerTypes = new[] { "Converter", "HadronCollider", "QuantumEncoder", "TrainStation", "ResourceSink", "GeneratorGeoThermal" };
     
     private bool _isLoading;
@@ -122,8 +112,6 @@
     private string? _svgFiltered;
     private string? _svgNonFiltered;
     private Factory? _selectedFactory;
-    private string? _mainPowerCircuitName;
-    private string? _subPowerCircuitName;
     private int _lastUpdateCounter = -1;
     private bool _graphvizLoaded = false;
     private readonly string _wrapperCssClass = $"map-wrapper-{Guid.NewGuid():N}";
@@ -188,8 +176,8 @@
             _isLoading = true;
             StateHasChanged();
 
-            var filteredFactories = FactoryStore.FilteredFactories;
-            var nonFilteredFactories = FactoryStore.NonFilteredFactories;
+            var filteredFactories = FactoryStore.FilteredFactories.Where(f => f.ClockSpeed.HasValue).ToList();
+            var nonFilteredFactories = FactoryStore.NonFilteredFactories.Where(f => f.ClockSpeed.HasValue).ToList();
 
             var dotContentFiltered = CreateDotContent(filteredFactories);
             var dotContentNonFiltered = CreateDotContent(nonFilteredFactories);
@@ -244,16 +232,22 @@
 
             var x = (factory.X - minX) * scaleX;
             var y = mapHeight - (factory.Y - minY) * scaleY - 5;
-            var color = GetFactoryColor(factory);
-            var borderColor = GetFactoryBorderColor?.Invoke(factory) ?? "#000000";
+            var fillColor = GetFactoryColor(factory);
+            var borderColor = factory.HasSloop ? "#FF0000" : "#000000";
             var shape = GetFactoryShape(factory.Type);
+            var penwidth = factory.HasSloop ? 3 : 1;
 
             var factoryId = $"factory_{index}";
-            dot += $"\n{factoryId} [shape=\"{shape}\", fillcolor=\"{color}\", color=\"{borderColor}\", pos=\"{x:F2},{y:F2}!\"];";
+            dot += $"\n{factoryId} [shape=\"{shape}\", fillcolor=\"{fillColor}\", color=\"{borderColor}\", penwidth={penwidth}, pos=\"{x:F2},{y:F2}!\"];";
         }
 
         dot += "\n}";
         return dot;
+    }
+
+    private string GetFactoryColor(Factory factory)
+    {
+        return FactoryColors.GetFactoryColorForClockSpeed(factory.ClockSpeed);
     }
 
     private string GetFactoryShape(string? factoryType)
@@ -291,7 +285,7 @@
         Factory? closestFactory = null;
         double closestDistance = double.MaxValue;
 
-        foreach (var factory in FactoryStore.NonFilteredFactories)
+        foreach (var factory in FactoryStore.NonFilteredFactories.Where(f => f.ClockSpeed.HasValue))
         {
             var distance = Math.Sqrt(Math.Pow(factoryX - factory.X, 2) + Math.Pow(factoryY - factory.Y, 2));
             if (distance < clickRadius && distance < closestDistance)
@@ -302,7 +296,6 @@
         }
 
         _selectedFactory = closestFactory;
-        SetPowerCircuitNames();
 
         if (_selectedFactory != null)
         {
@@ -334,20 +327,6 @@
         }
 
         StateHasChanged();
-    }
-
-    private void SetPowerCircuitNames()
-    {
-        if (_selectedFactory != null)
-        {
-            _mainPowerCircuitName = CircuitNames.GetIdAndName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.MainPowerCircuitId));
-            _subPowerCircuitName = CircuitNames.GetName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.SubPowerCircuitId));
-        }
-        else
-        {
-            _mainPowerCircuitName = null;
-            _subPowerCircuitName = null;
-        }
     }
 
     private class BoundingClientRect
@@ -432,32 +411,7 @@
             width: 14px;
             height: 14px;
             border-radius: 50%;
-            border: 1px solid #000000;
             box-sizing: border-box;
-        }
-
-            .legend-icon.factory.stable {
-                background: #00FF00;
-            }
-
-            .legend-icon.factory.almost-stable {
-                background: #FFFF00;
-            }
-
-            .legend-icon.factory.unstable {
-                background: #FFA500;
-            }
-
-            .legend-icon.factory.off {
-                background: #FF0000;
-            }
-
-        .legend-icon.uploader {
-            width: 0;
-            height: 0;
-            border-left: 7px solid transparent;
-            border-right: 7px solid transparent;
-            border-bottom: 14px solid #00FF00;
         }
 
     .factory-tooltip {
@@ -510,4 +464,3 @@
         text-align: right;
     }
 </style>
-

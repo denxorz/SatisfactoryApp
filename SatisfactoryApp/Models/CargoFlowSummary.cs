@@ -8,3 +8,4 @@ public class CargoFlowSummary
     public double Available => Produced - Consumed;
 }
 
+
