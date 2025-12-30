@@ -86,6 +86,13 @@
                 <div class="factory-tooltip" style="left: @($"{_tooltipX}px"); top: @($"{_tooltipY}px")">
                     <div class="tooltip-content">
                         <div class="tooltip-header">@(_selectedFactory.Type ?? "Unknown")</div>
+                        @if (_selectedFactory.Recipe is not null)
+                        {
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Recipe:</span>
+                                <span class="tooltip-value">@_selectedFactory.Recipe</span>
+                            </div>
+                        }
                         <div class="tooltip-row">
                             <span class="tooltip-label">ClockSpeed:</span>
                             <span class="tooltip-value">@(_selectedFactory.ClockSpeed?.ToString("F1") ?? "-")%</span>

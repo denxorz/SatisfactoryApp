@@ -78,6 +78,13 @@
                 <div class="factory-tooltip" style="left: @($"{_tooltipX}px"); top: @($"{_tooltipY}px")">
                     <div class="tooltip-content">
                         <div class="tooltip-header">@(_selectedFactory.Type ?? "Unknown")</div>
+                        @if (_selectedFactory.Recipe is not null)
+                        {
+                            <div class="tooltip-row">
+                                <span class="tooltip-label">Recipe:</span>
+                                <span class="tooltip-value">@_selectedFactory.Recipe</span>
+                            </div>
+                        }
                         @if (_selectedFactory.PercentageProducing is not null)
                         {
                             <div class="tooltip-row">
