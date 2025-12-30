@@ -59,16 +59,40 @@
                     <div class="tooltip-content">
                         <div class="tooltip-header">@(_selectedResource.Type ?? "Unknown")</div>
                         <div class="tooltip-row">
+                            <span class="tooltip-label">Purity:</span>
+                            <span class="tooltip-value">@(_selectedResource.PurityModifier switch { 0.5f => "Impure", 1 => "Normal", 2 => "Pure", _ => "?" })</span>
+                        </div>
+                        <div class="tooltip-row">
                             <span class="tooltip-label">Max:</span>
                             <span class="tooltip-value">@(_selectedResource.Max.ToString("F1"))</span>
+                        </div>
+                             <div class="tooltip-row">
+                            <span class="tooltip-label">Miner:</span>
+                            <span class="tooltip-value">@(_selectedResource.MinerLevel switch { 1 => "Mk1", 2 => "Mk2", 4 => "Mk3", _ => "?" })</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Miner clock speed:</span>
+                            <span class="tooltip-value">@(_selectedResource.ClockSpeed.ToString("F1"))</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Miner stability:</span>
+                            <span class="tooltip-value">@(_selectedResource.PercentageProducing.ToString("F1"))</span>
                         </div>
                         <div class="tooltip-row">
                             <span class="tooltip-label">Used:</span>
                             <span class="tooltip-value">@(_selectedResource.Flow.ToString("F1"))</span>
                         </div>
                         <div class="tooltip-row">
+                            <span class="tooltip-label">Used sum:</span>
+                            <span class="tooltip-value">60*Purity*MnrLvl*MnrClckSpd*MnrStability</span>
+                        </div>
+                        <div class="tooltip-row">
                             <span class="tooltip-label">Left:</span>
                             <span class="tooltip-value">@((_selectedResource.Max - _selectedResource.Flow).ToString("F1"))</span>
+                        </div>
+                        <div class="tooltip-row">
+                            <span class="tooltip-label">Left sum:</span>
+                            <span class="tooltip-value">60*Purity - 60*Purity*MnrLvl*MnrClckSpd*MnrStability</span>
                         </div>
                     </div>
                 </div>
