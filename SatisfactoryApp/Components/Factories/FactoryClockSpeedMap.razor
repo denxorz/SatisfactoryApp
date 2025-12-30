@@ -11,40 +11,34 @@
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
     <MudCardHeader Class="mud-primary pa-0 pl-1">
         <MudText Class="primary-card-header-title" Color="Color.Surface">Factory ClockSpeed Map</MudText>
-        @if (_isLoading)
-        {
-            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">Loading...</MudText>
-        }
-        else if (!string.IsNullOrEmpty(_error))
-        {
-            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">
-                Selected: @(_selectedFactory?.Type ?? "-") |
-                ClockSpeed: @(_selectedFactory?.ClockSpeed?.ToString("F1") ?? "-")% |
-                Has Sloop: @(_selectedFactory?.HasSloop ?? false ? "Yes" : "No")
-            </MudText>
-        }
+        <MudSpacer />
+        <MudSwitch @bind-Value="_showSloopOnly"
+                   UncheckedColor="Color.Surface"                   
+                   Label="Sloops only" 
+                   Size="Size.Small"
+                   Dense="true"
+                   Class="mr-2 compact-switch" />
     </MudCardHeader>
     <MudCardContent Class="pa-0">
         <div class="map-container @_containerCssClass" @onclick="HandleMapClick">
             <div class="map-wrapper @_wrapperCssClass">
                 <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
-                @if (!string.IsNullOrEmpty(_svgNonFiltered) || !string.IsNullOrEmpty(_svgFiltered))
+                @if (!_showSloopOnly)
                 {
-                    @if (!string.IsNullOrEmpty(_svgNonFiltered))
+                    @if (!string.IsNullOrEmpty(_svgNonFiltered) || !string.IsNullOrEmpty(_svgFiltered))
                     {
-                        <div class="map-svg-overlay">
-                            @((MarkupString)_svgNonFiltered)
-                        </div>
-                    }
-                    @if (!string.IsNullOrEmpty(_svgFiltered))
-                    {
-                        <div class="map-svg-overlay map-svg-overlay-filtered">
-                            @((MarkupString)_svgFiltered)
-                        </div>
+                        @if (!string.IsNullOrEmpty(_svgNonFiltered))
+                        {
+                            <div class="map-svg-overlay">
+                                @((MarkupString)_svgNonFiltered)
+                            </div>
+                        }
+                        @if (!string.IsNullOrEmpty(_svgFiltered))
+                        {
+                            <div class="map-svg-overlay map-svg-overlay-filtered">
+                                @((MarkupString)_svgFiltered)
+                            </div>
+                        }
                     }
                 }
                 @if (!string.IsNullOrEmpty(_svgHasSloop))
@@ -81,7 +75,7 @@
                     <span>250%</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-icon factory" style="background: @GetLegendColor(100); border: 3px solid #FF0000;"></span>
+                    <span class="legend-icon factory" style="background: transparent; border: 3px solid #7B1FA2;"></span>
                     <span>Has Sloop</span>
                 </div>
             </div>
@@ -122,6 +116,7 @@
     private bool _showTooltip = false;
     private double _tooltipX = 0;
     private double _tooltipY = 0;
+    private bool _showSloopOnly = false;
 
     private Action? _checkAndRenderHandler;
 
@@ -243,7 +238,7 @@
             var x = (factory.X - minX) * scaleX;
             var y = mapHeight - (factory.Y - minY) * scaleY - 5;
             var fillColor = GetFactoryColor(factory);
-            var borderColor = factory.HasSloop ? "#FF0000" : "#000000";
+            var borderColor = factory.HasSloop ? "#7B1FA2" : "#000000";
             var shape = GetFactoryShape(factory.Type);
             var penwidth = factory.HasSloop ? 3 : 1;
 
@@ -277,7 +272,8 @@
 
     private async Task HandleMapClick(MouseEventArgs e)
     {
-        if (string.IsNullOrEmpty(_svgNonFiltered) && string.IsNullOrEmpty(_svgFiltered)) return;
+        if (!_showSloopOnly && string.IsNullOrEmpty(_svgNonFiltered) && string.IsNullOrEmpty(_svgFiltered)) return;
+        if (_showSloopOnly && string.IsNullOrEmpty(_svgHasSloop)) return;
 
         var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{_wrapperCssClass}");
         if (rect == null) return;
@@ -483,4 +479,20 @@
         font-weight: 500;
         text-align: right;
     }
+
+    .compact-switch {
+        margin: 0;
+        padding: 0;
+    }
+
+        .compact-switch ::deep .mud-switch-root {
+            margin: 0;
+            padding: 0;
+        }
+
+        .compact-switch ::deep .mud-switch-label {
+            margin: 0;
+            padding: 0;
+            margin-left: 8px;
+        }
 </style>

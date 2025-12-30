@@ -7,5 +7,3 @@ public class CargoFlowSummary
     public double Consumed { get; set; }
     public double Available => Produced - Consumed;
 }
-
-
