@@ -1,7 +1,19 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using SatisfactoryApp.Utils
 
-<BaseFactoryMap Title="Power Circuits Map" GetFactoryColor="@GetFactoryColor" />
+<BaseFactoryMap Title="Power Circuits Map"
+                GetFactoryColor="@GetFactoryColor">
+    <LegendSlot>
+        <div class="legend-item">
+            <span class="legend-icon factory stable"></span>
+            <span>Normal</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-icon uploader"></span>
+            <span>Variable power</span>
+        </div>
+    </LegendSlot>
+</BaseFactoryMap>
 
 @code {
     private string GetFactoryColor(Factory factory)
@@ -10,3 +22,24 @@
     }
 }
 
+<style>
+    .legend-icon.factory {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1px solid #000000;
+        box-sizing: border-box;
+    }
+
+    .legend-icon.factory.stable {
+        background: #00FF00;
+    }
+
+    .legend-icon.uploader {
+        width: 0;
+        height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-bottom: 14px solid #00FF00;
+    }
+</style>

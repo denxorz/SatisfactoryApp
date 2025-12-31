@@ -1,0 +1,447 @@
+@using Denxorz.Satisfactory.Routes.Types
+@using Microsoft.JSInterop
+@using MudBlazor
+@using SatisfactoryApp.Services
+@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Utils
+@using System.Text
+@implements IDisposable
+@inject FactoryStore FactoryStore
+@inject IJSRuntime JSRuntime
+
+<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+    <MudCardHeader Class="mud-primary pa-0 pl-1">
+        <MudText Class="primary-card-header-title" Color="Color.Surface">@Title</MudText>
+        @if (!string.IsNullOrEmpty(_error))
+        {
+            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
+        }
+        @TitleAfterSlot
+    </MudCardHeader>
+    <MudCardContent Class="pa-0">
+        <div class="map-container @_containerCssClass" @onclick="HandleMapClick">
+            <div class="map-wrapper @_wrapperCssClass">
+                <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
+                @if (!string.IsNullOrEmpty(_svgNonFiltered) && IsNonFilteredLayerVisible)
+                {
+                    <div class="map-svg-overlay">
+                        @((MarkupString)_svgNonFiltered)
+                    </div>
+                }
+                @if (!string.IsNullOrEmpty(_svgFiltered) && IsFilteredLayerVisible)
+                {
+                    <div class="map-svg-overlay map-svg-overlay-filtered">
+                        @((MarkupString)_svgFiltered)
+                    </div>
+                }
+                @OverlaySlot
+            </div>
+
+            <div class="legend-overlay">
+                @LegendSlot
+            </div>
+
+            @if (_showTooltip && _selectedFactory != null)
+            {
+                <div class="factory-tooltip" style="left: @($"{_tooltipX}px"); top: @($"{_tooltipY}px")">
+                    <div class="tooltip-content">
+                        @TooltipSlot
+                    </div>
+                </div>
+            }
+        </div>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter] public string Title { get; set; } = string.Empty;
+    [Parameter] public Func<string, Factory, string, string> CreateEdge { get; set; } = (fId, f, pos) => "";
+    [Parameter] public Action<Factory?>? SelectedChanged { get; set; }
+    [Parameter] public Func<Task>? CustomRender { get; set; }
+    [Parameter] public Func<List<Factory>>? CustomFactoriesForMapClick { get; set; }
+    [Parameter] public Func<Factory, bool> ExtraFactoryFilter { get; set; } = (f) => true;
+    [Parameter] public bool IsNonFilteredLayerVisible { get; set; } = true;
+    [Parameter] public bool IsFilteredLayerVisible { get; set; } = true;
+
+    [Parameter] public RenderFragment? TitleAfterSlot { get; set; }
+    [Parameter] public RenderFragment? OverlaySlot { get; set; }
+    [Parameter] public RenderFragment? LegendSlot { get; set; }
+    [Parameter] public RenderFragment? TooltipSlot { get; set; }
+
+    private bool _isLoading;
+    private string? _error;
+    private string? _svgFiltered;
+    private string? _svgNonFiltered;
+    private Factory? _selectedFactory;
+    private int _lastUpdateCounter = -1;
+    private bool _graphvizLoaded = false;
+    private readonly string _wrapperCssClass = $"map-wrapper-{Guid.NewGuid():N}";
+    private readonly string _containerCssClass = $"map-container-{Guid.NewGuid():N}";
+    private bool _showTooltip = false;
+    private double _tooltipX = 0;
+    private double _tooltipY = 0;
+
+    private Action? _checkAndRenderHandler;
+
+    protected override void OnInitialized()
+    {
+        _checkAndRenderHandler = () => _ = CheckAndRenderIfNeeded();
+        FactoryStore.FilteredFactoriesChanged += _checkAndRenderHandler;
+    }
+
+    public void Dispose()
+    {
+        FactoryStore.FilteredFactoriesChanged -= _checkAndRenderHandler;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                _isLoading = true;
+
+                await JSRuntime.InvokeVoidAsync("loadGraphviz");
+                _graphvizLoaded = true;
+            }
+            catch (Exception ex)
+            {
+                _error = $"Failed to load graph renderer: {ex.Message}";
+                Console.WriteLine(_error);
+            }
+            finally
+            {
+                _isLoading = false;
+            }
+        }
+
+        await CheckAndRenderIfNeeded();
+    }
+
+    private async Task CheckAndRenderIfNeeded()
+    {
+        if (_graphvizLoaded && FactoryStore.UpdateCounter != _lastUpdateCounter)
+        {
+            _lastUpdateCounter = FactoryStore.UpdateCounter;
+            if (FactoryStore.Factories.Count > 0 && !_isLoading && string.IsNullOrEmpty(_error))
+            {
+                await RenderMap();
+            }
+        }
+    }
+
+    public async Task<string?> RenderLayerAsync(List<Factory> factories)
+    {
+        try
+        {
+            _isLoading = true;
+
+            var dot = CreateDotContent(factories);
+            return await JSRuntime.InvokeAsync<string>("renderDotGraph", dot);
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to render map layer: {ex.Message}";
+            Console.WriteLine(_error);
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+
+        return null;
+    }
+
+
+    private async Task RenderMap()
+    {
+        Console.WriteLine("Rendering factory map...");
+        try
+        {
+            _isLoading = true;
+
+            var nonFiltered = FactoryStore.NonFilteredFactories.Where(ExtraFactoryFilter).ToList();
+            var filtered = FactoryStore.FilteredFactories.Where(ExtraFactoryFilter).ToList();
+
+            _svgNonFiltered = await RenderLayerAsync(nonFiltered);
+            _svgFiltered = await RenderLayerAsync(filtered);
+            await (CustomRender?.Invoke() ?? Task.CompletedTask);
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to render graph: " + ex.Message;
+            Console.WriteLine(_error);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string CreateDotContent(List<Factory> factories)
+    {
+        const int minX = -320000;
+        const int maxX = 380000;
+        const int minY = -250000;
+        const int maxY = 450000;
+
+        const int mapWidth = 30;
+        const int mapHeight = 30;
+        const float mapWidthClamp = mapWidth - 0.1f;
+        const float mapHeightClamp = mapHeight - 0.1f;
+
+        var scaleX = (mapWidth - 2.0) / (maxX - minX);
+        var scaleY = (mapHeight - 2.0) / (maxY - minY);
+
+        var dot = new StringBuilder(
+$@"digraph G {{
+  layout=neato;
+  size=""{mapWidth},{mapHeight}"";
+  bgcolor=transparent;
+  node [shape=circle, style=filled, penwidth=1, width=0.2, height=0.2, fontsize=8, fontname=""Arial"", label=""""];
+  edge [fontname=""Arial"", penwidth=2];
+  graph [ranksep=0, nodesep=0, splines=curved];
+");
+
+        const double cornerSize = 0.001;
+        dot.Append($"\n_tl [label=\"\", pos=\"0,{mapHeight}!\", width={cornerSize}, height={cornerSize}];");
+        dot.Append($"\n_tr [label=\"\", pos=\"{mapWidth},{mapHeight}!\", width={cornerSize}, height={cornerSize}];");
+        dot.Append($"\n_bl [label=\"\", pos=\"0,0!\", width={cornerSize}, height={cornerSize}];");
+        dot.Append($"\n_br [label=\"\", pos=\"{mapWidth},0!\", width={cornerSize}, height={cornerSize}];");
+
+        for (int index = 0; index < factories.Count; index++)
+        {
+            var factory = factories[index];
+            var x = (factory.X - minX) * scaleX;
+            var y = mapHeight - (factory.Y - minY) * scaleY - 5;
+
+            var clampedX = Math.Clamp(x, 0, mapWidthClamp);
+            var clampedY = Math.Clamp(y, 0, mapHeightClamp);
+            dot.Append(CreateEdge($"factory_{index}", factory, $"pos=\"{clampedX:F2},{clampedY:F2}!\""));
+        }
+
+        dot.Append("\n}");
+        return dot.ToString();
+    }
+
+    private async Task HandleMapClick(MouseEventArgs e)
+    {
+        List<Factory> availableFactories;
+        if (!string.IsNullOrEmpty(_svgNonFiltered) && IsNonFilteredLayerVisible)
+        {
+            availableFactories = FactoryStore.NonFilteredFactories
+            .Where(ExtraFactoryFilter)
+            .ToList();
+        }
+        else if (!string.IsNullOrEmpty(_svgFiltered) && IsFilteredLayerVisible)
+        {
+            availableFactories = FactoryStore.FilteredFactories
+            .Where(ExtraFactoryFilter)
+            .ToList();
+        }
+        else if (CustomFactoriesForMapClick is not null)
+        {
+            availableFactories = CustomFactoriesForMapClick();
+        }
+        else
+        {
+            return;
+        }
+
+        var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{_wrapperCssClass}");
+        if (rect == null) return;
+
+        var clickX = e.ClientX - rect.Left;
+        var clickY = e.ClientY - rect.Top;
+
+        const int minX = -320000;
+        const int maxX = 435000;
+        const int minY = -372000;
+        const int maxY = 382000;
+
+        var scaleX = (maxX - minX) / rect.Width;
+        var scaleY = (maxY - minY) / rect.Height;
+
+        var factoryX = clickX * scaleX + minX;
+        var factoryY = clickY * scaleY + minY;
+
+        const int clickRadius = 5000;
+        Factory? closestFactory = null;
+        double closestDistance = double.MaxValue;
+
+        foreach (var factory in availableFactories)
+        {
+            var distance = Math.Sqrt(Math.Pow(factoryX - factory.X, 2) + Math.Pow(factoryY - factory.Y, 2));
+            if (distance < clickRadius && distance < closestDistance)
+            {
+                closestDistance = distance;
+                closestFactory = factory;
+            }
+        }
+
+        _selectedFactory = closestFactory;
+        SelectedChanged?.Invoke(_selectedFactory);
+
+        if (_selectedFactory != null)
+        {
+            var containerRect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{_containerCssClass}");
+            if (containerRect != null)
+            {
+                var containerClickX = e.ClientX - containerRect.Left;
+                var containerClickY = e.ClientY - containerRect.Top;
+
+                var rawX = containerClickX + 15;
+                var rawY = containerClickY - 10;
+
+                const double margin = 8;
+                const double tooltipWidth = 260;
+                const double tooltipHeight = 120;
+
+                var maxTooltipX = Math.Max(margin, containerRect.Width - tooltipWidth - margin);
+                var maxTooltipY = Math.Max(margin, containerRect.Height - tooltipHeight - margin);
+                var minTooltipY = margin + tooltipHeight;
+
+                _tooltipX = Math.Min(Math.Max(rawX, margin), maxTooltipX);
+                _tooltipY = Math.Min(Math.Max(rawY, minTooltipY), maxTooltipY);
+                _showTooltip = true;
+            }
+        }
+        else
+        {
+            _showTooltip = false;
+        }
+
+        StateHasChanged();
+    }
+
+    private class BoundingClientRect
+    {
+        public double Left { get; set; }
+        public double Top { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
+}
+
+<style>
+    .map-container {
+        position: relative;
+        overflow: hidden;
+        min-height: 400px;
+        cursor: pointer;
+    }
+
+    .map-wrapper {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+
+    .map-image {
+        object-fit: contain;
+        transition: opacity 0.2s;
+        width: 100%;
+        height: auto;
+    }
+
+        .map-image.background-only {
+            filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+            opacity: 0.4;
+        }
+
+    .map-svg-overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+    }
+
+        .map-svg-overlay svg {
+            width: 100%;
+            height: 100%;
+        }
+
+    .map-svg-overlay-filtered {
+        opacity: 0.3;
+    }
+
+    .legend-overlay {
+        position: absolute;
+        bottom: 16px;
+        right: 16px;
+        background: var(--mud-palette-surface);
+        border: 1px solid #e59345;
+        border-radius: 6px;
+        padding: 8px 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 170px;
+        backdrop-filter: blur(4px);
+    }
+
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 12px;
+        color: #f5f5f5;
+    }
+
+    .legend-icon {
+        display: inline-block;
+    }
+
+    .factory-tooltip {
+        position: absolute;
+        z-index: 1000;
+        pointer-events: none;
+        transform: translateY(-100%);
+    }
+
+    .tooltip-content {
+        background: rgba(10, 10, 10, 0.95);
+        border: 1px solid #e59345;
+        border-radius: 6px;
+        padding: 10px 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(4px);
+        min-width: 200px;
+        max-width: 300px;
+    }
+
+    .tooltip-header {
+        font-weight: bold;
+        font-size: 14px;
+        color: #e59345;
+        margin-bottom: 8px;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(229, 147, 69, 0.3);
+    }
+
+    .tooltip-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 4px;
+        font-size: 12px;
+    }
+
+        .tooltip-row:last-child {
+            margin-bottom: 0;
+        }
+
+    .tooltip-label {
+        color: #b0b0b0;
+        margin-right: 12px;
+    }
+
+    .tooltip-value {
+        color: #f5f5f5;
+        font-weight: 500;
+        text-align: right;
+    }
+</style>
+
