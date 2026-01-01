@@ -24,13 +24,79 @@
                        Class="ml-auto" />
     </MudCardHeader>
     <MudCardContent Class="pa-0">
-        @RenderMapContent(_containerCssClass, _wrapperCssClass)
+        <div class="map-container @_containerCssClass" onclick="@HandleMapClick">
+            <div class="map-wrapper @_wrapperCssClass">
+                <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
+
+                @if (!string.IsNullOrEmpty(_svgNonFiltered) && IsNonFilteredLayerVisible)
+                {
+                    <div class="map-svg-overlay">
+                        @((MarkupString)_svgNonFiltered)
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(_svgFiltered) && IsFilteredLayerVisible)
+                {
+                    <div class="map-svg-overlay map-svg-overlay-filtered">
+                        @((MarkupString)_svgFiltered)
+                    </div>
+                }
+
+                @OverlaySlot
+
+                <div class="legend-overlay">
+                    @LegendSlot
+                </div>
+
+                @if (_showTooltip && _selectedFactory != null)
+                {
+                    <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
+                        <div class="tooltip-content">
+                            @TooltipSlot
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
     </MudCardContent>
 </MudCard>
 
 <MudDialog @bind-Visible="_showFullscreenDialog" Options="@(new DialogOptions { FullScreen = true, CloseButton = true, CloseOnEscapeKey = true })">
     <DialogContent>
-        @RenderMapContent(_fullscreenContainerCssClass, _fullscreenWrapperCssClass)
+        <div class="map-container @_fullscreenContainerCssClass" onclick="@HandleFullscreenMapClick">
+            <div class="map-wrapper @_fullscreenWrapperCssClass">
+                <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
+
+                @if (!string.IsNullOrEmpty(_svgNonFilteredFullscreen) && IsNonFilteredLayerVisible)
+                {
+                    <div class="map-svg-overlay">
+                        @((MarkupString)_svgNonFilteredFullscreen)
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(_svgFilteredFullscreen) && IsFilteredLayerVisible)
+                {
+                    <div class="map-svg-overlay map-svg-overlay-filtered">
+                        @((MarkupString)_svgFilteredFullscreen)
+                    </div>
+                }
+
+                @OverlaySlot
+
+                <div class="legend-overlay">
+                    @LegendSlot
+                </div>
+
+                @if (_showTooltip && _selectedFactory != null)
+                {
+                    <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
+                        <div class="tooltip-content">
+                            @TooltipSlot
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
     </DialogContent>
 </MudDialog>
 
@@ -312,73 +378,6 @@ $@"digraph G {{
     private void OpenFullscreenDialog()
     {
         _showFullscreenDialog = true;
-    }
-
-    private RenderFragment RenderMapContent(string containerCssClass, string wrapperCssClass)
-    {
-        var isFullscreen = containerCssClass == _fullscreenContainerCssClass;
-        var clickHandler = isFullscreen
-            ? EventCallback.Factory.Create<MouseEventArgs>(this, HandleFullscreenMapClick)
-            : EventCallback.Factory.Create<MouseEventArgs>(this, HandleMapClick);
-
-        return builder =>
-        {
-            builder.OpenElement(0, "div");
-            builder.AddAttribute(1, "class", $"map-container {containerCssClass}");
-            builder.AddAttribute(2, "onclick", clickHandler);
-
-            builder.OpenElement(3, "div");
-            builder.AddAttribute(4, "class", $"map-wrapper {wrapperCssClass}");
-
-            builder.OpenElement(5, "img");
-            builder.AddAttribute(6, "src", "/images/1920px-Biome_Map.jpg");
-            builder.AddAttribute(7, "alt", "Satisfactory Map");
-            builder.AddAttribute(8, "class", "map-image background-only");
-            builder.CloseElement();
-
-            var svgNonFiltered = isFullscreen ? _svgNonFilteredFullscreen : _svgNonFiltered;
-            var svgFiltered = isFullscreen ? _svgFilteredFullscreen : _svgFiltered;
-
-            if (!string.IsNullOrEmpty(svgNonFiltered) && IsNonFilteredLayerVisible)
-            {
-                builder.OpenElement(9, "div");
-                builder.AddAttribute(10, "class", "map-svg-overlay");
-                builder.AddContent(11, (MarkupString)svgNonFiltered);
-                builder.CloseElement();
-            }
-
-            if (!string.IsNullOrEmpty(svgFiltered) && IsFilteredLayerVisible)
-            {
-                builder.OpenElement(12, "div");
-                builder.AddAttribute(13, "class", "map-svg-overlay map-svg-overlay-filtered");
-                builder.AddContent(14, (MarkupString)svgFiltered);
-                builder.CloseElement();
-            }
-
-            builder.AddContent(15, OverlaySlot);
-            builder.CloseElement();
-
-            builder.OpenElement(16, "div");
-            builder.AddAttribute(17, "class", "legend-overlay");
-            builder.AddContent(18, LegendSlot);
-            builder.CloseElement();
-
-            if (_showTooltip && _selectedFactory != null)
-            {
-                builder.OpenElement(19, "div");
-                builder.AddAttribute(20, "class", "factory-tooltip");
-                builder.AddAttribute(21, "style", $"left: {_tooltipX}px; top: {_tooltipY}px");
-
-                builder.OpenElement(22, "div");
-                builder.AddAttribute(23, "class", "tooltip-content");
-                builder.AddContent(24, TooltipSlot);
-                builder.CloseElement();
-
-                builder.CloseElement();
-            }
-
-            builder.CloseElement();
-        };
     }
 
     private class BoundingClientRect
