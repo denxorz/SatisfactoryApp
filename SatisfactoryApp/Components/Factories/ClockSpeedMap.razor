@@ -6,32 +6,18 @@
 @using SatisfactoryApp.Utils
 @inject FactoryStore FactoryStore
 
-<BaseMap @ref="Map"
-                 Title="Factory Clock speed"
-                 CreateEdge="CreateEdge"
-                 SelectedChanged="SelectedChanged"
-                 CustomRender="CustomRender"
-                 CustomFactoriesForMapClick="CustomFactoriesForMapClick"
-                 ExtraFactoryFilter="(f) => f.ClockSpeed.HasValue"
-                 IsNonFilteredLayerVisible="!_showSloopOnly"
-                 IsFilteredLayerVisible="!_showSloopOnly">
+<BaseMap Title="Factory Clock speed"
+         SelectedChanged="SelectedChanged"
+         Layers="[clockSpeedMapLayer,clockSpeedFilteredMapLayer,sloopMapLayer,sloopFilteredMapLayer]">
     <TitleAfterSlot>
         <MudSpacer />
-        <MudSwitch @bind-Value="_showSloopOnly"
+        <MudSwitch @bind-Value="ShowSloopOnly"
                    Color="Color.Tertiary"
                    UncheckedColor="Color.Tertiary"
                    Label="Sloops only"
                    Size="Size.Small"
                    Class="mr-2 compact-switch" />
     </TitleAfterSlot>
-    <OverlaySlot>
-        @if (!string.IsNullOrEmpty(_svgSloops))
-        {
-            <div class="map-svg-overlay map-svg-overlay-hassloop">
-                @((MarkupString)_svgSloops)
-            </div>
-        }
-    </OverlaySlot>
     <LegendSlot>
         <div class="legend-item">
             <span class="legend-icon factory" style="background: @GetLegendColor(0); border: 1px solid #000000;"></span>
@@ -83,74 +69,49 @@
 </BaseMap>
 
 @code {
-    private static readonly string[] variablePowerTypes = new[]
-    {
-        "Converter",
-        "HadronCollider",
-        "QuantumEncoder",
-        "TrainStation",
-        "ResourceSink",
-        "GeneratorGeoThermal"
-    };
+    private readonly ClockSpeedFactoryMapLayer clockSpeedMapLayer;
+    private readonly ClockSpeedFilteredFactoryMapLayer clockSpeedFilteredMapLayer;
+    private readonly SloopsFactoryMapLayer sloopMapLayer;
+    private readonly SloopsFilteredFactoryMapLayer sloopFilteredMapLayer;
 
-    private BaseMap? Map;
     private bool _showSloopOnly = false;
-    private string? _svgSloops;
     private Factory? _selectedFactory;
+
+    private bool ShowSloopOnly
+    {
+        get => _showSloopOnly;
+        set
+        {
+            if (_showSloopOnly != value)
+            {
+                _showSloopOnly = value;
+                clockSpeedMapLayer.IsVisible = !_showSloopOnly;
+                clockSpeedFilteredMapLayer.IsVisible = !_showSloopOnly;
+            }
+        }
+    }
+
+    public ClockSpeedMap(FactoryStore s)
+    {
+        clockSpeedMapLayer = new(s);
+        clockSpeedFilteredMapLayer = new(s);
+        sloopMapLayer = new(s);
+        sloopFilteredMapLayer = new(s);
+    }
 
     private void SelectedChanged(Factory? factory)
     {
         _selectedFactory = factory;
     }
 
-    private string CreateEdge(string factoryId, Factory factory, string pos)
-    {
-        var fillColor = GetFactoryColor(factory);
-        var shape = GetFactoryShape(factory.Type);
-        var borderColor = factory.HasSloop ? "#7B1FA2" : "#000000";
-        var penwidth = factory.HasSloop ? 3 : 1;
-
-        return $"\n{factoryId} [shape=\"{shape}\", fillcolor=\"{fillColor}\", color=\"{borderColor}\", penwidth={penwidth}, {pos}];";
-    }
-
-    private async Task CustomRender()
-    {
-        var hasSloop = CustomFactoriesForMapClick();
-        _svgSloops = await (Map?.RenderLayerAsync(hasSloop) ?? Task.FromResult((string?)null));
-    }
-
-    private List<Factory> CustomFactoriesForMapClick()
-    {
-        return FactoryStore.NonFilteredFactories
-         .Where(f => f.ClockSpeed.HasValue)
-         .Where(f => f.HasSloop)
-         .ToList();
-    }
-
-    private string GetFactoryColor(Factory factory)
-    {
-        return FactoryColors.GetFactoryColorForClockSpeed(factory.ClockSpeed);
-    }
-
     private string GetLegendColor(float clockSpeed)
     {
         return FactoryColors.GetFactoryColorForClockSpeed(clockSpeed);
-    }
-
-    private string GetFactoryShape(string? factoryType)
-    {
-        return IsVariablePower(factoryType) ? "triangle" : "circle";
-    }
-
-    private bool IsVariablePower(string? factoryType)
-    {
-        return variablePowerTypes.Contains(factoryType);
     }
 }
 
 <style>
     .map-svg-overlay-hassloop {
-        z-index: 10;
         pointer-events: auto;
     }
 

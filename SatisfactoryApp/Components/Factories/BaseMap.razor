@@ -28,21 +28,12 @@
             <div class="map-wrapper @_wrapperCssClass">
                 <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
 
-                @if (!string.IsNullOrEmpty(_svgNonFiltered) && IsNonFilteredLayerVisible)
+                @foreach (var l in generatedLayers.Where(s => s.Key.IsVisible && !string.IsNullOrEmpty(s.Value)))
                 {
-                    <div class="map-svg-overlay">
-                        @((MarkupString)_svgNonFiltered)
+                    <div class="map-svg-overlay @l.Key.Class">
+                        @((MarkupString)l.Value)
                     </div>
                 }
-
-                @if (!string.IsNullOrEmpty(_svgFiltered) && IsFilteredLayerVisible)
-                {
-                    <div class="map-svg-overlay map-svg-overlay-filtered">
-                        @((MarkupString)_svgFiltered)
-                    </div>
-                }
-
-                @OverlaySlot
 
                 <div class="legend-overlay">
                     @LegendSlot
@@ -67,21 +58,12 @@
             <div class="map-wrapper @_fullscreenWrapperCssClass">
                 <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
 
-                @if (!string.IsNullOrEmpty(_svgNonFilteredFullscreen) && IsNonFilteredLayerVisible)
+                @foreach (var l in generatedFullscreenLayers.Where(s => s.Key.IsVisible && !string.IsNullOrEmpty(s.Value)))
                 {
-                    <div class="map-svg-overlay">
-                        @((MarkupString)_svgNonFilteredFullscreen)
+                    <div class="map-svg-overlay @l.Key.Class">
+                        @((MarkupString)l.Value)
                     </div>
                 }
-
-                @if (!string.IsNullOrEmpty(_svgFilteredFullscreen) && IsFilteredLayerVisible)
-                {
-                    <div class="map-svg-overlay map-svg-overlay-filtered">
-                        @((MarkupString)_svgFilteredFullscreen)
-                    </div>
-                }
-
-                @OverlaySlot
 
                 <div class="legend-overlay">
                     @LegendSlot
@@ -104,11 +86,8 @@
     [Parameter] public string Title { get; set; } = string.Empty;
     [Parameter] public Func<string, Factory, string, string> CreateEdge { get; set; } = (fId, f, pos) => "";
     [Parameter] public Action<Factory?>? SelectedChanged { get; set; }
-    [Parameter] public Func<Task>? CustomRender { get; set; }
-    [Parameter] public Func<List<Factory>>? CustomFactoriesForMapClick { get; set; }
-    [Parameter] public Func<Factory, bool> ExtraFactoryFilter { get; set; } = (f) => true;
-    [Parameter] public bool IsNonFilteredLayerVisible { get; set; } = true;
-    [Parameter] public bool IsFilteredLayerVisible { get; set; } = true;
+
+    [Parameter] public List<IMapLayer> Layers { get; set; } = [];
 
     [Parameter] public RenderFragment? TitleAfterSlot { get; set; }
     [Parameter] public RenderFragment? OverlaySlot { get; set; }
@@ -117,10 +96,6 @@
 
     private bool _isLoading;
     private string? _error;
-    private string? _svgFiltered;
-    private string? _svgNonFiltered;
-    private string? _svgFilteredFullscreen;
-    private string? _svgNonFilteredFullscreen;
     private Factory? _selectedFactory;
     private int _lastUpdateCounter = -1;
     private bool _graphvizLoaded = false;
@@ -139,6 +114,9 @@
     private const int maxX = 425000;
     private const int minY = -380000;
     private const int maxY = 375000;
+
+    private Dictionary<IMapLayer, string> generatedLayers = [];
+    private Dictionary<IMapLayer, string> generatedFullscreenLayers = [];
 
     protected override void OnInitialized()
     {
@@ -188,44 +166,30 @@
         }
     }
 
-    public async Task<string?> RenderLayerAsync(List<Factory> factories, int mapSize = 30)
+    private async Task<(IMapLayer layer, string svg)> CreateSvgAsync(IMapLayer layer, int mapSize)
     {
         try
         {
-            _isLoading = true;
-
-            var dot = CreateDotContent(factories, mapSize);
-            return await JSRuntime.InvokeAsync<string>("renderDotGraph", dot);
+            var dot = CreateDotContent(layer, mapSize);
+            return (layer, await JSRuntime.InvokeAsync<string>("renderDotGraph", dot));
         }
         catch (Exception ex)
         {
             _error = $"Failed to render map layer: {ex.Message}";
             Console.WriteLine(_error);
         }
-        finally
-        {
-            _isLoading = false;
-        }
 
-        return null;
+        return (layer, "");
     }
-
 
     private async Task RenderMap()
     {
-        Console.WriteLine("Rendering factory map...");
         try
         {
             _isLoading = true;
 
-            var nonFiltered = FactoryStore.NonFilteredFactories.Where(ExtraFactoryFilter).ToList();
-            var filtered = FactoryStore.FilteredFactories.Where(ExtraFactoryFilter).ToList();
-
-            _svgNonFiltered = await RenderLayerAsync(nonFiltered, 30);
-            _svgFiltered = await RenderLayerAsync(filtered, 30);
-            _svgNonFilteredFullscreen = await RenderLayerAsync(nonFiltered, 100);
-            _svgFilteredFullscreen = await RenderLayerAsync(filtered, 100);
-            await (CustomRender?.Invoke() ?? Task.CompletedTask);
+            generatedLayers = (await Task.WhenAll(Layers.Select(l => CreateSvgAsync(l, 30)))).ToDictionary(l => l.layer, l => l.svg);
+            generatedFullscreenLayers = (await Task.WhenAll(Layers.Select(l => CreateSvgAsync(l, 100)))).ToDictionary(l => l.layer, l => l.svg);
         }
         catch (Exception ex)
         {
@@ -239,7 +203,7 @@
         }
     }
 
-    private string CreateDotContent(List<Factory> factories, int mapSize = 30)
+    private string CreateDotContent(IMapLayer layer, int mapSize = 30)
     {
         float mapWidth = mapSize;
         float mapHeight = mapSize;
@@ -250,14 +214,14 @@
         var scaleY = mapHeight / (maxY - minY);
 
         var dot = new StringBuilder(
-$@"digraph G {{
-  layout=neato;
-  size=""{mapWidth},{mapHeight}"";
-  bgcolor=transparent;
-  node [shape=circle, style=filled, penwidth=1, width=0.2, height=0.2, fontsize=8, fontname=""Arial"", label=""""];
-  edge [fontname=""Arial"", penwidth=2];
-  graph [ranksep=0, nodesep=0, splines=curved];
-");
+            $@"digraph G {{
+              layout=neato;
+              size=""{mapWidth},{mapHeight}"";
+              bgcolor=transparent;
+              node [shape=circle, style=filled, penwidth=1, width=0.2, height=0.2, fontsize=8, fontname=""Arial"", label=""""];
+              edge [fontname=""Arial"", penwidth=2];
+              graph [ranksep=0, nodesep=0, splines=curved];
+            ");
 
         const double cornerSize = 0.001;
         dot.Append($"\n_tl [label=\"\", pos=\"0,{mapHeight}!\", width={cornerSize}, height={cornerSize}];");
@@ -265,16 +229,17 @@ $@"digraph G {{
         dot.Append($"\n_bl [label=\"\", pos=\"0,0!\", width={cornerSize}, height={cornerSize}];");
         dot.Append($"\n_br [label=\"\", pos=\"{mapWidth},0!\", width={cornerSize}, height={cornerSize}];");
 
-        for (int index = 0; index < factories.Count; index++)
+        string GetPosition(float x, float y)
         {
-            var factory = factories[index];
-            var x = (factory.X - minX) * scaleX;
-            var y = mapHeight - (factory.Y - minY) * scaleY;
-
-            var clampedX = Math.Clamp(x, 0, mapWidthClamp);
-            var clampedY = Math.Clamp(y, 0, mapHeightClamp);
-            dot.Append(CreateEdge($"factory_{index}", factory, $"pos=\"{clampedX:F2},{clampedY:F2}!\""));
+            var scaledX = (x - minX) * scaleX;
+            var scaledY = mapHeight - (y - minY) * scaleY;
+            var clampedX = Math.Clamp(scaledX, 0, mapWidthClamp);
+            var clampedY = Math.Clamp(scaledY, 0, mapHeightClamp);
+            return $"pos=\"{clampedX:F2},{clampedY:F2}!\"";
         }
+
+        var edges = layer.CreateDotEdges(GetPosition);
+        edges.ForEach(edge => dot.Append(edge));
 
         dot.Append("\n}");
         return dot.ToString();
@@ -292,27 +257,10 @@ $@"digraph G {{
 
     private async Task HandleMapClickInternal(MouseEventArgs e, string wrapperCssClass, string containerCssClass)
     {
-        List<Factory> availableFactories;
-        if (!string.IsNullOrEmpty(_svgNonFiltered) && IsNonFilteredLayerVisible)
-        {
-            availableFactories = FactoryStore.NonFilteredFactories
-            .Where(ExtraFactoryFilter)
+        var availableFactories = Layers
+            .Where(l => l.IsVisible)
+            .SelectMany(layer => layer.ItemsWithTooltip<Factory>())
             .ToList();
-        }
-        else if (!string.IsNullOrEmpty(_svgFiltered) && IsFilteredLayerVisible)
-        {
-            availableFactories = FactoryStore.FilteredFactories
-            .Where(ExtraFactoryFilter)
-            .ToList();
-        }
-        else if (CustomFactoriesForMapClick is not null)
-        {
-            availableFactories = CustomFactoriesForMapClick();
-        }
-        else
-        {
-            return;
-        }
 
         var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{wrapperCssClass}");
         if (rect == null) return;

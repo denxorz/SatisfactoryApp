@@ -36,17 +36,16 @@ public class FactoryStore
         FilteredFactoriesChanged?.Invoke();
     }
 
-    public List<Factory> FilteredFactories => [.. _factories.Where(IsFactoryFiltered)];
-    public List<Factory> NonFilteredFactories => [.. _factories.Where(f => !IsFactoryFiltered(f))];
+    public List<Factory> FilteredFactories => [.. _factories.Where(IsFactoryIncluded)];
 
-    private bool IsFactoryFiltered(Factory factory)
+    private bool IsFactoryIncluded(Factory factory)
     {
         if (_filters.SelectedFactoryTypes.Count > 0)
         {
             var factoryType = factory.Type ?? "unknown";
             if (!_filters.SelectedFactoryTypes.Any(f => f.Value == factoryType))
             {
-                return true;
+                return false;
             }
         }
 
@@ -61,7 +60,7 @@ public class FactoryStore
 
             if (!hasMatchingCircuit)
             {
-                return true;
+                return false;
             }
         }
 
@@ -70,14 +69,14 @@ public class FactoryStore
             var status = GetFactoryStability(factory);
             if (!_filters.SelectedFactoryStabilities.Any(s => s.Value == status))
             {
-                return true;
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
-    private string GetFactoryStability(Factory factory)
+    private static string GetFactoryStability(Factory factory)
     {
         var percentage = factory.PercentageProducing;
         if (percentage is null) return "Unknown";

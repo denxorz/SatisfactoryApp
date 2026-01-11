@@ -126,9 +126,9 @@
                 .ToList();
 
             var notStable = factories.Count(f => f.PercentageProducing is not null && f.PercentageProducing != 100);
-            var variablePower = factories.Count(IsVariablePowerFactory);
-            var powerstorage = factories.Count(IsPowerStorage);
-            var powerProducers = factories.Count(IsPowerProducerStorage);
+            var variablePower = factories.Count(f => f.IsVariablePower());
+            var powerstorage = factories.Count(f => f.IsPowerStorage());
+            var powerProducers = factories.Count(f => f.IsPowerProducerStorage());
 
             if (isMainCircuit)
             {
@@ -172,22 +172,6 @@
             .ToList();
 
         StateHasChanged();
-    }
-
-    private static bool IsVariablePowerFactory(Factory factory)
-    {
-        var types = new[] { "Converter", "HadronCollider", "QuantumEncoder", "TrainStation", "ResourceSink", "GeneratorGeoThermal" };
-        return factory.Type != null && types.Contains(factory.Type);
-    }
-
-    private static bool IsPowerStorage(Factory factory)
-    {
-        return factory.Type == "PowerStorage";
-    }
-
-    private static bool IsPowerProducerStorage(Factory factory)
-    {
-        return factory.Type != null && factory.Type.StartsWith("Generator");
     }
 
     private string GetMainCircuitNameFromParentId(string? parentId)

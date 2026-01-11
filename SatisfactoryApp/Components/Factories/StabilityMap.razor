@@ -1,16 +1,33 @@
 @using Denxorz.Satisfactory.Routes.Types
-@using Microsoft.JSInterop
-@using MudBlazor
-@using SatisfactoryApp.Services
 @using SatisfactoryApp.Services.Factories
 @using SatisfactoryApp.Utils
 @inject FactoryStore FactoryStore
 
-<BaseMap Title="Power Circuits"
-                 CreateEdge="CreateEdge"
-                 SelectedChanged="SelectedChanged"
-                 LegendSlot="LegendSlot"
-                 ExtraFactoryFilter="ExtraFactoryFilter">
+<BaseMap Title="Factory Stability Map"
+         SelectedChanged="SelectedChanged"
+         Layers="[allMapLayer,filteredMapLayer]">
+    <LegendSlot>
+        <div class="legend-item">
+            <span class="legend-icon factory stable"></span>
+            <span>Stable (100%)</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-icon factory almost-stable"></span>
+            <span>Almost Stable (> 95%)</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-icon factory unstable"></span>
+            <span>Unstable</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-icon factory off"></span>
+            <span>Off</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-icon uploader"></span>
+            <span>Variable power</span>
+        </div>
+    </LegendSlot>
     <TooltipSlot>
         <div class="tooltip-header">@(_selectedFactory!.Type ?? "Unknown")</div>
         @if (_selectedFactory.Recipe is not null)
@@ -43,32 +60,24 @@
         }
         <div class="tooltip-row">
             <span class="tooltip-label">Is variable power:</span>
-            <span class="tooltip-value">@IsVariablePower(_selectedFactory.Type)</span>
+            <span class="tooltip-value">@_selectedFactory.IsVariablePower()</span>
         </div>
     </TooltipSlot>
 </BaseMap>
 
 @code {
-    [Parameter] public string Title { get; set; } = string.Empty;
-    [Parameter] public Func<Factory, string> GetFactoryColor { get; set; } = null!;
-    [Parameter] public Func<Factory, string>? GetFactoryBorderColor { get; set; }
-    [Parameter] public Func<Factory, bool> ExtraFactoryFilter { get; set; } = (f) => true;
-
-    [Parameter] public RenderFragment? LegendSlot { get; set; }
-
-    private static readonly string[] variablePowerTypes = new[]
-    {
-        "Converter",
-        "HadronCollider",
-        "QuantumEncoder",
-        "TrainStation",
-        "ResourceSink",
-        "GeneratorGeoThermal"
-    };
+    private readonly StabilityFactoryMapLayer allMapLayer;
+    private readonly StabilityFilteredFactoryMapLayer filteredMapLayer;
 
     private Factory? _selectedFactory;
     private string? _mainPowerCircuitName;
     private string? _subPowerCircuitName;
+
+    public StabilityMap(FactoryStore s)
+    {
+        allMapLayer = new(s);
+        filteredMapLayer = new(s);
+    }
 
     private void SelectedChanged(Factory? factory)
     {
@@ -89,23 +98,38 @@
             _subPowerCircuitName = null;
         }
     }
-
-    private string CreateEdge(string factoryId, Factory factory, string pos)
-    {
-        var color = GetFactoryColor(factory);
-        var borderColor = GetFactoryBorderColor?.Invoke(factory) ?? "#000000";
-        var shape = GetFactoryShape(factory.Type);
-
-        return $"\n{factoryId} [shape=\"{shape}\", fillcolor=\"{color}\", color=\"{borderColor}\", {pos}];";
-    }
-
-    private string GetFactoryShape(string? factoryType)
-    {
-        return IsVariablePower(factoryType) ? "triangle" : "circle";
-    }
-
-    private bool IsVariablePower(string? factoryType)
-    {
-        return variablePowerTypes.Contains(factoryType);
-    }
 }
+
+<style>
+    .legend-icon.factory {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1px solid #000000;
+        box-sizing: border-box;
+    }
+
+    .legend-icon.factory.stable {
+        background: #00FF00;
+    }
+
+    .legend-icon.factory.almost-stable {
+        background: #FFFF00;
+    }
+
+    .legend-icon.factory.unstable {
+        background: #FFA500;
+    }
+
+    .legend-icon.factory.off {
+        background: #FF0000;
+    }
+
+    .legend-icon.uploader {
+        width: 0;
+        height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-bottom: 14px solid #00FF00;
+    }
+</style>

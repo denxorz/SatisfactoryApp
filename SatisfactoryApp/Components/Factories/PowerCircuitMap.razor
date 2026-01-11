@@ -1,0 +1,111 @@
+@using Denxorz.Satisfactory.Routes.Types
+@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Utils
+@inject FactoryStore FactoryStore
+
+<BaseMap Title="Power Circuits Map"
+         SelectedChanged="SelectedChanged"
+         Layers="[allMapLayer,filteredMapLayer]">
+    <LegendSlot>
+        <div class="legend-item">
+            <span class="legend-icon factory stable"></span>
+            <span>Normal</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-icon uploader"></span>
+            <span>Variable power</span>
+        </div>
+    </LegendSlot>
+    <TooltipSlot>
+        <div class="tooltip-header">@(_selectedFactory!.Type ?? "Unknown")</div>
+        @if (_selectedFactory.Recipe is not null)
+        {
+            <div class="tooltip-row">
+                <span class="tooltip-label">Recipe:</span>
+                <span class="tooltip-value">@_selectedFactory.Recipe</span>
+            </div>
+        }
+        @if (_selectedFactory.PercentageProducing is not null)
+        {
+            <div class="tooltip-row">
+                <span class="tooltip-label">Running at:</span>
+                <span class="tooltip-value">@(_selectedFactory.PercentageProducing.Value.ToString("F1"))%</span>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(_mainPowerCircuitName))
+        {
+            <div class="tooltip-row">
+                <span class="tooltip-label">Main Circuit:</span>
+                <span class="tooltip-value">@_mainPowerCircuitName</span>
+            </div>
+        }
+        @if (!string.IsNullOrEmpty(_subPowerCircuitName))
+        {
+            <div class="tooltip-row">
+                <span class="tooltip-label">Sub Circuit:</span>
+                <span class="tooltip-value">@_subPowerCircuitName</span>
+            </div>
+        }
+        <div class="tooltip-row">
+            <span class="tooltip-label">Is variable power:</span>
+            <span class="tooltip-value">@_selectedFactory.IsVariablePower()</span>
+        </div>
+    </TooltipSlot>
+</BaseMap>
+
+@code {
+    private readonly PowerCircuitFactoryMapLayer allMapLayer;
+    private readonly PowerCircuitFilteredFactoryMapLayer filteredMapLayer;
+
+    private Factory? _selectedFactory;
+    private string? _mainPowerCircuitName;
+    private string? _subPowerCircuitName;
+
+    public PowerCircuitMap(FactoryStore s)
+    {
+        allMapLayer = new(s);
+        filteredMapLayer = new(s);
+    }
+
+    private void SelectedChanged(Factory? factory)
+    {
+        _selectedFactory = factory;
+        SetPowerCircuitNames();
+    }
+
+    private void SetPowerCircuitNames()
+    {
+        if (_selectedFactory != null)
+        {
+            _mainPowerCircuitName = CircuitNames.GetIdAndName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.MainPowerCircuitId));
+            _subPowerCircuitName = CircuitNames.GetName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.SubPowerCircuitId));
+        }
+        else
+        {
+            _mainPowerCircuitName = null;
+            _subPowerCircuitName = null;
+        }
+    }
+}
+
+<style>
+    .legend-icon.factory {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 1px solid #000000;
+        box-sizing: border-box;
+    }
+
+    .legend-icon.factory.stable {
+        background: #00FF00;
+    }
+
+    .legend-icon.uploader {
+        width: 0;
+        height: 0;
+        border-left: 7px solid transparent;
+        border-right: 7px solid transparent;
+        border-bottom: 14px solid #00FF00;
+    }
+</style>
