@@ -4,17 +4,17 @@ public static class Resources
 {
     public static IReadOnlyList<string> Types { get; } =
     [
-        "Iron",
-        "Copper",
-        "Limestone",
+        "OreIron",
+        "OreCopper",
+        "Stone",
         "Coal",
-        "Caterium",
-        "Quartz",
+        "OreGold",
+        "RawQuartz",
         "Sulfur",
-        "Bauxite",
-        "Uranium",
-        "Sam",
-        "Oil",
+        "OreBauxite",
+        "OreUranium",
+        "SAM",
+        "LiquidOil",
         "Water",
         "Nitrogengas"
     ];
@@ -23,17 +23,17 @@ public static class Resources
     {
         return resourceType switch
         {
-            "Iron" => "#808080",
-            "Copper" => "#CD7F32",
-            "Limestone" => "#C0C0C0",
+            "OreIron" => "#808080",
+            "OreCopper" => "#CD7F32",
+            "Stone" => "#C0C0C0",
             "Coal" => "#000000",
-            "Caterium" => "#FFD700",
-            "Quartz" => "#E0E0E0",
+            "OreGold" => "#FFD700",
+            "RawQuartz" => "#E0E0E0",
             "Sulfur" => "#FFFF00",
-            "Bauxite" => "#8B4513",
-            "Uranium" => "#00FF00",
-            "Sam" => "#9932CC",
-            "Oil" => "#000080",
+            "OreBauxite" => "#8B4513",
+            "OreUranium" => "#00FF00",
+            "SAM" => "#9932CC",
+            "LiquidOil" => "#000080",
             "Water" => "#1E90FF",
             "Nitrogengas" => "#87CEEB",
             _ => "red"
