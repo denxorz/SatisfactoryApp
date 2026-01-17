@@ -1,6 +1,6 @@
 let graphviz = null;
 
-window.loadGraphviz = async function () {
+globalThis.loadGraphviz = async function () {
   if (!graphviz) {
     try {
       const { Graphviz } = await import('https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@2/dist/index.js');
@@ -12,14 +12,14 @@ window.loadGraphviz = async function () {
   }
 };
 
-window.renderDotGraph = async function (dotContent) {
+globalThis.renderDotGraph = async function (dotContent) {
   if (!graphviz) {
-    await window.loadGraphviz();
+    await globalThis.loadGraphviz();
   }
   return await graphviz.dot(dotContent);
 };
 
-window.getElementBoundingClientRect = function (selector) {
+globalThis.getElementBoundingClientRect = function (selector) {
   const element = document.querySelector(selector);
   if (!element) return null;
   const rect = element.getBoundingClientRect();
@@ -31,7 +31,7 @@ window.getElementBoundingClientRect = function (selector) {
   };
 };
 
-window.downloadJsonFile = function (jsonContent, filename) {
+globalThis.downloadJsonFile = function (jsonContent, filename) {
   const blob = new Blob([jsonContent], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
@@ -39,6 +39,48 @@ window.downloadJsonFile = function (jsonContent, filename) {
   link.download = filename;
   document.body.appendChild(link);
   link.click();
-  document.body.removeChild(link);
+  link.remove();
   URL.revokeObjectURL(url);
+};
+
+let jsonMessageHandler = null;
+
+globalThis.registerJsonMessageHandler = function (dotNetRef) {
+  if (jsonMessageHandler) return;
+
+  jsonMessageHandler = function (event) {
+    const message = event?.data ?? null;
+    if (message?.type !== 'statisfactory-json') return;
+
+    const payload = message.payload || {};
+    const jsonContent = payload.json || message.json;
+    if (typeof jsonContent !== 'string') return;
+
+    const filename = payload.filename || message.filename || null;
+    dotNetRef.invokeMethodAsync('LoadJsonFromMessage', jsonContent, filename);
+  };
+
+  globalThis.addEventListener('message', jsonMessageHandler);
+  try {
+    const parentWindow = globalThis.parent;
+    if (parentWindow) {
+      let targetOrigin = 'null';
+      if (document.referrer) {
+        try {
+          targetOrigin = new URL(document.referrer).origin;
+        } catch {
+          targetOrigin = 'null';
+        }
+      }
+      parentWindow.postMessage({ type: 'statisfactory-ready' }, targetOrigin);
+    }
+  } catch {
+    // Ignore cross-origin errors; readiness is best-effort.
+  }
+};
+
+globalThis.unregisterJsonMessageHandler = function () {
+  if (!jsonMessageHandler) return;
+  globalThis.removeEventListener('message', jsonMessageHandler);
+  jsonMessageHandler = null;
 };

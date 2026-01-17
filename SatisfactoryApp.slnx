@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="SatisfactoryApp/SatisfactoryApp.csproj" />
+  <Project Path="SatisfactoryDesktop/SatisfactoryDesktop.csproj" />
 </Solution>

@@ -22,16 +22,16 @@ using Microsoft.AspNetCore.Components
     <MudSpacer />
     @if (Test == true)
     {
-        <MudButton Variant="Variant.Outlined" 
-                   Color="Color.Secondary" 
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Secondary"
                    StartIcon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Science"
                    OnClick="LoadTestDataAsync"
                    Disabled="@_isCalculating"
                    Style="margin-right: 8px;">
             Load Test Data
         </MudButton>
-        <MudButton Variant="Variant.Outlined" 
-                   Color="Color.Primary" 
+        <MudButton Variant="Variant.Outlined"
+                   Color="Color.Primary"
                    StartIcon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Save"
                    OnClick="SaveStoresToJsonAsync"
                    Disabled="@_isCalculating"
@@ -90,7 +90,9 @@ using Microsoft.AspNetCore.Components
     }
 </style>
 
-    @code {
+@code {
+
+
 
     [SupplyParameterFromQuery]
     public bool? Example { get; set; }
@@ -106,10 +108,13 @@ using Microsoft.AspNetCore.Components
     private string? _error;
     private bool _isExampleFileLoaded;
     private string? _loadedFileName;
+    private DotNetObjectReference<Toolbar>? _dotNetRef;
 
     protected override async Task OnInitializedAsync()
     {
         NavigationManager.LocationChanged += OnLocationChanged;
+        _dotNetRef = DotNetObjectReference.Create(this);
+        await JSRuntime.InvokeVoidAsync("registerJsonMessageHandler", _dotNetRef);
         await CheckAndLoadTestDataAsync();
     }
 
@@ -121,12 +126,14 @@ using Microsoft.AspNetCore.Components
     public void Dispose()
     {
         NavigationManager.LocationChanged -= OnLocationChanged;
+        _dotNetRef?.Dispose();
+        _ = JSRuntime.InvokeVoidAsync("unregisterJsonMessageHandler");
     }
 
     private async Task CheckAndLoadTestDataAsync()
     {
         if (_isExampleFileLoaded) return;
-                
+
         if (Example == true)
         {
             _isExampleFileLoaded = true;
@@ -145,62 +152,59 @@ using Microsoft.AspNetCore.Components
 
     private async Task LoadTestDataAsync()
     {
+        await LoadDataAsync(DataService.GetTestDataAsync(HttpClient));
+    }
+
+    [JSInvokable]
+    public async Task LoadJsonFromMessage(string jsonContent, string? filename)
+    {
+        await LoadDataAsync(Task.FromResult(DataService.ImportFromJson(jsonContent, filename)));
+    }
+
+    private async Task LoadDataAsync(Task<SaveData> loadSaveData)
+    {
         try
         {
             _isCalculating = true;
             _error = null;
             StateHasChanged();
 
-            var (factories, powerCircuits, stations, uploaders, resources) = await TestDataService.GetTestDataAsync(HttpClient);
-            FactoryStore.Set(factories, powerCircuits);
-            StationStore.Set(stations, uploaders);
-            ResourceStore.Set(resources);
-            if (string.IsNullOrEmpty(_loadedFileName))
-            {
-                _selectedFile = null;
-            }
+            var saveData = await loadSaveData;
+            FactoryStore.Set(saveData.Factories, saveData.PowerCircuits);
+            StationStore.Set(saveData.Stations, saveData.Uploaders);
+            ResourceStore.Set(saveData.Resources);
+
+            _loadedFileName = saveData.Filename;
             _error = null;
         }
         catch (Exception ex)
         {
             _error = ex.Message;
-            Console.WriteLine($"LoadTestData: {_error}");
+            Console.WriteLine($"LoadData: {_error}");
         }
         finally
         {
             _isCalculating = false;
+            StateHasChanged();
         }
     }
 
     private async Task CalculateRoutes()
     {
-        _isCalculating = true;
-        _error = null;
-        StateHasChanged();
-
-        try
+        if (_selectedFile == null)
         {
-            if (_selectedFile == null)
-            {
-                return;
-            }
+            return;
+        }
 
-            using var memoryStream = await OpenFileAndCopyToMemoryStreamAsync();
+        await LoadDataAsync(LoadFromBrowserFile());
+    }
 
-            var result = SaveDetails.LoadFromStream(memoryStream);
-            FactoryStore.Set(result.Factories, result.PowerCircuits);
-            StationStore.Set(result.Stations, result.Uploaders);
-            ResourceStore.Set(result.Resources);
-        }
-        catch (Exception ex)
-        {
-            _error = ex.Message;
-            Console.WriteLine($"CalculateRoutes: {_error}");
-        }
-        finally
-        {
-            _isCalculating = false;
-        }
+    private async Task<SaveData> LoadFromBrowserFile()
+    {
+        using var memoryStream = await OpenFileAndCopyToMemoryStreamAsync();
+        var result = SaveDetails.LoadFromStream(memoryStream);
+
+        return SaveData.FromSaveDetails(_selectedFile.Name, result);
     }
 
     private async Task<MemoryStream> OpenFileAndCopyToMemoryStreamAsync()
@@ -244,9 +248,9 @@ using Microsoft.AspNetCore.Components
             _error = null;
             StateHasChanged();
 
-            var jsonContent = TestDataService.ExportToJson(FactoryStore, StationStore, ResourceStore);
+            var jsonContent = DataService.ExportToJson(FactoryStore, StationStore, ResourceStore);
             var filename = $"satisfactory-data-{DateTime.Now:yyyyMMdd-HHmmss}.json";
-            
+
             await JSRuntime.InvokeVoidAsync("downloadJsonFile", jsonContent, filename);
             _error = null;
         }
