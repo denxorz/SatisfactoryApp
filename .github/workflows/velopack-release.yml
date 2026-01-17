@@ -1,0 +1,59 @@
+name: Velopack Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-release:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore SatisfactoryDesktop/SatisfactoryDesktop.csproj
+
+      - name: Publish
+        run: dotnet publish SatisfactoryDesktop/SatisfactoryDesktop.csproj -c Release -r win-x64 --self-contained true -o publish
+
+      - name: Install Velopack CLI
+        run: |
+          dotnet tool install -g vpk --version 0.0.1298
+          echo "$env:USERPROFILE\.dotnet\tools" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Get version from tag
+        id: get-version
+        run: |
+          $version = "${{ github.ref_name }}".TrimStart("v")
+          "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Download previous releases (for delta)
+        run: vpk download github --repoUrl https://github.com/${{ github.repository }} --token ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pack Velopack release
+        run: >
+          vpk pack
+          --packId SatisfactoryDesktop
+          --packVersion ${{ steps.get-version.outputs.version }}
+          --packDir publish
+          --mainExe SatisfactoryDesktop.exe
+
+      - name: Upload Velopack release to GitHub
+        run: >
+          vpk upload github
+          --repoUrl https://github.com/${{ github.repository }}
+          --token ${{ secrets.GITHUB_TOKEN }}
+          --publish
+          --releaseName "SatisfactoryDesktop ${{ steps.get-version.outputs.version }}"
+          --tag v${{ steps.get-version.outputs.version }}
