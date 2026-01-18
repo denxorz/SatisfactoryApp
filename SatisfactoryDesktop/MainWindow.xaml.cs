@@ -35,7 +35,7 @@ public partial class MainWindow : Window
         SetProcessing(true);
         try
         {
-            var json = BuildJson();
+            var json = await BuildJsonAsync();
 
             var wrapperPath = await WriteWrapperHtmlAsync(siteUri, _saveFilePath, json);
 
@@ -55,10 +55,11 @@ public partial class MainWindow : Window
         }
     }
 
-    private string BuildJson()
+    private async Task<string> BuildJsonAsync()
     {
         using var stream = File.OpenRead(_saveFilePath);
-        var result = SaveDetails.LoadFromStream(stream);
+        SaveDetails? result = null;
+        await Task.Run(() => result = SaveDetails.LoadFromStream(stream));
 
         var options = new JsonSerializerOptions
         {
