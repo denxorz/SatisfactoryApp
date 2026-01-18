@@ -56,26 +56,29 @@
     <DialogContent>
         <div class="map-container @_fullscreenContainerCssClass" onclick="@HandleFullscreenMapClick">
             <div class="map-wrapper @_fullscreenWrapperCssClass">
-                <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
-
-                @foreach (var l in generatedFullscreenLayers.Where(s => s.Key.IsVisible && !string.IsNullOrEmpty(s.Value)))
+                @if (_fullscreenInitialized)
                 {
-                    <div class="map-svg-overlay @l.Key.Class">
-                        @((MarkupString)l.Value)
-                    </div>
-                }
+                    <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
 
-                <div class="legend-overlay">
-                    @LegendSlot
-                </div>
-
-                @if (_showTooltip && _selectedFactory != null)
-                {
-                    <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
-                        <div class="tooltip-content">
-                            @TooltipSlot
+                    @foreach (var l in generatedFullscreenLayers.Where(s => s.Key.IsVisible && !string.IsNullOrEmpty(s.Value)))
+                    {
+                        <div class="map-svg-overlay @l.Key.Class">
+                            @((MarkupString)l.Value)
                         </div>
+                    }
+
+                    <div class="legend-overlay">
+                        @LegendSlot
                     </div>
+
+                    @if (_showTooltip && _selectedFactory != null)
+                    {
+                        <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
+                            <div class="tooltip-content">
+                                @TooltipSlot
+                            </div>
+                        </div>
+                    }
                 }
             </div>
         </div>
@@ -103,6 +106,9 @@
     private readonly string _containerCssClass = $"map-container-{Guid.NewGuid():N}";
     private readonly string _fullscreenWrapperCssClass = $"map-wrapper-fullscreen-{Guid.NewGuid():N}";
     private readonly string _fullscreenContainerCssClass = $"map-container-fullscreen-{Guid.NewGuid():N}";
+    private bool _fullscreenInitialized = false;
+    private bool _fullscreenNeedsRender = false;
+    private bool _fullscreenLoading = false;
     private bool _showTooltip = false;
     private double _tooltipX = 0;
     private double _tooltipY = 0;
@@ -117,6 +123,7 @@
 
     private Dictionary<IMapLayer, string> generatedLayers = [];
     private Dictionary<IMapLayer, string> generatedFullscreenLayers = [];
+    private int _lastFullscreenUpdateCounter = -1;
 
     protected override void OnInitialized()
     {
@@ -164,6 +171,18 @@
                 await RenderMap();
             }
         }
+
+        if (_graphvizLoaded
+            && _fullscreenInitialized
+            && (_fullscreenNeedsRender || FactoryStore.UpdateCounter != _lastFullscreenUpdateCounter)
+            && FactoryStore.Factories.Count > 0
+            && !_fullscreenLoading
+            && string.IsNullOrEmpty(_error))
+        {
+            _lastFullscreenUpdateCounter = FactoryStore.UpdateCounter;
+            _fullscreenNeedsRender = false;
+            await RenderFullscreenMap();
+        }
     }
 
     private async Task<(IMapLayer layer, string svg)> CreateSvgAsync(IMapLayer layer, int mapSize)
@@ -189,7 +208,6 @@
             _isLoading = true;
 
             generatedLayers = (await Task.WhenAll(Layers.Select(l => CreateSvgAsync(l, 30)))).ToDictionary(l => l.layer, l => l.svg);
-            generatedFullscreenLayers = (await Task.WhenAll(Layers.Select(l => CreateSvgAsync(l, 100)))).ToDictionary(l => l.layer, l => l.svg);
         }
         catch (Exception ex)
         {
@@ -199,6 +217,26 @@
         finally
         {
             _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task RenderFullscreenMap()
+    {
+        Console.WriteLine("Rendering fullscreen map...");
+        try
+        {
+            _fullscreenLoading = true;
+            generatedFullscreenLayers = (await Task.WhenAll(Layers.Select(l => CreateSvgAsync(l, 100)))).ToDictionary(l => l.layer, l => l.svg);
+        }
+        catch (Exception ex)
+        {
+            _error = "Failed to render graph: " + ex.Message;
+            Console.WriteLine(_error);
+        }
+        finally
+        {
+            _fullscreenLoading = false;
             StateHasChanged();
         }
     }
@@ -323,9 +361,16 @@
         StateHasChanged();
     }
 
-    private void OpenFullscreenDialog()
+    private async Task OpenFullscreenDialog()
     {
         _showFullscreenDialog = true;
+        if (!_fullscreenInitialized)
+        {
+            _fullscreenInitialized = true;
+            _fullscreenNeedsRender = true;
+        }
+
+        await CheckAndRenderIfNeeded();
     }
 
     private class BoundingClientRect
