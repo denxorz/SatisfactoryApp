@@ -47,6 +47,7 @@ jobs:
           --packId SatisfactoryDesktop
           --packVersion ${{ steps.get-version.outputs.version }}
           --packDir publish
+          --packTitle "Statisfactory Loader"
           --mainExe SatisfactoryDesktop.exe
 
       - name: Upload Velopack release to GitHub
