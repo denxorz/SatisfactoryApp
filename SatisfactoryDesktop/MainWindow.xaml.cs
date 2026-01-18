@@ -26,12 +26,6 @@ public partial class MainWindow : Window
     private static string GetAppVersion()
     {
         var assembly = Assembly.GetExecutingAssembly();
-        var infoVersion = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
-        if (!string.IsNullOrWhiteSpace(infoVersion))
-        {
-            return infoVersion.TrimStart('v', 'V');
-        }
-
         var assemblyVersion = assembly.GetName().Version?.ToString();
         return string.IsNullOrWhiteSpace(assemblyVersion)
             ? "dev"
