@@ -25,7 +25,7 @@ jobs:
         run: dotnet restore SatisfactoryDesktop/SatisfactoryDesktop.csproj
 
       - name: Publish
-        run: dotnet publish SatisfactoryDesktop/SatisfactoryDesktop.csproj -c Release -r win-x64 --self-contained true -o publish
+        run: dotnet publish SatisfactoryDesktop/SatisfactoryDesktop.csproj -c Release -r win-x64 --self-contained true -o publish /p:Version=${{ steps.get-version.outputs.version }} /p:InformationalVersion=${{ steps.get-version.outputs.version }}
 
       - name: Install Velopack CLI
         run: |
