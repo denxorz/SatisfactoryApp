@@ -17,8 +17,8 @@ using Microsoft.AspNetCore.Components
 @inject NavigationManager NavigationManager
 
 <MudAppBar Elevation="1">
-    <img src="/images/ctor.png" alt="constructor" style="height: 40px; width: 40px; margin-right: 16px;" />
-    <MudText Typo="Typo.h6">Stats of your Satisfactory</MudText>
+    <span class="app-icon" role="img" aria-label="Statisfactory icon"></span>
+    <MudText Typo="Typo.h6">Stats of your Satisfactory game</MudText>
     <MudSpacer />
     @if (Test == true)
     {
@@ -86,6 +86,16 @@ using Microsoft.AspNetCore.Components
 </MudAppBar>
 
 <style>
+    .app-icon {
+        width: 40px;
+        height: 40px;
+        margin-right: 16px;
+        display: inline-block;
+        background-color: var(--mud-palette-primary);
+        mask: url("/images/icons8-graph-48.png") center / contain no-repeat;
+        -webkit-mask: url("/images/icons8-graph-48.png") center / contain no-repeat;
+    }
+
     .file-upload-input {
         position: absolute;
         width: 100%;
