@@ -13,6 +13,7 @@ namespace SatisfactoryDesktop;
 
 public partial class MainWindow : Window
 {
+    private const string IconPackUri = "pack://application:,,,/Assets/icons8-graph-48.png";
     private const string DropZoneHoverBrush = "#E59345";
     private const string DropZoneNormalBrush = "#555555";
     private string? _saveFilePath;
@@ -84,16 +85,28 @@ public partial class MainWindow : Window
     {
         var filename = Path.GetFileName(savePath);
         var escapedJson = EscapeJsonForScript(json);
+        var iconDataUri = GetIconDataUri();
 
         var tempDir = Path.Combine(Path.GetTempPath(), "statisfactory-pre-loader");
         Directory.CreateDirectory(tempDir);
         Directory.GetFiles(tempDir).ToList().ForEach(File.Delete);
         var outputPath = Path.Combine(tempDir, $"statisfactory-{DateTime.Now:yyyyMMdd-HHmmss}.html");
 
-        var html = BuildWrapperHtml(siteUri, escapedJson, filename);
+        var html = BuildWrapperHtml(siteUri, escapedJson, filename, iconDataUri);
         await File.WriteAllTextAsync(outputPath, html, new UTF8Encoding(false));
 
         return outputPath;
+    }
+
+    private static string GetIconDataUri()
+    {
+        var resourceInfo = Application.GetResourceStream(new Uri(IconPackUri, UriKind.Absolute))
+            ?? throw new InvalidOperationException("Icon resource not found.");
+
+        using var memory = new MemoryStream();
+        resourceInfo.Stream.CopyTo(memory);
+        var base64 = Convert.ToBase64String(memory.ToArray());
+        return $"data:image/png;base64,{base64}";
     }
 
     private static string EscapeJsonForScript(string json)
@@ -101,11 +114,12 @@ public partial class MainWindow : Window
         return json.Replace("</script>", "<\\/script>", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static string BuildWrapperHtml(Uri siteUrl, string json, string filename)
+    private static string BuildWrapperHtml(Uri siteUrl, string json, string filename, string iconDataUri)
     {
         var encodedUrl = WebUtility.HtmlEncode(siteUrl.ToString());
         var filenameLiteral = JsonSerializer.Serialize(filename);
         var originLiteral = JsonSerializer.Serialize(siteUrl.ToString());
+        var iconLine = $"  <link rel=\"icon\" type=\"image/png\" href=\"{iconDataUri}\" />\n";
 
         return $$"""
             <!doctype html>
@@ -113,6 +127,7 @@ public partial class MainWindow : Window
             <head>
               <meta charset="utf-8" />
               <title>Statisfactory</title>
+            {{iconLine}}
             </head>
             <body style="margin:0">
               <iframe id="app" src="{{encodedUrl}}" style="border:0;width:100vw;height:100vh;"></iframe>
