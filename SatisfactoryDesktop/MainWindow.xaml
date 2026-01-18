@@ -16,6 +16,7 @@
         <Border x:Name="DropZone"
                     Margin="0,6,0,0"
                     Padding="12"
+                    Background="Transparent"
                     AllowDrop="True"
                     MouseLeftButtonUp="DropZone_MouseLeftButtonUp"
                     DragEnter="DropZone_DragEnter"
@@ -30,11 +31,12 @@
                                StrokeThickness="1"
                                StrokeDashArray="4 3"
                                RadiusX="6"
-                               RadiusY="6" Margin="3" />
-                <TextBlock x:Name="DropZoneHint"
-                               Text="Drop a .sav file here or click to browse"
-                               HorizontalAlignment="Center"
-                               VerticalAlignment="Center" />
+                               RadiusY="6"
+                               IsHitTestVisible="False"
+                               Margin="3" />
+                <TextBlock Text="Drop a .sav file here or click to browse"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center" />
             </Grid>
         </Border>
 
