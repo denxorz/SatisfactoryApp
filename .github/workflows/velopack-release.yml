@@ -31,7 +31,7 @@ jobs:
           "version=$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
 
       - name: Publish
-        run: dotnet publish SatisfactoryDesktop/SatisfactoryDesktop.csproj -c Release -r win-x64 --self-contained true -o publish /p:Version=${{ steps.get-version.outputs.version }} /p:InformationalVersion=${{ steps.get-version.outputs.version }}
+        run: dotnet publish SatisfactoryDesktop/SatisfactoryDesktop.csproj -c Release -r win-x64 --self-contained true -o publish /p:Version=${{ github.run_number }} /p:InformationalVersion=${{ github.run_number }}
 
       - name: Install Velopack CLI
         run: |
