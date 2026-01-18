@@ -31,4 +31,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="..\icons8-graph-48.png" Link="Assets\icons8-graph-48.png" />
+  </ItemGroup>
+
 </Project>

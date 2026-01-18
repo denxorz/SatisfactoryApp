@@ -6,7 +6,8 @@
         xmlns:local="clr-namespace:SatisfactoryDesktop"
         mc:Ignorable="d"
         Title="Statisfactory.net Loader" Height="320" Width="720" MinHeight="300" MinWidth="640"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        Icon="Assets/icons8-graph-48.png">
     <Grid Margin="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="150" />
