@@ -267,8 +267,12 @@ using Microsoft.AspNetCore.Components
 
     private static bool ShouldOfferDesktopDownload(Exception ex)
     {
+        if (ex is OutOfMemoryException)
+            return true;
+
         var message = ex.Message ?? string.Empty;
-        return message.Contains("Garbage collector could not allocate", StringComparison.OrdinalIgnoreCase);
+        return message.Contains("Garbage collector could not allocate", StringComparison.OrdinalIgnoreCase)
+            || message.Contains("Arg_OutOfMemoryException", StringComparison.OrdinalIgnoreCase);
     }
 
     private async Task SaveStoresToJsonAsync()
