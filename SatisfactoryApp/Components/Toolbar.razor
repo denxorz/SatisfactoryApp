@@ -77,6 +77,12 @@ using Microsoft.AspNetCore.Components
             <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Error" Color="Color.Error" Size="Size.Small" />
         </MudTooltip>
     }
+    @if (_showDesktopDownload)
+    {
+        <MudLink Href="@DesktopDownloadUrl" Target="_blank" Rel="noopener" Style="margin-left: 8px;">
+            Download desktop app
+        </MudLink>
+    }
 </MudAppBar>
 
 <style>
@@ -109,6 +115,10 @@ using Microsoft.AspNetCore.Components
     private bool _isExampleFileLoaded;
     private string? _loadedFileName;
     private DotNetObjectReference<Toolbar>? _dotNetRef;
+    private bool _showDesktopDownload;
+
+    private const string DesktopDownloadUrl =
+        "https://github.com/denxorz/SatisfactoryApp/releases/latest/download/SatisfactoryDesktop-win-Setup.exe";
 
     protected override async Task OnInitializedAsync()
     {
@@ -167,6 +177,7 @@ using Microsoft.AspNetCore.Components
         {
             _isCalculating = true;
             _error = null;
+            _showDesktopDownload = false;
             StateHasChanged();
 
             var saveData = await loadSaveData;
@@ -179,7 +190,10 @@ using Microsoft.AspNetCore.Components
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            _showDesktopDownload = ShouldOfferDesktopDownload(ex);
+            _error = _showDesktopDownload
+                ? "File too large for the web app. Please use the desktop app."
+                : ex.Message;
             Console.WriteLine($"LoadData: {_error}");
         }
         finally
@@ -234,11 +248,18 @@ using Microsoft.AspNetCore.Components
         ClearDragClass();
         _selectedFile = e.File;
         _loadedFileName = null;
+        _showDesktopDownload = false;
         await CalculateRoutes();
     }
 
     private void SetDragClass() => _dragClass = $"{DefaultDragClass} mud-border-primary";
     private void ClearDragClass() => _dragClass = DefaultDragClass;
+
+    private static bool ShouldOfferDesktopDownload(Exception ex)
+    {
+        var message = ex.Message ?? string.Empty;
+        return message.Contains("Garbage collector could not allocate", StringComparison.OrdinalIgnoreCase);
+    }
 
     private async Task SaveStoresToJsonAsync()
     {
