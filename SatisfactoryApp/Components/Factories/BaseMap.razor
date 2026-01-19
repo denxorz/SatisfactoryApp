@@ -115,6 +115,11 @@
     private bool _showFullscreenDialog = false;
 
     private Action? _checkAndRenderHandler;
+    private CancellationTokenSource? _renderCts;
+    private CancellationTokenSource? _fullscreenRenderCts;
+    private int _pendingUpdateCounter = -1;
+    private int _pendingFullscreenUpdateCounter = -1;
+    private const int RenderDebounceMs = 150;
 
     private const int minX = -320000;
     private const int maxX = 425000;
@@ -134,6 +139,10 @@
     public void Dispose()
     {
         FactoryStore.FilteredFactoriesChanged -= _checkAndRenderHandler;
+        _renderCts?.Cancel();
+        _renderCts?.Dispose();
+        _fullscreenRenderCts?.Cancel();
+        _fullscreenRenderCts?.Dispose();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -165,10 +174,10 @@
     {
         if (_graphvizLoaded && FactoryStore.UpdateCounter != _lastUpdateCounter)
         {
-            _lastUpdateCounter = FactoryStore.UpdateCounter;
+            _pendingUpdateCounter = FactoryStore.UpdateCounter;
             if (FactoryStore.Factories.Count > 0 && !_isLoading && string.IsNullOrEmpty(_error))
             {
-                await RenderMap();
+                _ = QueueRenderMapAsync();
             }
         }
 
@@ -179,9 +188,49 @@
             && !_fullscreenLoading
             && string.IsNullOrEmpty(_error))
         {
-            _lastFullscreenUpdateCounter = FactoryStore.UpdateCounter;
+            _pendingFullscreenUpdateCounter = FactoryStore.UpdateCounter;
             _fullscreenNeedsRender = false;
-            await RenderFullscreenMap();
+            _ = QueueRenderFullscreenMapAsync();
+        }
+    }
+
+    private async Task QueueRenderMapAsync()
+    {
+        _renderCts?.Cancel();
+        _renderCts?.Dispose();
+        _renderCts = new CancellationTokenSource();
+
+        var token = _renderCts.Token;
+        try
+        {
+            await Task.Delay(RenderDebounceMs, token);
+            if (!token.IsCancellationRequested)
+            {
+                await RenderMap();
+            }
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private async Task QueueRenderFullscreenMapAsync()
+    {
+        _fullscreenRenderCts?.Cancel();
+        _fullscreenRenderCts?.Dispose();
+        _fullscreenRenderCts = new CancellationTokenSource();
+
+        var token = _fullscreenRenderCts.Token;
+        try
+        {
+            await Task.Delay(RenderDebounceMs, token);
+            if (!token.IsCancellationRequested)
+            {
+                await RenderFullscreenMap();
+            }
+        }
+        catch (TaskCanceledException)
+        {
         }
     }
 
@@ -207,7 +256,9 @@
         {
             _isLoading = true;
 
-            generatedLayers = (await Task.WhenAll(Layers.Select(l => CreateSvgAsync(l, 30)))).ToDictionary(l => l.layer, l => l.svg);
+            var visibleLayers = Layers.Where(l => l.IsVisible).ToList();
+            generatedLayers = (await Task.WhenAll(visibleLayers.Select(l => CreateSvgAsync(l, 30))))
+                .ToDictionary(l => l.layer, l => l.svg);
         }
         catch (Exception ex)
         {
@@ -217,6 +268,7 @@
         finally
         {
             _isLoading = false;
+            _lastUpdateCounter = _pendingUpdateCounter;
             StateHasChanged();
         }
     }
@@ -227,7 +279,9 @@
         try
         {
             _fullscreenLoading = true;
-            generatedFullscreenLayers = (await Task.WhenAll(Layers.Select(l => CreateSvgAsync(l, 100)))).ToDictionary(l => l.layer, l => l.svg);
+            var visibleLayers = Layers.Where(l => l.IsVisible).ToList();
+            generatedFullscreenLayers = (await Task.WhenAll(visibleLayers.Select(l => CreateSvgAsync(l, 100))))
+                .ToDictionary(l => l.layer, l => l.svg);
         }
         catch (Exception ex)
         {
@@ -237,6 +291,7 @@
         finally
         {
             _fullscreenLoading = false;
+            _lastFullscreenUpdateCounter = _pendingFullscreenUpdateCounter;
             StateHasChanged();
         }
     }
