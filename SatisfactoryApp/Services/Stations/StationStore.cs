@@ -7,10 +7,17 @@ public class StationStore
     private List<Station> _stations = [];
     private List<Uploader> _uploaders = [];
     private readonly StationFilters _filters = new();
+    private List<Station> _filteredStations = [];
+    private List<Uploader> _filteredUploaders = [];
+    private string? _searchText;
+    private HashSet<string>? _availableStationTypes;
+    private HashSet<string>? _availableTransferTypes;
+    private HashSet<string>? _selectedCargoTypes;
+    private HashSet<string>? _selectedCargoTypesIgnoreCase;
     private int _updateCounter = 0;
 
     public List<Station> Stations => _stations;
-    public List<Station> FilteredStations => [.. _stations.Where(IsIncluded)];
+    public List<Station> FilteredStations => _filteredStations;
     public List<Uploader> Uploaders => _uploaders;
     public StationFilters Filters => _filters;
     public List<CargoTypeOption> CargoTypeOptions { get; private set; } = [];
@@ -32,53 +39,47 @@ public class StationStore
 
     public void NotifyFiltersChanged()
     {
+        UpdateFilterCaches();
+        UpdateFilteredStations();
+        UpdateFilteredUploaders();
         _updateCounter++;
         FilteredStationsChanged?.Invoke();
     }
 
     public List<Uploader> FilteredUploaders
     {
-        get
-        {
-            if (_filters.SelectedTransferTypes.Count > 0 && !_filters.AvailableAfterFilterTransferTypes.Contains("Uploader"))
-            {
-                return [];
-            }
-
-            return [.. _uploaders.Where(IsUploaderFiltered)];
-        }
+        get => _filteredUploaders;
     }
 
     private bool IsIncluded(Station station)
     {
-        if (!string.IsNullOrEmpty(_filters.SearchText))
+        if (!string.IsNullOrEmpty(_searchText))
         {
-            var searchText = _filters.SearchText.ToLower();
-            var stationName = (station.Name ?? "").ToLower();
-            var stationShortName = (station.ShortName ?? "").ToLower();
+            var stationName = station.Name ?? string.Empty;
+            var stationShortName = station.ShortName ?? string.Empty;
 
-            if (!stationName.Contains(searchText) && !stationShortName.Contains(searchText))
+            if (!stationName.Contains(_searchText, StringComparison.OrdinalIgnoreCase)
+                && !stationShortName.Contains(_searchText, StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }
         }
 
         if (_filters.SelectedStationTypes.Count > 0
-            && !_filters.AvailableAfterFilterStationTypes.Contains(station.Type, StringComparer.OrdinalIgnoreCase))
+            && (_availableStationTypes == null || !_availableStationTypes.Contains(station.Type ?? string.Empty)))
         {
             return false;
         }
 
         if (_filters.SelectedTransferTypes.Count > 0
-            && !_filters.AvailableAfterFilterTransferTypes.Contains(station.IsUnload ? "Unload" : "Load"))
+            && (_availableTransferTypes == null || !_availableTransferTypes.Contains(station.IsUnload ? "Unload" : "Load")))
         {
             return false;
         }
 
-        if (_filters.SelectedCargoTypes.Count > 0)
+        if (_selectedCargoTypesIgnoreCase is { Count: > 0 })
         {
-            var hasMatchingCargo = _filters.SelectedCargoTypes.Any(s => station.CargoTypes.Contains(s.Value, StringComparer.OrdinalIgnoreCase));
-            if (!hasMatchingCargo)
+            if (!station.CargoTypes.Any(c => _selectedCargoTypesIgnoreCase.Contains(c)))
             {
                 return false;
             }
@@ -89,10 +90,9 @@ public class StationStore
 
     private bool IsUploaderFiltered(Uploader uploader)
     {
-        if (_filters.SelectedCargoTypes.Count > 0)
+        if (_selectedCargoTypes is { Count: > 0 })
         {
-            var hasMatchingCargo = _filters.SelectedCargoTypes.Any(s => uploader.CargoTypes.Contains(s.Value));
-            if (!hasMatchingCargo)
+            if (!uploader.CargoTypes.Any(c => _selectedCargoTypes.Contains(c)))
             {
                 return false;
             }
@@ -116,7 +116,7 @@ public class StationStore
         get => Filters.SelectedTransferTypes;
         set
         {
-            Filters.SelectedTransferTypes = value.ToList() ?? [];
+            Filters.SelectedTransferTypes = value?.ToList() ?? [];
             Filters.AvailableAfterFilterTransferTypes = [.. Filters.AllTransferTypes.Except(_filters.SelectedTransferTypes)];
             NotifyFiltersChanged();
         }
@@ -127,7 +127,7 @@ public class StationStore
         get => Filters.SelectedStationTypes;
         set
         {
-            Filters.SelectedStationTypes = value.ToList() ?? [];
+            Filters.SelectedStationTypes = value?.ToList() ?? [];
             Filters.AvailableAfterFilterStationTypes = [.. Filters.AllStationTypes.Except(_filters.SelectedStationTypes)];
             NotifyFiltersChanged();
         }
@@ -138,7 +138,7 @@ public class StationStore
         get => Filters.SelectedCargoTypes;
         set
         {
-            Filters.SelectedCargoTypes = value.ToList() ?? [];
+            Filters.SelectedCargoTypes = value?.ToList() ?? [];
             NotifyFiltersChanged();
         }
     }
@@ -160,5 +160,45 @@ public class StationStore
         return [.. cargoTypes
             .OrderBy(t => t)
             .Select(t => new CargoTypeOption(t, t))];
+    }
+
+    private void UpdateFilterCaches()
+    {
+        _searchText = string.IsNullOrWhiteSpace(_filters.SearchText) ? null : _filters.SearchText;
+        _availableStationTypes = _filters.AvailableAfterFilterStationTypes.Count > 0
+            ? _filters.AvailableAfterFilterStationTypes.ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : null;
+        _availableTransferTypes = _filters.AvailableAfterFilterTransferTypes.Count > 0
+            ? _filters.AvailableAfterFilterTransferTypes.ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : null;
+
+        if (_filters.SelectedCargoTypes.Count > 0)
+        {
+            var values = _filters.SelectedCargoTypes.Select(s => s.Value);
+            _selectedCargoTypes = new HashSet<string>(values, StringComparer.Ordinal);
+            _selectedCargoTypesIgnoreCase = new HashSet<string>(values, StringComparer.OrdinalIgnoreCase);
+        }
+        else
+        {
+            _selectedCargoTypes = null;
+            _selectedCargoTypesIgnoreCase = null;
+        }
+    }
+
+    private void UpdateFilteredStations()
+    {
+        _filteredStations = [.. _stations.Where(IsIncluded)];
+    }
+
+    private void UpdateFilteredUploaders()
+    {
+        if (_filters.SelectedTransferTypes.Count > 0
+            && (_availableTransferTypes == null || !_availableTransferTypes.Contains("Uploader")))
+        {
+            _filteredUploaders = [];
+            return;
+        }
+
+        _filteredUploaders = [.. _uploaders.Where(IsUploaderFiltered)];
     }
 }

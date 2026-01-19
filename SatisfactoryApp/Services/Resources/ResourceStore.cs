@@ -6,10 +6,12 @@ public class ResourceStore
 {
     private readonly List<Resource> _resources = [];
     private readonly ResourceFilters _filters = new();
+    private List<Resource> _filteredResources = [];
+    private List<ResourceTypeOption> _resourceTypeOptions = [];
     private int _updateCounter = 0;
 
     public List<Resource> Resources => _resources;
-    public List<Resource> FilteredResources => [.. _resources.Where(IsResourceIncluded)];
+    public List<Resource> FilteredResources => _filteredResources;
     public ResourceFilters Filters => _filters;
     public int UpdateCounter => _updateCounter;
 
@@ -20,11 +22,13 @@ public class ResourceStore
         _resources.Clear();
         _resources.AddRange(resources);
 
+        UpdateResourceTypeOptions();
         NotifyChanged();
     }
 
     private void NotifyChanged()
     {
+        _filteredResources = [.. _resources.Where(IsResourceIncluded)];
         _updateCounter++;
         ResourcesChanged?.Invoke();
     }
@@ -65,21 +69,7 @@ public class ResourceStore
 
     public List<ResourceTypeOption> ResourceTypeOptions
     {
-        get
-        {
-            var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-
-            foreach (var resource in _resources)
-            {
-                var type = resource.Type ?? "Unknown";
-                counts.TryGetValue(type, out var count);
-                counts[type] = count + 1;
-            }
-
-            return Utils.Resources.Types
-                    .Select(type => new ResourceTypeOption($"{type} ({counts.GetValueOrDefault(type, 0)})", type))
-                    .ToList();
-        }
+        get => _resourceTypeOptions;
     }
 
     public IEnumerable<ResourceTypeOption> SelectedResourceTypes
@@ -120,5 +110,21 @@ public class ResourceStore
             Filters.AvailableAfterFilterMaxValues = [.. ((int[])[300, 600, 1200]).Except(_filters.SelectedMaxValues)];
             NotifyChanged();
         }
+    }
+
+    private void UpdateResourceTypeOptions()
+    {
+        var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var resource in _resources)
+        {
+            var type = resource.Type ?? "Unknown";
+            counts.TryGetValue(type, out var count);
+            counts[type] = count + 1;
+        }
+
+        _resourceTypeOptions = Utils.Resources.Types
+            .Select(type => new ResourceTypeOption($"{type} ({counts.GetValueOrDefault(type, 0)})", type))
+            .ToList();
     }
 }
