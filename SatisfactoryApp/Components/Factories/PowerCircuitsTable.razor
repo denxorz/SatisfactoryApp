@@ -167,6 +167,33 @@
             .OrderBy(s => s.CircuitId)
             .ToDictionary(s => s.CircuitId, s => s);
 
+        var mainIdsWithSubCircuits = statsSub.Values
+            .Where(s => s.ParentCircuitId.HasValue)
+            .Select(s => s.ParentCircuitId!.Value)
+            .ToHashSet();
+
+        foreach (var mainCircuit in _powerMainCircuitStats.Values)
+        {
+            if (mainCircuit.Total == 0 || mainIdsWithSubCircuits.Contains(mainCircuit.CircuitId))
+            {
+                continue;
+            }
+
+            statsSub[mainCircuit.CircuitId] = new PowerCircuitStat
+            {
+                CircuitId = mainCircuit.CircuitId,
+                CircuitName = mainCircuit.CircuitName,
+                ParentCircuitId = mainCircuit.CircuitId,
+                Total = mainCircuit.Total,
+                NumberOfNotStable = mainCircuit.NumberOfNotStable,
+                NumberOfVariablePower = mainCircuit.NumberOfVariablePower,
+                NumberOfPowerStorage = mainCircuit.NumberOfPowerStorage,
+                NumberOfPowerGenerator = mainCircuit.NumberOfPowerGenerator,
+                Priority = mainCircuit.Priority,
+                IsStable = mainCircuit.IsStable
+            };
+        }
+
         _powerSubCircuitStats = statsSub.Values
             .OrderBy(s => s.CircuitId)
             .ToList();

@@ -17,7 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Denxorz.Satisfactory.Routes" Version="1.7.6" />
+    <PackageReference Include="Denxorz.Satisfactory.Routes" Version="1.7.8" />
     <PackageReference Include="Velopack" Version="0.0.1298" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="10.0.1" />
   </ItemGroup>
