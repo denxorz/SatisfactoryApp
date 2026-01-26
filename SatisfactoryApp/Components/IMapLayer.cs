@@ -1,4 +1,4 @@
-namespace SatisfactoryApp.Components.Factories
+namespace SatisfactoryApp.Components
 {
     public interface IMapLayer<T>
     {
