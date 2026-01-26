@@ -369,9 +369,9 @@
     {
         var watermarkText = $"{DateTime.Now:yyyy-MM-dd HH:mm} • Statisfactory.net • {(!string.IsNullOrWhiteSpace(LoadedFileStore.LoadedFileName) ? LoadedFileStore.LoadedFileName : "No file loaded")}";
         var encodedText = WebUtility.HtmlEncode(watermarkText);
-        var fontSize = mapSize / 25.0;
+        var fontSize = mapSize / 70.0;
         var x = mapSize * 0.02;
-        var y = mapSize * 0.04;
+        var y = mapSize * 0.02;
 
         return string.Format(
             CultureInfo.InvariantCulture,
