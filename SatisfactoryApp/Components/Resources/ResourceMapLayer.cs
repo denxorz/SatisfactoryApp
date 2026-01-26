@@ -41,15 +41,15 @@ public class ResourceMapLayer(ResourceStore ResourceStore) : BaseMapLayer<Resour
     {
         if (Math.Abs(item.Max - item.Flow) < 0.1)
         {
-            return 0.06f;
+            return 0.03f;
         }
         else if (item.Flow > 0)
         {
-            return 0.04f;
+            return 0.02f;
         }
         else
         {
-            return 0.02f;
+            return 0.01f;
         }
     }
 }

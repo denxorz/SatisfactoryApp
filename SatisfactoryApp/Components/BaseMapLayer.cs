@@ -19,7 +19,7 @@ public abstract class BaseMapLayer<T> : IMapLayer<T>
 
             if (shape == "triangle")
             {
-                const double size = 0.2;
+                const double size = 0.15;
                 var topX = x;
                 var topY = y - size / 2;
                 var leftX = x - size / 2;
@@ -31,7 +31,7 @@ public abstract class BaseMapLayer<T> : IMapLayer<T>
                     $"<polygon points=\"{topX:F2},{topY:F2} {leftX:F2},{leftY:F2} {rightX:F2},{rightY:F2}\" fill=\"{fillColor}\" stroke=\"{borderColor}\" stroke-width=\"{strokeWidth:F2}\" />");
             }
 
-            const double radius = 0.1;
+            const double radius = 0.05;
             return string.Create(CultureInfo.InvariantCulture,
                 $"<circle cx=\"{x:F2}\" cy=\"{y:F2}\" r=\"{radius:F2}\" fill=\"{fillColor}\" stroke=\"{borderColor}\" stroke-width=\"{strokeWidth:F2}\" />");
         })];
