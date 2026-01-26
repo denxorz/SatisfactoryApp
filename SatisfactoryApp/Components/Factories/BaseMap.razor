@@ -5,9 +5,11 @@
 @using SatisfactoryApp.Services.Factories
 @using SatisfactoryApp.Utils
 @using System.Text
+@using System.Globalization
 @implements IDisposable
 @inject FactoryStore FactoryStore
 @inject IJSRuntime JSRuntime
+@typeparam T where T : class
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
     <MudCardHeader Class="mud-primary pa-0 pl-1">
@@ -39,7 +41,7 @@
                     @LegendSlot
                 </div>
 
-                @if (_showTooltip && _selectedFactory != null)
+                @if (_showTooltip && _selected != null)
                 {
                     <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
                         <div class="tooltip-content">
@@ -71,7 +73,7 @@
                         @LegendSlot
                     </div>
 
-                    @if (_showTooltip && _selectedFactory != null)
+                    @if (_showTooltip && _selected != null)
                     {
                         <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
                             <div class="tooltip-content">
@@ -87,10 +89,10 @@
 
 @code {
     [Parameter] public string Title { get; set; } = string.Empty;
-    [Parameter] public Func<string, Factory, string, string> CreateEdge { get; set; } = (fId, f, pos) => "";
-    [Parameter] public Action<Factory?>? SelectedChanged { get; set; }
+    [Parameter] public Func<string, T, string, string> CreateEdge { get; set; } = (fId, f, pos) => "";
+    [Parameter] public Action<T?>? SelectedChanged { get; set; }
 
-    [Parameter] public List<IMapLayer> Layers { get; set; } = [];
+    [Parameter] public List<IMapLayer<T>> Layers { get; set; } = [];
 
     [Parameter] public RenderFragment? TitleAfterSlot { get; set; }
     [Parameter] public RenderFragment? OverlaySlot { get; set; }
@@ -99,9 +101,8 @@
 
     private bool _isLoading;
     private string? _error;
-    private Factory? _selectedFactory;
+    private T? _selected;
     private int _lastUpdateCounter = -1;
-    private bool _graphvizLoaded = false;
     private readonly string _wrapperCssClass = $"map-wrapper-{Guid.NewGuid():N}";
     private readonly string _containerCssClass = $"map-container-{Guid.NewGuid():N}";
     private readonly string _fullscreenWrapperCssClass = $"map-wrapper-fullscreen-{Guid.NewGuid():N}";
@@ -126,8 +127,8 @@
     private const int minY = -380000;
     private const int maxY = 375000;
 
-    private Dictionary<IMapLayer, string> generatedLayers = [];
-    private Dictionary<IMapLayer, string> generatedFullscreenLayers = [];
+    private Dictionary<IMapLayer<T>, string> generatedLayers = [];
+    private Dictionary<IMapLayer<T>, string> generatedFullscreenLayers = [];
     private int _lastFullscreenUpdateCounter = -1;
 
     protected override void OnInitialized()
@@ -147,32 +148,12 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            try
-            {
-                _isLoading = true;
-
-                await JSRuntime.InvokeVoidAsync("loadGraphviz");
-                _graphvizLoaded = true;
-            }
-            catch (Exception ex)
-            {
-                _error = $"Failed to load graph renderer: {ex.Message}";
-                Console.WriteLine(_error);
-            }
-            finally
-            {
-                _isLoading = false;
-            }
-        }
-
         await CheckAndRenderIfNeeded();
     }
 
     private async Task CheckAndRenderIfNeeded()
     {
-        if (_graphvizLoaded && FactoryStore.UpdateCounter != _lastUpdateCounter)
+        if (FactoryStore.UpdateCounter != _lastUpdateCounter)
         {
             _pendingUpdateCounter = FactoryStore.UpdateCounter;
             if (FactoryStore.Factories.Count > 0 && !_isLoading && string.IsNullOrEmpty(_error))
@@ -181,8 +162,7 @@
             }
         }
 
-        if (_graphvizLoaded
-            && _fullscreenInitialized
+        if (_fullscreenInitialized
             && (_fullscreenNeedsRender || FactoryStore.UpdateCounter != _lastFullscreenUpdateCounter)
             && FactoryStore.Factories.Count > 0
             && !_fullscreenLoading
@@ -196,7 +176,7 @@
 
     private async Task QueueRenderMapAsync()
     {
-        _renderCts?.Cancel();
+        await (_renderCts?.CancelAsync() ?? Task.CompletedTask);
         _renderCts?.Dispose();
         _renderCts = new CancellationTokenSource();
 
@@ -216,7 +196,7 @@
 
     private async Task QueueRenderFullscreenMapAsync()
     {
-        _fullscreenRenderCts?.Cancel();
+        await (_fullscreenRenderCts?.CancelAsync() ?? Task.CompletedTask);
         _fullscreenRenderCts?.Dispose();
         _fullscreenRenderCts = new CancellationTokenSource();
 
@@ -234,12 +214,12 @@
         }
     }
 
-    private async Task<(IMapLayer layer, string svg)> CreateSvgAsync(IMapLayer layer, int mapSize)
+    private Task<(IMapLayer<T> layer, string svg)> CreateSvgAsync(IMapLayer<T> layer, int mapSize)
     {
         try
         {
-            var dot = CreateDotContent(layer, mapSize);
-            return (layer, await JSRuntime.InvokeAsync<string>("renderDotGraph", dot));
+            var svg = CreateSvgContent(layer, mapSize);
+            return Task.FromResult((layer, svg));
         }
         catch (Exception ex)
         {
@@ -247,7 +227,7 @@
             Console.WriteLine(_error);
         }
 
-        return (layer, "");
+        return Task.FromResult((layer, ""));
     }
 
     private async Task RenderMap()
@@ -296,46 +276,35 @@
         }
     }
 
-    private string CreateDotContent(IMapLayer layer, int mapSize = 30)
+    private string CreateSvgContent(IMapLayer<T> layer, int mapSize = 30)
     {
-        float mapWidth = mapSize;
-        float mapHeight = mapSize;
+        int mapWidth = mapSize;
+        int mapHeight = mapSize;
         float mapWidthClamp = mapWidth - 0.1f;
         float mapHeightClamp = mapHeight - 0.1f;
 
-        var scaleX = mapWidth / (maxX - minX);
-        var scaleY = mapHeight / (maxY - minY);
+        var scaleX = mapWidth / (float)(maxX - minX);
+        var scaleY = mapHeight / (float)(maxY - minY);
 
-        var dot = new StringBuilder(
-            $@"digraph G {{
-              layout=neato;
-              size=""{mapWidth},{mapHeight}"";
-              bgcolor=transparent;
-              node [shape=circle, style=filled, penwidth=1, width=0.2, height=0.2, fontsize=8, fontname=""Arial"", label=""""];
-              edge [fontname=""Arial"", penwidth=2];
-              graph [ranksep=0, nodesep=0, splines=curved];
-            ");
+        var svg = new StringBuilder();
+        svg.AppendLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {mapWidth} {mapHeight}\" preserveAspectRatio=\"none\">");
+        svg.AppendLine("<g fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\">");
 
-        const double cornerSize = 0.001;
-        dot.Append($"\n_tl [label=\"\", pos=\"0,{mapHeight}!\", width={cornerSize}, height={cornerSize}];");
-        dot.Append($"\n_tr [label=\"\", pos=\"{mapWidth},{mapHeight}!\", width={cornerSize}, height={cornerSize}];");
-        dot.Append($"\n_bl [label=\"\", pos=\"0,0!\", width={cornerSize}, height={cornerSize}];");
-        dot.Append($"\n_br [label=\"\", pos=\"{mapWidth},0!\", width={cornerSize}, height={cornerSize}];");
-
-        string GetPosition(float x, float y)
+        (double x, double y) GetPosition(float x, float y)
         {
             var scaledX = (x - minX) * scaleX;
-            var scaledY = mapHeight - (y - minY) * scaleY;
+            var scaledY = (y - minY) * scaleY;
             var clampedX = Math.Clamp(scaledX, 0, mapWidthClamp);
             var clampedY = Math.Clamp(scaledY, 0, mapHeightClamp);
-            return $"pos=\"{clampedX:F2},{clampedY:F2}!\"";
+            return (clampedX, clampedY);
         }
 
-        var edges = layer.CreateDotEdges(GetPosition);
-        edges.ForEach(edge => dot.Append(edge));
+        var elements = layer.CreateSvgElements(GetPosition);
+        elements.ForEach(element => svg.AppendLine(element));
 
-        dot.Append("\n}");
-        return dot.ToString();
+        svg.AppendLine("</g>");
+        svg.AppendLine("</svg>");
+        return svg.ToString();
     }
 
     private async Task HandleMapClick(MouseEventArgs e)
@@ -350,9 +319,9 @@
 
     private async Task HandleMapClickInternal(MouseEventArgs e, string wrapperCssClass, string containerCssClass)
     {
-        var availableFactories = Layers
+        var availableItems = Layers
             .Where(l => l.IsVisible)
-            .SelectMany(layer => layer.ItemsWithTooltip<Factory>())
+            .SelectMany(layer => layer.ItemsWithTooltip())
             .ToList();
 
         var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{wrapperCssClass}");
@@ -364,27 +333,27 @@
         var scaleX = (maxX - minX) / rect.Width;
         var scaleY = (maxY - minY) / rect.Height;
 
-        var factoryX = clickX * scaleX + minX;
-        var factoryY = clickY * scaleY + minY;
+        var scaledClickX = clickX * scaleX + minX;
+        var scaledClickY = clickY * scaleY + minY;
 
         const int clickRadius = 3000;
-        Factory? closestFactory = null;
+        T? closest = default;
         double closestDistance = double.MaxValue;
 
-        foreach (var factory in availableFactories)
+        foreach (var location in availableItems)
         {
-            var distance = Math.Sqrt(Math.Pow(factoryX - factory.X, 2) + Math.Pow(factoryY - factory.Y, 2));
+            var distance = Math.Sqrt(Math.Pow(scaledClickX - location.X, 2) + Math.Pow(scaledClickY - location.Y, 2));
             if (distance < clickRadius && distance < closestDistance)
             {
                 closestDistance = distance;
-                closestFactory = factory;
+                closest = location.Item;
             }
         }
 
-        _selectedFactory = closestFactory;
-        SelectedChanged?.Invoke(_selectedFactory);
+        _selected = closest;
+        SelectedChanged?.Invoke(_selected);
 
-        if (_selectedFactory != null)
+        if (_selected != null)
         {
             var containerRect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{containerCssClass}");
             if (containerRect != null)

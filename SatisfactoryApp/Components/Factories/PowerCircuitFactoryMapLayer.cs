@@ -4,14 +4,14 @@ using SatisfactoryApp.Utils;
 
 namespace SatisfactoryApp.Components.Factories;
 
-public class PowerCircuitFactoryMapLayer(FactoryStore FactoryStore) : BaseMapLayer
+public class PowerCircuitFactoryMapLayer(FactoryStore FactoryStore) : BaseFactoryMapLayer
 {
-    protected override List<Factory> GetFactories()
+    protected override List<Factory> GetItems()
     {
         return FactoryStore.Factories;
     }
 
-    protected override string GetFactoryColor(Factory factory)
+    protected override string GetItemColor(Factory factory)
     {
         return FactoryColors.GetFactoryColorForPowerCircuit(factory.SubPowerCircuitId);
     }

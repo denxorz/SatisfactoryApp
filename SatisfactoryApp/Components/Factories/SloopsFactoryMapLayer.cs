@@ -4,11 +4,11 @@ using SatisfactoryApp.Utils;
 
 namespace SatisfactoryApp.Components.Factories;
 
-public class SloopsFactoryMapLayer(FactoryStore FactoryStore) : BaseMapLayer
+public class SloopsFactoryMapLayer(FactoryStore FactoryStore) : BaseFactoryMapLayer
 {
     public override string Class { get; } = "map-svg-overlay-hassloop map-svg-overlay-filtered";
 
-    protected override List<Factory> GetFactories()
+    protected override List<Factory> GetItems()
     {
         return [..
             FactoryStore.Factories
@@ -16,11 +16,11 @@ public class SloopsFactoryMapLayer(FactoryStore FactoryStore) : BaseMapLayer
              .Where(f => f.HasSloop)
          ];
     }
-    protected override string GetFactoryColor(Factory factory)
+    protected override string GetItemColor(Factory factory)
     {
         return FactoryColors.GetFactoryColorForClockSpeed(factory.ClockSpeed);
     }
 
-    protected override string GetFactoryBorderColor(Factory factory) => "#7B1FA2";
-    protected override string GetPenWidth(Factory factory) => "3";
+    protected override string GetItemBorderColor(Factory factory) => "#7B1FA2";
+    protected override float GetItemStrokeWidth(Factory factory) => 0.06f;
 }

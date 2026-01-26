@@ -4,14 +4,14 @@ using SatisfactoryApp.Utils;
 
 namespace SatisfactoryApp.Components.Factories;
 
-public class StabilityFactoryMapLayer(FactoryStore FactoryStore) : BaseMapLayer
+public class StabilityFactoryMapLayer(FactoryStore FactoryStore) : BaseFactoryMapLayer
 {
-    protected override List<Factory> GetFactories()
+    protected override List<Factory> GetItems()
     {
         return [.. FactoryStore.Factories.Where(f => f.PercentageProducing.HasValue)];
     }
 
-    protected override string GetFactoryColor(Factory factory)
+    protected override string GetItemColor(Factory factory)
     {
         return FactoryColors.GetFactoryColorForStability(factory.PercentageProducing);
     }

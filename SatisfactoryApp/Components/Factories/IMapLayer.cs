@@ -1,11 +1,11 @@
-﻿namespace SatisfactoryApp.Components.Factories
+namespace SatisfactoryApp.Components.Factories
 {
-    public interface IMapLayer
+    public interface IMapLayer<T>
     {
         string Class { get; }
         bool IsVisible { get; set; }
 
-        List<string> CreateDotEdges(Func<float, float, string> getPosition);
-        List<T> ItemsWithTooltip<T>();
+        List<string> CreateSvgElements(Func<float, float, (double x, double y)> getScaledPosition);
+        List<(float X, float Y, T Item)> ItemsWithTooltip();
     }
 }

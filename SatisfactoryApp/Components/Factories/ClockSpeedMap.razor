@@ -6,7 +6,8 @@
 @using SatisfactoryApp.Utils
 @inject FactoryStore FactoryStore
 
-<BaseMap Title="Factory Clock speed"
+<BaseMap T="Factory"
+         Title="Factory Clock speed"
          SelectedChanged="SelectedChanged"
          Layers="[clockSpeedMapLayer,clockSpeedFilteredMapLayer,sloopMapLayer,sloopFilteredMapLayer]">
     <TitleAfterSlot>

@@ -3,7 +3,8 @@
 @using SatisfactoryApp.Utils
 @inject FactoryStore FactoryStore
 
-<BaseMap Title="Factory Stability Map"
+<BaseMap T="Factory"
+         Title="Factory Stability Map"
          SelectedChanged="SelectedChanged"
          Layers="[allMapLayer,filteredMapLayer]">
     <LegendSlot>

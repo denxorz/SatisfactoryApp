@@ -1,399 +1,92 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using Microsoft.JSInterop
 @using MudBlazor
+@using SatisfactoryApp.Components.Factories
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Services.Resources
 @using SatisfactoryApp.Utils
-@implements IDisposable
+@using System.Globalization
 @inject ResourceStore ResourceStore
 @inject IJSRuntime JSRuntime
 
-<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
-    <MudCardHeader Class="mud-primary pa-0 pl-1">
-        <MudText Class="primary-card-header-title" Color="Color.Surface">Resources Map</MudText>
-        @if (_isLoading)
-        {
-            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">Loading...</MudText>
-        }
-        else if (!string.IsNullOrEmpty(_error))
-        {
-            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
-        }
-        else
-        {
-            <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Surface">
-                <span> | Selected: @(_selectedResource?.Type ?? "-") | Left: @(_selectedResourceFlowLeft)</span>
-            </MudText>
-        }
-    </MudCardHeader>
-    <MudCardContent Class="pa-0">
-        <div class="map-container @_containerCssClass" @onclick="HandleMapClick">
-            <div class="map-wrapper resources-map-wrapper">
-                <img src="/images/1920px-Biome_Map.jpg" alt="Biome Map" class="map-image background-only" />
-                @if (!string.IsNullOrEmpty(_svgContent))
-                {
-                    <div class="map-svg-overlay">
-                        @((MarkupString)_svgContent)
-                    </div>
-                }
-            </div>
-
-            <div class="legend-overlay">
-                <div class="legend-item">
-                    <span class="legend-dot depleted"></span>
-                    <span>Depleted</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-dot inuse"></span>
-                    <span>In use</span>
-                </div>
-                <div class="legend-item">
-                    <span class="legend-dot available"></span>
-                    <span>Not used</span>
-                </div>
-            </div>
-
-            @if (_showTooltip && _selectedResource != null)
-            {
-                <div class="factory-tooltip" style="left: @($"{_tooltipX}px"); top: @($"{_tooltipY}px")">
-                    <div class="tooltip-content">
-                        <div class="tooltip-header">@(_selectedResource.Type ?? "Unknown")</div>
-                        <div class="tooltip-row">
-                            <span class="tooltip-label">Purity:</span>
-                            <span class="tooltip-value">@(_selectedResource.PurityModifier switch { 0.5f => "Impure", 1 => "Normal", 2 => "Pure", _ => "?" })</span>
-                        </div>
-                        <div class="tooltip-row">
-                            <span class="tooltip-label">Max:</span>
-                            <span class="tooltip-value">@(_selectedResource.Max.ToString("F1"))</span>
-                        </div>
-                             <div class="tooltip-row">
-                            <span class="tooltip-label">Miner:</span>
-                            <span class="tooltip-value">@(_selectedResource.MinerLevel switch { 1 => "Mk1", 2 => "Mk2", 4 => "Mk3", _ => "?" })</span>
-                        </div>
-                        <div class="tooltip-row">
-                            <span class="tooltip-label">Miner clock speed:</span>
-                            <span class="tooltip-value">@(_selectedResource.ClockSpeed.ToString("F1"))</span>
-                        </div>
-                        <div class="tooltip-row">
-                            <span class="tooltip-label">Miner stability:</span>
-                            <span class="tooltip-value">@(_selectedResource.PercentageProducing.ToString("F1"))</span>
-                        </div>
-                        <div class="tooltip-row">
-                            <span class="tooltip-label">Used:</span>
-                            <span class="tooltip-value">@(_selectedResource.Flow.ToString("F1"))</span>
-                        </div>
-                        <div class="tooltip-row">
-                            <span class="tooltip-label">Used sum:</span>
-                            <span class="tooltip-value">60*Purity*MnrLvl*MnrClckSpd*MnrStability</span>
-                        </div>
-                        <div class="tooltip-row">
-                            <span class="tooltip-label">Left:</span>
-                            <span class="tooltip-value">@((_selectedResource.Max - _selectedResource.Flow).ToString("F1"))</span>
-                        </div>
-                        <div class="tooltip-row">
-                            <span class="tooltip-label">Left sum:</span>
-                            <span class="tooltip-value">60*Purity - 60*Purity*MnrLvl*MnrClckSpd*MnrStability</span>
-                        </div>
-                    </div>
-                </div>
-            }
+<BaseMap T="Resource"
+         Title="Resources Map"
+         SelectedChanged="SelectedChanged"
+         Layers="[allMapLayer,filteredMapLayer]">
+    <LegendSlot>
+        <div class="legend-item">
+            <span class="legend-dot depleted"></span>
+            <span>Depleted</span>
         </div>
-    </MudCardContent>
-</MudCard>
+        <div class="legend-item">
+            <span class="legend-dot inuse"></span>
+            <span>In use</span>
+        </div>
+        <div class="legend-item">
+            <span class="legend-dot available"></span>
+            <span>Not used</span>
+        </div>
+    </LegendSlot>
+    <TooltipSlot>
+        <div class="tooltip-header">@(_selected.Type ?? "Unknown")</div>
+        <div class="tooltip-row">
+            <span class="tooltip-label">Purity:</span>
+            <span class="tooltip-value">@(_selected.PurityModifier switch { 0.5f => "Impure", 1 => "Normal", 2 => "Pure", _ => "?" })</span>
+        </div>
+        <div class="tooltip-row">
+            <span class="tooltip-label">Max:</span>
+            <span class="tooltip-value">@(_selected.Max.ToString("F1"))</span>
+        </div>
+        <div class="tooltip-row">
+            <span class="tooltip-label">Miner:</span>
+            <span class="tooltip-value">@(_selected.MinerLevel switch { 1 => "Mk1", 2 => "Mk2", 4 => "Mk3", _ => "?" })</span>
+        </div>
+        <div class="tooltip-row">
+            <span class="tooltip-label">Miner clock speed:</span>
+            <span class="tooltip-value">@(_selected.ClockSpeed.ToString("F1"))</span>
+        </div>
+        <div class="tooltip-row">
+            <span class="tooltip-label">Miner stability:</span>
+            <span class="tooltip-value">@(_selected.PercentageProducing.ToString("F1"))</span>
+        </div>
+        <div class="tooltip-row">
+            <span class="tooltip-label">Used:</span>
+            <span class="tooltip-value">@(_selected.Flow.ToString("F1"))</span>
+        </div>
+        @* <div class="tooltip-row">
+            <span class="tooltip-label">Used sum:</span>
+            <span class="tooltip-value">60*Purity*MnrLvl*MnrClckSpd*MnrStability</span>
+        </div> *@
+        <div class="tooltip-row">
+            <span class="tooltip-label">Left:</span>
+            <span class="tooltip-value">@((_selected.Max - _selected.Flow).ToString("F1"))</span>
+        </div>
+        @* <div class="tooltip-row">
+            <span class="tooltip-label">Left sum:</span>
+            <span class="tooltip-value">60*Purity - 60*Purity*MnrLvl*MnrClckSpd*MnrStability</span>
+        </div> *@
+    </TooltipSlot>
+</BaseMap>
 
 @code {
-    private bool _isLoading;
-    private string? _error;
-    private string? _svgContent;
-    private Resource? _selectedResource;
-    private float? _selectedResourceFlowLeft;
-    private int _lastUpdateCounter = -1;
-    private bool _graphvizLoaded = false;
-    private readonly string _containerCssClass = $"map-container-{Guid.NewGuid():N}";
-    private bool _showTooltip = false;
-    private double _tooltipX = 0;
-    private double _tooltipY = 0;
+    private readonly ResourceMapLayer allMapLayer;
+    private readonly ResourceFilteredMapLayer filteredMapLayer;
 
-    protected override void OnInitialized()
+    private Resource? _selected;
+
+    public ResourcesMap(ResourceStore s)
     {
-        ResourceStore.ResourcesChanged += OnResourcesChanged;
+        allMapLayer = new(s);
+        filteredMapLayer = new(s);
     }
 
-    private async void OnResourcesChanged()
+    private void SelectedChanged(Resource? item)
     {
-        await CheckAndRenderIfNeeded();
-    }
-
-    public void Dispose()
-    {
-        ResourceStore.ResourcesChanged -= OnResourcesChanged;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (firstRender)
-        {
-            try
-            {
-                _isLoading = true;
-                StateHasChanged();
-                await JSRuntime.InvokeVoidAsync("loadGraphviz");
-                _graphvizLoaded = true;
-                _isLoading = false;
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                _error = "Failed to load graph renderer: " + ex.Message;
-                _isLoading = false;
-                StateHasChanged();
-            }
-        }
-
-        await CheckAndRenderIfNeeded();
-    }
-
-    private async Task CheckAndRenderIfNeeded()
-    {
-        if (_graphvizLoaded && ResourceStore.UpdateCounter != _lastUpdateCounter)
-        {
-            _lastUpdateCounter = ResourceStore.UpdateCounter;
-            if (!_isLoading && string.IsNullOrEmpty(_error))
-            {
-                await RenderMap();
-            }
-        }
-    }
-
-    private async Task RenderMap()
-    {
-        try
-        {
-            _isLoading = true;
-            StateHasChanged();
-
-            var resources = ResourceStore.FilteredResources;
-
-            var dotContent = CreateDotContent(resources);
-
-            var svg = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContent);
-
-            _svgContent = svg;
-
-            _isLoading = false;
-            StateHasChanged();
-        }
-        catch (Exception ex)
-        {
-            _error = "Failed to render graph: " + ex.Message;
-            _isLoading = false;
-            StateHasChanged();
-        }
-    }
-
-    private string CreateDotContent(List<Resource> resources)
-    {
-        const int minX = -320000;
-        const int maxX = 380000;
-        const int minY = -250000;
-        const int maxY = 450000;
-        const int mapWidth = 30;
-        const int mapHeight = 30;
-
-        var scaleX = (mapWidth - 2.0) / (maxX - minX);
-        var scaleY = (mapHeight - 2.0) / (maxY - minY);
-
-        var dot = $@"digraph G {{
-  layout=neato;
-  size=""{mapWidth},{mapHeight}"";
-  bgcolor=transparent;
-  node [shape=circle, style=filled, penwidth=1, width=0.15, height=0.15, fontsize=8, fontname=""Arial"", label=""""];
-  edge [fontname=""Arial"", penwidth=2];
-  graph [ranksep=0, nodesep=0, splines=curved];
-";
-
-        const double cornerSize = 0.001;
-        dot += $"\n_tl [label=\"\", pos=\"0,{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
-        dot += $"\n_tr [label=\"\", pos=\"{mapWidth},{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
-        dot += $"\n_bl [label=\"\", pos=\"0,0!\", width={cornerSize}, height={cornerSize}];";
-        dot += $"\n_br [label=\"\", pos=\"{mapWidth},0!\", width={cornerSize}, height={cornerSize}];";
-
-        for (int index = 0; index < resources.Count; index++)
-        {
-            var resource = resources[index];
-
-            var x = (resource.X - minX) * scaleX;
-            var y = mapHeight - (resource.Y - minY) * scaleY - 5;
-            var color = GetResourceColor(resource);
-
-            string borderColor;
-            int penwidth;
-            if (resource.Max == resource.Flow)
-            {
-                borderColor = "#FF0000";
-                penwidth = 3;
-            }
-            else if (resource.Flow > 0)
-            {
-                borderColor = "#FFA500";
-                penwidth = 2;
-            }
-            else
-            {
-                borderColor = "#000000";
-                penwidth = 1;
-            }
-
-            var resourceId = $"resource_{index}";
-            dot += $"\n{resourceId} [shape=\"circle\", fillcolor=\"{color}\", color=\"{borderColor}\", penwidth={penwidth}, pos=\"{x:F2},{y:F2}!\"];";
-        }
-
-        dot += "\n}";
-        return dot;
-    }
-
-    private string GetResourceColor(Resource resource)
-    {
-        return Resources.GetResourceColor(resource.Type);
-    }
-
-    private async Task HandleMapClick(MouseEventArgs e)
-    {
-        if (string.IsNullOrEmpty(_svgContent)) return;
-
-        var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", ".resources-map-wrapper");
-        if (rect == null) return;
-
-        var clickX = e.ClientX - rect.Left;
-        var clickY = e.ClientY - rect.Top;
-
-        const int minX = -320000;
-        const int maxX = 435000;
-        const int minY = -372000;
-        const int maxY = 372000;
-
-        var scaleX = (maxX - minX) / rect.Width;
-        var scaleY = (maxY - minY) / rect.Height;
-
-        var resourceX = clickX * scaleX + minX;
-        var resourceY = clickY * scaleY + minY;
-
-        const int clickRadius = 5000;
-        Resource? closestResource = null;
-        double closestDistance = double.MaxValue;
-
-        foreach (var resource in ResourceStore.FilteredResources)
-        {
-            var distance = Math.Sqrt(Math.Pow(resourceX - resource.X, 2) + Math.Pow(resourceY - resource.Y, 2));
-            if (distance < clickRadius && distance < closestDistance)
-            {
-                closestDistance = distance;
-                closestResource = resource;
-            }
-        }
-
-        _selectedResource = closestResource;
-        if (closestResource != null)
-        {
-            var max = closestResource.Max;
-            var flow = closestResource.Flow;
-            _selectedResourceFlowLeft = max - flow;
-
-            var containerRect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{_containerCssClass}");
-            if (containerRect != null)
-            {
-                var containerClickX = e.ClientX - containerRect.Left;
-                var containerClickY = e.ClientY - containerRect.Top;
-
-                var rawX = containerClickX + 15;
-                var rawY = containerClickY - 10;
-
-                const double margin = 8;
-                const double tooltipWidth = 260;
-                const double tooltipHeight = 120;
-
-                var maxTooltipX = Math.Max(margin, containerRect.Width - tooltipWidth - margin);
-                var maxTooltipY = Math.Max(margin, containerRect.Height - tooltipHeight - margin);
-                var minTooltipY = margin + tooltipHeight;
-
-                _tooltipX = Math.Min(Math.Max(rawX, margin), maxTooltipX);
-                _tooltipY = Math.Min(Math.Max(rawY, minTooltipY), maxTooltipY);
-                _showTooltip = true;
-            }
-        }
-        else
-        {
-            _selectedResourceFlowLeft = null;
-            _showTooltip = false;
-        }
-        StateHasChanged();
-    }
-
-    private class BoundingClientRect
-    {
-        public double Left { get; set; }
-        public double Top { get; set; }
-        public double Width { get; set; }
-        public double Height { get; set; }
-    }
-
-    private class ResourceTypeStat
-    {
-        public string Type { get; set; } = string.Empty;
-        public float TotalLeft { get; set; }
+        _selected = item;
     }
 }
 
 <style>
-    .map-container {
-        position: relative;
-        overflow: hidden;
-        min-height: 400px;
-        cursor: pointer;
-    }
-
-    .map-wrapper {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-
-    .map-image {
-        object-fit: contain;
-        transition: opacity 0.2s;
-        width: 100%;
-        height: auto;
-    }
-
-    .map-image.background-only {
-        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
-        opacity: 0.4;
-    }
-
-    .legend-overlay {
-        position: absolute;
-        bottom: 16px;
-        right: 16px;
-        background: rgba(10, 10, 10, 0.65);
-        border: 1px solid #e59345;
-        border-radius: 6px;
-        padding: 8px 10px;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.45);
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 170px;
-        backdrop-filter: blur(4px);
-    }
-
-    .legend-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 12px;
-        color: #f5f5f5;
-    }
-
     .legend-dot {
         width: 14px;
         height: 14px;
@@ -402,76 +95,15 @@
         display: inline-block;
     }
 
-    .legend-dot.depleted {
-        border: 2px solid #FF0000;
-    }
+        .legend-dot.depleted {
+            border: 2px solid #FF0000;
+        }
 
-    .legend-dot.inuse {
-        border: 2px solid #FFA500;
-    }
+        .legend-dot.inuse {
+            border: 2px solid #FFA500;
+        }
 
-    .legend-dot.available {
-        border: 2px solid #000000;
-    }
-
-    .map-svg-overlay {
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-    }
-
-    .map-svg-overlay svg {
-        width: 100%;
-        height: 100%;
-    }
-
-    .factory-tooltip {
-        position: absolute;
-        z-index: 1000;
-        pointer-events: none;
-        transform: translateY(-100%);
-    }
-
-    .tooltip-content {
-        background: rgba(10, 10, 10, 0.95);
-        border: 1px solid #e59345;
-        border-radius: 6px;
-        padding: 10px 12px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        min-width: 200px;
-        max-width: 300px;
-    }
-
-    .tooltip-header {
-        font-weight: bold;
-        font-size: 14px;
-        color: #e59345;
-        margin-bottom: 8px;
-        padding-bottom: 6px;
-        border-bottom: 1px solid rgba(229, 147, 69, 0.3);
-    }
-
-    .tooltip-row {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 4px;
-        font-size: 12px;
-    }
-
-    .tooltip-row:last-child {
-        margin-bottom: 0;
-    }
-
-    .tooltip-label {
-        color: #b0b0b0;
-        margin-right: 12px;
-    }
-
-    .tooltip-value {
-        color: #f5f5f5;
-        font-weight: 500;
-        text-align: right;
-    }
+        .legend-dot.available {
+            border: 2px solid #000000;
+        }
 </style>
