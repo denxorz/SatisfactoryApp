@@ -4,6 +4,7 @@
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Services.Factories
 @using SatisfactoryApp.Utils
+@using System.Net
 @using System.Text
 @using System.Globalization
 @implements IDisposable
@@ -29,10 +30,7 @@
     <MudCardContent Class="pa-0">
         <div class="map-container @_containerCssClass" onclick="@HandleMapClick">
             <div class="map-wrapper @_wrapperCssClass">
-                <div class="map-watermark">
-                    @DateTime.Now.ToString("yyyy-MM-dd HH:mm") • Statisfactory.net • @(!string.IsNullOrWhiteSpace(LoadedFileStore.LoadedFileName) ? LoadedFileStore.LoadedFileName : "No file loaded")
-                </div>
-                <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
+                <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" draggable="false" />
 
                 @foreach (var l in generatedLayers.Where(s => s.Key.IsVisible && !string.IsNullOrEmpty(s.Value)))
                 {
@@ -40,20 +38,24 @@
                         @((MarkupString)l.Value)
                     </div>
                 }
-
-                <div class="legend-overlay">
-                    @LegendSlot
-                </div>
-
-                @if (_showTooltip && _selected != null)
-                {
-                    <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
-                        <div class="tooltip-content">
-                            @TooltipSlot
-                        </div>
-                    </div>
-                }
             </div>
+
+            <div class="map-watermark-overlay">
+                @((MarkupString)CreateWatermarkSvg(30))
+            </div>
+
+            <div class="legend-overlay">
+                @LegendSlot
+            </div>
+
+            @if (_showTooltip && _selected != null)
+            {
+                <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
+                    <div class="tooltip-content">
+                        @TooltipSlot
+                    </div>
+                </div>
+            }
         </div>
     </MudCardContent>
 </MudCard>
@@ -62,12 +64,9 @@
     <DialogContent>
         <div class="map-container @_fullscreenContainerCssClass" onclick="@HandleFullscreenMapClick">
             <div class="map-wrapper @_fullscreenWrapperCssClass">
-                <div class="map-watermark">
-                    @DateTime.Now.ToString("yyyy-MM-dd HH:mm") • Statisfactory.net • @(!string.IsNullOrWhiteSpace(LoadedFileStore.LoadedFileName) ? LoadedFileStore.LoadedFileName : "No file loaded")
-                </div>
                 @if (_fullscreenInitialized)
                 {
-                    <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
+                    <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" draggable="false" />
 
                     @foreach (var l in generatedFullscreenLayers.Where(s => s.Key.IsVisible && !string.IsNullOrEmpty(s.Value)))
                     {
@@ -75,21 +74,28 @@
                             @((MarkupString)l.Value)
                         </div>
                     }
-
-                    <div class="legend-overlay">
-                        @LegendSlot
-                    </div>
-
-                    @if (_showTooltip && _selected != null)
-                    {
-                        <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
-                            <div class="tooltip-content">
-                                @TooltipSlot
-                            </div>
-                        </div>
-                    }
                 }
             </div>
+
+            @if (_fullscreenInitialized)
+            {
+                <div class="map-watermark-overlay">
+                    @((MarkupString)CreateWatermarkSvg(100))
+                </div>
+            }
+
+            <div class="legend-overlay">
+                @LegendSlot
+            </div>
+
+            @if (_showTooltip && _selected != null)
+            {
+                <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
+                    <div class="tooltip-content">
+                        @TooltipSlot
+                    </div>
+                </div>
+            }
         </div>
     </DialogContent>
 </MudDialog>
@@ -117,6 +123,8 @@
     private bool _fullscreenInitialized = false;
     private bool _fullscreenNeedsRender = false;
     private bool _fullscreenLoading = false;
+    private bool _mapInteractionsInitialized = false;
+    private bool _fullscreenInteractionsInitialized = false;
     private bool _showTooltip = false;
     private double _tooltipX = 0;
     private double _tooltipY = 0;
@@ -153,6 +161,8 @@
         _renderCts?.Dispose();
         _fullscreenRenderCts?.Cancel();
         _fullscreenRenderCts?.Dispose();
+        _ = JSRuntime.InvokeVoidAsync("disposeMapZoomPan", $".{_containerCssClass}");
+        _ = JSRuntime.InvokeVoidAsync("disposeMapZoomPan", $".{_fullscreenContainerCssClass}");
     }
 
     private void OnLoadedFileNameChanged()
@@ -162,7 +172,41 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender && !_mapInteractionsInitialized)
+        {
+            _mapInteractionsInitialized = await InitializeMapInteractionsAsync(_containerCssClass, _wrapperCssClass);
+        }
+
+        if (_showFullscreenDialog && !_fullscreenInteractionsInitialized)
+        {
+            _fullscreenInteractionsInitialized = await InitializeMapInteractionsAsync(_fullscreenContainerCssClass, _fullscreenWrapperCssClass);
+        }
+
         await CheckAndRenderIfNeeded();
+    }
+
+    private async Task<bool> InitializeMapInteractionsAsync(string containerCssClass, string wrapperCssClass)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync(
+                "initMapZoomPan",
+                $".{containerCssClass}",
+                $".{wrapperCssClass}",
+                new
+                {
+                    minScale = 1.0,
+                    maxScale = 5.0,
+                    startScale = 1.0
+                });
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _error = $"Failed to initialize map interactions: {ex.Message}";
+            Console.WriteLine(_error);
+            return false;
+        }
     }
 
     private async Task CheckAndRenderIfNeeded()
@@ -321,6 +365,26 @@
         return svg.ToString();
     }
 
+    private string CreateWatermarkSvg(int mapSize)
+    {
+        var watermarkText = $"{DateTime.Now:yyyy-MM-dd HH:mm} • Statisfactory.net • {(!string.IsNullOrWhiteSpace(LoadedFileStore.LoadedFileName) ? LoadedFileStore.LoadedFileName : "No file loaded")}";
+        var encodedText = WebUtility.HtmlEncode(watermarkText);
+        var fontSize = mapSize / 25.0;
+        var x = mapSize * 0.02;
+        var y = mapSize * 0.04;
+
+        return string.Format(
+            CultureInfo.InvariantCulture,
+            "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {0} {0}\" preserveAspectRatio=\"none\" overflow=\"visible\">" +
+            "<text x=\"{1}\" y=\"{2}\" fill=\"rgba(245, 245, 245, 0.02)\" font-size=\"{3}\" font-weight=\"600\" letter-spacing=\"0.08em\">{4}</text>" +
+            "</svg>",
+            mapSize,
+            x,
+            y,
+            fontSize,
+            encodedText);
+    }
+
     private async Task HandleMapClick(MouseEventArgs e)
     {
         await HandleMapClickInternal(e, _wrapperCssClass, _containerCssClass);
@@ -333,22 +397,32 @@
 
     private async Task HandleMapClickInternal(MouseEventArgs e, string wrapperCssClass, string containerCssClass)
     {
+        var ignoreClick = await JSRuntime.InvokeAsync<bool>("shouldIgnoreMapClick", $".{containerCssClass}");
+        if (ignoreClick)
+        {
+            _showTooltip = false;
+            StateHasChanged();
+            return;
+        }
+
         var availableItems = Layers
             .Where(l => l.IsVisible)
             .SelectMany(layer => layer.ItemsWithTooltip())
             .ToList();
 
-        var rect = await JSRuntime.InvokeAsync<BoundingClientRect>("getElementBoundingClientRect", $".{wrapperCssClass}");
-        if (rect == null) return;
+        var mapPoint = await JSRuntime.InvokeAsync<MapPointResult>(
+            "getMapPoint",
+            $".{containerCssClass}",
+            $".{wrapperCssClass}",
+            e.ClientX,
+            e.ClientY);
+        if (mapPoint == null || mapPoint.Width <= 0 || mapPoint.Height <= 0) return;
 
-        var clickX = e.ClientX - rect.Left;
-        var clickY = e.ClientY - rect.Top;
+        var scaleX = (maxX - minX) / mapPoint.Width;
+        var scaleY = (maxY - minY) / mapPoint.Height;
 
-        var scaleX = (maxX - minX) / rect.Width;
-        var scaleY = (maxY - minY) / rect.Height;
-
-        var scaledClickX = clickX * scaleX + minX;
-        var scaledClickY = clickY * scaleY + minY;
+        var scaledClickX = mapPoint.X * scaleX + minX;
+        var scaledClickY = mapPoint.Y * scaleY + minY;
 
         const int clickRadius = 3000;
         T? closest = default;
@@ -418,6 +492,14 @@
         public double Width { get; set; }
         public double Height { get; set; }
     }
+
+    private class MapPointResult
+    {
+        public double X { get; set; }
+        public double Y { get; set; }
+        public double Width { get; set; }
+        public double Height { get; set; }
+    }
 }
 
 <style>
@@ -425,7 +507,9 @@
         position: relative;
         overflow: hidden;
         min-height: 400px;
-        cursor: pointer;
+        cursor: grab;
+        user-select: none;
+        touch-action: none;
     }
 
     .map-container-fullscreen {
@@ -437,6 +521,12 @@
         position: relative;
         width: 100%;
         height: 100%;
+        transform-origin: 0 0;
+        -webkit-user-drag: none;
+    }
+
+    .map-container.map-dragging {
+        cursor: grabbing;
     }
 
     .map-image {
@@ -444,6 +534,7 @@
         transition: opacity 0.2s;
         width: 100%;
         height: auto;
+        -webkit-user-drag: none;
     }
 
         .map-image.background-only {
@@ -457,22 +548,13 @@
         pointer-events: none;
     }
 
-    .map-watermark {
+    .map-watermark-overlay {
         position: absolute;
-        top: 10px;
-        left: 12px;
-        z-index: 5;
-        font-size: 20px;
-        font-weight: 600;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: rgba(245, 245, 245, 0.02);
+        inset: 0;
         pointer-events: none;
-        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
-        backdrop-filter: blur(1px);
-        display: inline-flex;
-        align-items: baseline;
-        gap: 8px;
+        transform-origin: 0 0;
+        transform: translate(var(--map-translate-x, 0px), var(--map-translate-y, 0px)) scale(var(--map-scale, 1));
+        z-index: 4;
     }
 
         .map-svg-overlay svg {
@@ -498,6 +580,7 @@
         gap: 4px;
         min-width: 170px;
         backdrop-filter: blur(4px);
+        z-index: 10;
     }
 
     .legend-item {
