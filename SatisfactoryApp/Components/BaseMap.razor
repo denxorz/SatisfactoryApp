@@ -8,6 +8,7 @@
 @using System.Globalization
 @implements IDisposable
 @inject FactoryStore FactoryStore
+@inject LoadedFileStore LoadedFileStore
 @inject IJSRuntime JSRuntime
 @typeparam T where T : class
 
@@ -28,6 +29,9 @@
     <MudCardContent Class="pa-0">
         <div class="map-container @_containerCssClass" onclick="@HandleMapClick">
             <div class="map-wrapper @_wrapperCssClass">
+                <div class="map-watermark">
+                    @DateTime.Now.ToString("yyyy-MM-dd HH:mm") • Statisfactory.net • @(!string.IsNullOrWhiteSpace(LoadedFileStore.LoadedFileName) ? LoadedFileStore.LoadedFileName : "No file loaded")
+                </div>
                 <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
 
                 @foreach (var l in generatedLayers.Where(s => s.Key.IsVisible && !string.IsNullOrEmpty(s.Value)))
@@ -58,6 +62,9 @@
     <DialogContent>
         <div class="map-container @_fullscreenContainerCssClass" onclick="@HandleFullscreenMapClick">
             <div class="map-wrapper @_fullscreenWrapperCssClass">
+                <div class="map-watermark">
+                    @DateTime.Now.ToString("yyyy-MM-dd HH:mm") • Statisfactory.net • @(!string.IsNullOrWhiteSpace(LoadedFileStore.LoadedFileName) ? LoadedFileStore.LoadedFileName : "No file loaded")
+                </div>
                 @if (_fullscreenInitialized)
                 {
                     <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" />
@@ -135,15 +142,22 @@
     {
         _checkAndRenderHandler = () => _ = CheckAndRenderIfNeeded();
         FactoryStore.FilteredFactoriesChanged += _checkAndRenderHandler;
+        LoadedFileStore.LoadedFileNameChanged += OnLoadedFileNameChanged;
     }
 
     public void Dispose()
     {
         FactoryStore.FilteredFactoriesChanged -= _checkAndRenderHandler;
+        LoadedFileStore.LoadedFileNameChanged -= OnLoadedFileNameChanged;
         _renderCts?.Cancel();
         _renderCts?.Dispose();
         _fullscreenRenderCts?.Cancel();
         _fullscreenRenderCts?.Dispose();
+    }
+
+    private void OnLoadedFileNameChanged()
+    {
+        StateHasChanged();
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -441,6 +455,24 @@
         position: absolute;
         inset: 0;
         pointer-events: none;
+    }
+
+    .map-watermark {
+        position: absolute;
+        top: 10px;
+        left: 12px;
+        z-index: 5;
+        font-size: 20px;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: rgba(245, 245, 245, 0.02);
+        pointer-events: none;
+        text-shadow: 0 1px 3px rgba(0, 0, 0, 0.01);
+        backdrop-filter: blur(1px);
+        display: inline-flex;
+        align-items: baseline;
+        gap: 8px;
     }
 
         .map-svg-overlay svg {

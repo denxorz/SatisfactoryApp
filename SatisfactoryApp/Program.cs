@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 using MudBlazor.Services;
 using MudExtensions.Services;
 using SatisfactoryApp;
+using SatisfactoryApp.Services;
 using SatisfactoryApp.Services.Factories;
 using SatisfactoryApp.Services.Resources;
 using SatisfactoryApp.Services.Stations;
@@ -17,6 +18,7 @@ builder.Services.AddMudExtensions();
 
 // Register custom services
 builder.Services.AddScoped<FactoryStore>();
+builder.Services.AddScoped<LoadedFileStore>();
 builder.Services.AddScoped<StationStore>();
 builder.Services.AddScoped<ResourceStore>();
 
