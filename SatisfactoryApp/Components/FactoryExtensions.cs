@@ -14,18 +14,33 @@ public static class FactoryExtensions
         "GeneratorGeoThermal"
     ];
 
-    public static bool IsVariablePower(this Factory f)
+    extension(Factory f)
     {
-        return variablePowerTypes.Contains(f.Type);
-    }
+        public bool IsVariablePower() => variablePowerTypes.Contains(f.Type);
+        public bool IsPowerStorage() => f.Type == "PowerStorage";
+        public bool IsPowerProducerStorage() => f.Type.StartsWith("Generator");
+        public bool IsStable() => f.PercentageProducing == 100;
 
-    public static bool IsPowerStorage(this Factory f)
-    {
-        return f.Type == "PowerStorage";
-    }
+        public string GetStabilityTooltip()
+        {
+            return f.PercentageProducing switch
+            {
+                null => "Off or unknown",
+                100 => "Stable (100%)",
+                _ => $"Running at {f.PercentageProducing:F1}%"
+            };
+        }
 
-    public static bool IsPowerProducerStorage(this Factory f)
-    {
-        return f.Type.StartsWith("Generator");
+        public string GetFactoryStability()
+        {
+            return f.PercentageProducing switch
+            {
+                null => "Unknown",
+                100 => "Stable",
+                >= 95 and < 100 => "Almost Stable",
+                >= 1 and < 95 => "Unstable",
+                _ => "Off"
+            };
+        }
     }
 }

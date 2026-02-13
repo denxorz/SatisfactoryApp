@@ -1,0 +1,113 @@
+@using Denxorz.Satisfactory.Routes.Types
+@using MudBlazor
+@using SatisfactoryApp.Components
+@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Utils
+@inject FactoryStore FactoryStore
+@implements IDisposable
+
+<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+    <MudCardHeader Class="mud-primary pa-0 pl-1">
+        <MudText Class="primary-card-header-title" Color="Color.Surface">Factories</MudText>
+    </MudCardHeader>
+    <MudCardContent Class="pa-2">
+        <MudDataGrid T="Factory" Items="@FactoryStore.FilteredFactories" Hover Dense SortMode="SortMode.Multiple">
+            <Columns>
+                <TemplateColumn T="Factory" Title="" Sortable="false">
+                    <CellTemplate>
+                        <MudTooltip Text="@(context.Item.GetStabilityTooltip())">
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.CheckCircle)" Color="Color.Success" Size="Size.Small" Class="@($"mr-1 {(context.Item.IsStable() ? "" : "disabled-faded-icon")}")" />
+                        </MudTooltip>
+                        <MudTooltip Text="@(context.Item.IsVariablePower() ? "Variable power usage" : "Fixed power usage")">
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.ShowChart)" Color="Color.Primary" Size="Size.Small" Class="@($"mr-1 {(context.Item.IsVariablePower() ? "" : "disabled-faded-icon")}")" />
+                        </MudTooltip>
+                        <MudTooltip Text="Power storage">
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Battery6Bar)" Color="Color.Info" Size="Size.Small" Class="@($"mr-1 {(context.Item.IsPowerStorage() ? "" : "disabled-faded-icon")}")" />
+                        </MudTooltip>
+                        <MudTooltip Text="Power generator">
+                            <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.EvStation)" Color="Color.Info" Size="Size.Small" Class="@(context.Item.IsPowerProducerStorage() ? "" : "disabled-faded-icon")" />
+                        </MudTooltip>
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn T="Factory" TProperty="string" Property="@(x => x.Type)" Title="Type" Sortable="true" />
+                <PropertyColumn T="Factory" TProperty="string" Property="@(x => x.Recipe ?? string.Empty)" Title="Recipe" Sortable="true">
+                    <CellTemplate>
+                        @if (!string.IsNullOrWhiteSpace(context.Item.Recipe))
+                        {
+                            @context.Item.Recipe
+                        }
+                        else
+                        {
+                            <span>-</span>
+                        }
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn T="Factory" Title="Stability" SortBy="FactoryExtensions.GetFactoryStability" Sortable="true">
+                    <CellTemplate>
+                        @(context.Item.GetFactoryStability())
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn T="Factory" TProperty="float?" Property="@(x => x.PercentageProducing)" Title="Running at" align="Align.Right" Sortable="true">
+                    <CellTemplate>
+                        @(context.Item.PercentageProducing is null
+                            ? "Unknown"
+                            : $"{context.Item.PercentageProducing.Value:F1} %")
+                    </CellTemplate>
+                </PropertyColumn>
+                <TemplateColumn T="Factory" Title="Circuit" SortBy="GetCircuitName" Sortable="true">
+                    <CellTemplate>
+                        @GetCircuitName(context.Item)
+                    </CellTemplate>
+                </TemplateColumn>
+                <TemplateColumn T="Factory" Title="Sub circuit" SortBy="GetSubCircuitName" Sortable="true">
+                    <CellTemplate>
+                        @GetSubCircuitName(context.Item)
+                    </CellTemplate>
+                </TemplateColumn>
+                <PropertyColumn T="Factory" TProperty="float?" Property="@(x => x.ClockSpeed)" Title="Clock speed" align="Align.Right" Sortable="true">
+                    <CellTemplate>
+                        @(context.Item.ClockSpeed is null ? "-" : $"{context.Item.ClockSpeed.Value:F1} %")
+                    </CellTemplate>
+                </PropertyColumn>
+            </Columns>
+        </MudDataGrid>
+    </MudCardContent>
+</MudCard>
+
+<style>
+    .disabled-faded-icon {
+        color: var(--mud-palette-background-grey, #2b2b2b) !important;
+        fill: var(--mud-palette-background-grey, #2b2b2b) !important;
+        opacity: 0.90 !important;
+    }
+</style>
+
+@code {
+    protected override void OnInitialized()
+    {
+        FactoryStore.FilteredFactoriesChanged += OnFilteredFactoriesChanged;
+    }
+
+    public void Dispose()
+    {
+        FactoryStore.FilteredFactoriesChanged -= OnFilteredFactoriesChanged;
+    }
+
+    private void OnFilteredFactoriesChanged()
+    {
+        StateHasChanged();
+    }
+
+    private string GetCircuitName(Factory factory)
+    {
+        var main = FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == factory.MainPowerCircuitId);
+        return CircuitNames.GetIdAndName(main);
+    }
+
+    private string GetSubCircuitName(Factory factory)
+    {
+        var sub = FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == factory.SubPowerCircuitId);
+        return CircuitNames.GetName(sub);
+    }
+}
+

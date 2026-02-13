@@ -23,6 +23,16 @@
     <MudTabPanel Text="Resources" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.DataUsage" Class="pt-1">
         <ResourcesTab />
     </MudTabPanel>
+    <MudTabPanel Text="Everything" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.GridView" Class="pt-1">
+        <MudGrid Spacing="3">
+            <MudItem xs="12">
+                <FactoryFilters />
+            </MudItem>
+            <MudItem xs="12">
+                <FactoriesTable />
+            </MudItem>
+        </MudGrid>
+    </MudTabPanel>
     <MudTabPanel Text="Instructions" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Help" Class="pt-1 special-tab">
         <InstructionsTab />
     </MudTabPanel>
@@ -39,7 +49,7 @@
 
 @code {
     private int _activeTabIndex = 0;
-    private const int MaxTabIndex = 4;
+    private const int MaxTabIndex = 5;
 
     protected override void OnInitialized()
     {
