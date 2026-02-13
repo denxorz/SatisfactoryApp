@@ -7,6 +7,7 @@ public class FactoryStore
 {
     private readonly List<Factory> _factories = [];
     private readonly List<PowerCircuit> _powerCircuits = [];
+    private Dictionary<int, PowerCircuit> _powerCircuitsById = [];
     private readonly FactoryFilters _filters = new();
     private List<Factory> _filteredFactories = [];
     private List<FactoryTypeOption> _factoryTypeOptions = [];
@@ -32,6 +33,12 @@ public class FactoryStore
 
         _powerCircuits.Clear();
         _powerCircuits.AddRange(powerCircuits);
+        _powerCircuitsById = new Dictionary<int, PowerCircuit>();
+        
+        foreach (var c in _powerCircuits)
+        {
+            _powerCircuitsById.TryAdd(c.Id, c);
+        }
 
         UpdateOptions();
 
@@ -39,7 +46,7 @@ public class FactoryStore
         NotifyFiltersChanged();
     }
 
-    public void NotifyFiltersChanged()
+    private void NotifyFiltersChanged()
     {
         UpdateFilterCaches();
         _filteredFactories = [.. _factories.Where(IsFactoryIncluded)];
@@ -48,6 +55,11 @@ public class FactoryStore
     }
 
     public List<Factory> FilteredFactories => _filteredFactories;
+
+    public PowerCircuit? GetCircuitById(int id)
+    {
+        return _powerCircuitsById.GetValueOrDefault(id);
+    }
 
     private bool IsFactoryIncluded(Factory factory)
     {
@@ -65,9 +77,8 @@ public class FactoryStore
             var mainCircuitKey = $"main_{factory.MainPowerCircuitId}";
             var subCircuitKey = $"sub_{factory.SubPowerCircuitId}";
 
-            var hasMatchingCircuit =
-                (mainCircuitKey != null && _selectedPowerCircuits.Contains(mainCircuitKey)) ||
-                (subCircuitKey != null && _selectedPowerCircuits.Contains(subCircuitKey));
+            var hasMatchingCircuit = _selectedPowerCircuits.Contains(mainCircuitKey) 
+                                     || _selectedPowerCircuits.Contains(subCircuitKey);
 
             if (!hasMatchingCircuit)
             {

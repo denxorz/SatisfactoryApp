@@ -78,8 +78,8 @@
     {
         if (_selectedFactory != null)
         {
-            _mainPowerCircuitName = CircuitNames.GetIdAndName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.MainPowerCircuitId));
-            _subPowerCircuitName = CircuitNames.GetName(FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == _selectedFactory.SubPowerCircuitId));
+            _mainPowerCircuitName = CircuitNames.GetIdAndName(FactoryStore.GetCircuitById(_selectedFactory.MainPowerCircuitId));
+            _subPowerCircuitName = CircuitNames.GetName(FactoryStore.GetCircuitById(_selectedFactory.SubPowerCircuitId));
         }
         else
         {

@@ -11,7 +11,7 @@
         <MudText Class="primary-card-header-title" Color="Color.Surface">Factories</MudText>
     </MudCardHeader>
     <MudCardContent Class="pa-2">
-        <MudDataGrid T="Factory" Items="@FactoryStore.FilteredFactories" Hover Dense SortMode="SortMode.Multiple">
+        <MudDataGrid T="Factory" Items="@FactoryStore.FilteredFactories" Hover Dense SortMode="SortMode.Multiple" Virtualize="true">
             <Columns>
                 <TemplateColumn T="Factory" Title="" Sortable="false">
                     <CellTemplate>
@@ -98,16 +98,10 @@
         StateHasChanged();
     }
 
-    private string GetCircuitName(Factory factory)
-    {
-        var main = FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == factory.MainPowerCircuitId);
-        return CircuitNames.GetIdAndName(main);
-    }
+    private string GetCircuitName(Factory factory) =>
+        CircuitNames.GetIdAndName(FactoryStore.GetCircuitById(factory.MainPowerCircuitId));
 
-    private string GetSubCircuitName(Factory factory)
-    {
-        var sub = FactoryStore.PowerCircuits.FirstOrDefault(p => p.Id == factory.SubPowerCircuitId);
-        return CircuitNames.GetName(sub);
-    }
+    private string GetSubCircuitName(Factory factory) =>
+        CircuitNames.GetName(FactoryStore.GetCircuitById(factory.SubPowerCircuitId));
 }
 
