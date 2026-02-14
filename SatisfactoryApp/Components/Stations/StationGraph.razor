@@ -4,6 +4,8 @@
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Services.Stations
 @using SatisfactoryApp.Utils
+@using System.Net
+@using System.Text
 @implements IDisposable
 @inject StationStore StationStore
 @inject IJSRuntime JSRuntime
@@ -34,11 +36,15 @@
 
             <div class="legend-overlay">
                 <div class="legend-item">
-                    <span class="legend-icon station"></span>
+                    <svg class="legend-icon" viewBox="0 0 16 10" width="20" height="14">
+                        <rect x="1" y="1" width="14" height="8" rx="1" fill="#212121" stroke="#e59345" stroke-width="0.8"/>
+                    </svg>
                     <span>Station</span>
                 </div>
                 <div class="legend-item">
-                    <span class="legend-icon uploader"></span>
+                    <svg class="legend-icon" viewBox="0 0 16 14" width="16" height="14">
+                        <polygon points="8,1 2,13 14,13" fill="#FF0000" stroke="#e59345" stroke-width="0.8"/>
+                    </svg>
                     <span>Uploader</span>
                 </div>
             </div>
@@ -78,7 +84,6 @@
     private string? _error;
     private string? _svgContent;
     private int _lastUpdateCounter = -1;
-    private bool _graphvizLoaded = false;
     private readonly string _containerCssClass = $"map-container-{Guid.NewGuid():N}";
     private readonly string _wrapperCssClass = $"map-wrapper-{Guid.NewGuid():N}";
     private Station? _selectedStation;
@@ -102,55 +107,28 @@
         StationStore.FilteredStationsChanged -= OnFilteredStationsChanged;
     }
 
-    protected override async Task OnAfterRenderAsync(bool firstRender)
+    protected override Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
-        {
-            try
-            {
-                _isLoading = true;
-                StateHasChanged();
-                await JSRuntime.InvokeVoidAsync("loadGraphviz");
-                _graphvizLoaded = true;
-                _isLoading = false;
-                StateHasChanged();
-            }
-            catch (Exception ex)
-            {
-                _error = "Failed to load graph renderer: " + ex.Message;
-                _isLoading = false;
-                StateHasChanged();
-            }
-        }
-
-        await CheckAndRenderIfNeeded();
+        return CheckAndRenderIfNeeded();
     }
 
     private async Task CheckAndRenderIfNeeded()
     {
-        if (_graphvizLoaded && StationStore.UpdateCounter != _lastUpdateCounter)
+        if (StationStore.UpdateCounter != _lastUpdateCounter)
         {
             _lastUpdateCounter = StationStore.UpdateCounter;
             if (!_isLoading && string.IsNullOrEmpty(_error))
-            {
                 await RenderMap();
-            }
         }
     }
 
-    private async Task RenderMap()
+    private Task RenderMap()
     {
         try
         {
             _isLoading = true;
             StateHasChanged();
-
-            var dotContent = CreateDotContent();
-
-            var svg = await JSRuntime.InvokeAsync<string>("renderDotGraph", dotContent);
-
-            _svgContent = svg;
-
+            _svgContent = CreateStationGraphSvg();
             _isLoading = false;
             StateHasChanged();
         }
@@ -160,34 +138,23 @@
             _isLoading = false;
             StateHasChanged();
         }
+        return Task.CompletedTask;
     }
 
-    private string CreateDotContent()
+    private string CreateStationGraphSvg()
     {
         const int minX = -320000;
-        const int maxX = 350000;
-        const int minY = -375000;
-        const int maxY = 300000;
+        const int maxX = 425000;
+        const int minY = -380000;
+        const int maxY = 375000;
         const int mapWidth = 30;
         const int mapHeight = 30;
 
-        var scaleX = (mapWidth - 2.0) / (maxX - minX);
-        var scaleY = (mapHeight - 2.0) / (maxY - minY);
+        var scaleX = mapWidth / (double)(maxX - minX);
+        var scaleY = mapHeight / (double)(maxY - minY);
 
-        var dot = $@"digraph G {{
-  layout=neato;
-  size=""{mapWidth},{mapHeight}"";
-  bgcolor=transparent;
-  node [shape=box, style=filled, fontname=""Arial"", fontcolor=""#e59345"", color=""#e59345"", penwidth=0.5, fillcolor=""#212121"", fontweight=600];
-  edge [fontname=""Arial"", penwidth=2];
-  graph [ranksep=0, nodesep=0, splines=curved];
-";
-
-        const double cornerSize = 0.001;
-        dot += $"\n_tl [label=\"\", pos=\"0,{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
-        dot += $"\n_tr [label=\"\", pos=\"{mapWidth},{mapHeight}!\", width={cornerSize}, height={cornerSize}];";
-        dot += $"\n_bl [label=\"\", pos=\"0,0!\", width={cornerSize}, height={cornerSize}];";
-        dot += $"\n_br [label=\"\", pos=\"{mapWidth},0!\", width={cornerSize}, height={cornerSize}];";
+        double ToSvgX(double worldX) => (worldX - minX) * scaleX;
+        double ToSvgY(double worldY) => (worldY - minY) * scaleY;
 
         var requiredStations = new HashSet<string>();
         var edges = new List<(string from, string to, string color, string style, int penwidth)>();
@@ -209,9 +176,7 @@
 
                 var stationType = station.Type;
                 if (stationType == "drone")
-                {
                     edgeStyle = "dashed";
-                }
                 else if (stationType == "truck")
                 {
                     edgeStyle = "dotted";
@@ -220,14 +185,9 @@
 
                 var cargoTypes = fromStation.CargoTypes ?? new List<string>();
                 if (cargoTypes.Count == 0 && fromStation.CargoFlows != null)
-                {
                     cargoTypes = fromStation.CargoFlows.Select(cf => cf.Type).ToList();
-                }
-
                 if (cargoTypes.Count > 0)
-                {
                     edgeColor = CargoColors.GetCargoColor(cargoTypes[0]);
-                }
 
                 var fromName = fromStation.ShortName ?? fromStation.Id;
                 var toName = toStation.ShortName ?? toStation.Id;
@@ -235,13 +195,9 @@
                 requiredStations.Add(toName);
 
                 if (fromStation.IsUnload)
-                {
                     edges.Add((toName, fromName, edgeColor, edgeStyle, edgePenwidth));
-                }
                 else
-                {
                     edges.Add((fromName, toName, edgeColor, edgeStyle, edgePenwidth));
-                }
 
                 if (transporter.OtherStops != null)
                 {
@@ -253,68 +209,145 @@
                             var otherName = otherStopStation.ShortName ?? otherStopStation.Id;
                             requiredStations.Add(otherName);
                             if (fromStation.IsUnload)
-                            {
                                 edges.Add((toName, otherName, edgeColor, edgeStyle, edgePenwidth));
-                            }
                             else
-                            {
                                 edges.Add((otherName, toName, edgeColor, edgeStyle, edgePenwidth));
-                            }
                         }
                     }
                 }
             }
         }
 
-        var uniqueEdges = edges
-            .GroupBy(e => (e.from, e.to))
-            .Select(g => g.First())
-            .ToList();
-
-        foreach (var edge in uniqueEdges)
-        {
-            var fromId = SanitizeDotId(edge.from);
-            var toId = SanitizeDotId(edge.to);
-            dot += $"\n{fromId} -> {toId} [color=\"{edge.color}\", style=\"{edge.style}\", penwidth={edge.penwidth}];";
-        }
-
+        var uniqueEdges = edges.GroupBy(e => (e.from, e.to)).Select(g => g.First()).ToList();
         var uniqueStations = StationStore.Stations
             .Where(s => requiredStations.Contains(s.ShortName ?? s.Id))
             .GroupBy(s => s.ShortName ?? s.Id)
             .Select(g => g.First())
             .ToList();
 
+        var posByStation = uniqueStations.ToDictionary(s => s.ShortName ?? s.Id, s => (x: ToSvgX(s.X), y: ToSvgY(s.Y)));
+
+        const double nodeH = 0.35;
+        const double paddingX = 0.22;
+        const double charWidth = 0.115;
+        var boxByStation = uniqueStations.ToDictionary(s => s.ShortName ?? s.Id, s =>
+        {
+            var labelLen = (s.ShortName ?? s.Id).Length;
+            var nodeW = Math.Max(0.65, paddingX * 2 + labelLen * charWidth);
+            return (w: nodeW, h: nodeH);
+        });
+
+        string StrokeDasharray(string style) => style switch { "dashed" => "0.2,0.15", "dotted" => "0.08,0.1", _ => "none" };
+
+        var sb = new StringBuilder();
+        sb.AppendLine($"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {mapWidth} {mapHeight}\" preserveAspectRatio=\"none\">");
+        sb.AppendLine("  <defs>");
+        sb.AppendLine("    <marker id=\"arrow\" markerUnits=\"userSpaceOnUse\" markerWidth=\"0.26\" markerHeight=\"0.26\" refX=\"0.22\" refY=\"0.13\" orient=\"auto\">");
+        sb.AppendLine("      <polygon points=\"0,0 0.26,0.13 0,0.26\" fill=\"context-stroke\"/>");
+        sb.AppendLine("    </marker>");
+        sb.AppendLine("  </defs>");
+
+        const double edgeStroke = 0.04;
+        const double edgeStrokeTruck = 0.06;
+        foreach (var edge in uniqueEdges)
+        {
+            if (!posByStation.TryGetValue(edge.from, out var fromPos) || !posByStation.TryGetValue(edge.to, out var toPos))
+                continue;
+            if (!boxByStation.TryGetValue(edge.from, out var fromBox) || !boxByStation.TryGetValue(edge.to, out var toBox))
+                continue;
+            var (x1, y1, x2, y2) = ClipLineToBoxes(fromPos.x, fromPos.y, toPos.x, toPos.y, fromBox.w, fromBox.h, toBox.w, toBox.h);
+            var dash = StrokeDasharray(edge.style);
+            var dashAttr = dash == "none" ? "" : $" stroke-dasharray=\"{dash}\"";
+            var strokeW = edge.penwidth == 4 ? edgeStrokeTruck : edgeStroke;
+            sb.AppendLine($"  <line x1=\"{x1:F2}\" y1=\"{y1:F2}\" x2=\"{x2:F2}\" y2=\"{y2:F2}\" stroke=\"{edge.color}\" stroke-width=\"{strokeW:F2}\"{dashAttr} fill=\"none\" marker-end=\"url(#arrow)\"/>");
+        }
+
+        const double fontSize = 0.22;
+
         foreach (var station in uniqueStations)
         {
             var name = station.ShortName ?? station.Id;
-            var x = (station.X - minX) * scaleX;
-            var y = mapHeight - (station.Y - minY) * scaleY;
-            var stationId = SanitizeDotId(name);
-            dot += $"\n{stationId} [label=\"{name.ToUpper()}\", pos=\"{x:F2},{y:F2}!\"];";
+            if (!posByStation.TryGetValue(name, out var pos))
+                continue;
+            var label = WebUtility.HtmlEncode((station.ShortName ?? station.Id).ToUpperInvariant());
+            var nodeW = Math.Max(0.65, paddingX * 2 + label.Length * charWidth);
+            var cx = pos.x;
+            var cy = pos.y;
+            var left = cx - nodeW / 2;
+            var top = cy - nodeH / 2;
+            sb.AppendLine($"  <rect x=\"{left:F2}\" y=\"{top:F2}\" width=\"{nodeW:F2}\" height=\"{nodeH}\" fill=\"#212121\" stroke=\"#e59345\" stroke-width=\"0.03\" rx=\"0.05\"/>");
+            sb.AppendLine($"  <text x=\"{cx:F2}\" y=\"{cy:F2}\" font-family=\"Arial\" font-size=\"{fontSize}\" font-weight=\"600\" fill=\"#e59345\" text-anchor=\"middle\" dominant-baseline=\"central\" letter-spacing=\"-0.01\">{label}</text>");
         }
 
+        const double triSize = 0.2;
         foreach (var uploader in StationStore.FilteredUploaders)
         {
-            var x = (uploader.X - minX) * scaleX;
-            var y = mapHeight - (uploader.Y - minY) * scaleY;
+            var x = ToSvgX(uploader.X);
+            var y = ToSvgY(uploader.Y);
             var cargoTypes = uploader.CargoTypes ?? new List<string>();
             var color = cargoTypes.Count > 0 ? CargoColors.GetCargoColor(cargoTypes[0]) : "#FF0000";
-            var uploaderId = $"uploader_{uploader.Id ?? Guid.NewGuid().ToString()}";
-            uploaderId = SanitizeDotId(uploaderId);
-            dot += $"\n{uploaderId} [label=\"\", shape=triangle, style=filled, fillcolor=\"{color}\", color=\"#000000\", penwidth=2, pos=\"{x:F2},{y:F2}!\", width=0.3, height=0.3];";
+            var top = y - triSize / 2;
+            var bot = y + triSize / 2;
+            var left = x - triSize / 2;
+            var right = x + triSize / 2;
+            var points = $"{x:F2},{top:F2} {left:F2},{bot:F2} {right:F2},{bot:F2}";
+            sb.AppendLine($"  <polygon points=\"{points}\" fill=\"{color}\" stroke=\"#e59345\" stroke-width=\"0.03\"/>");
         }
 
-        dot += "\n}";
-        return dot;
+        sb.AppendLine("</svg>");
+        return sb.ToString();
     }
 
-    private string SanitizeDotId(string name)
+    private static (double x1, double y1, double x2, double y2) ClipLineToBoxes(double fromX, double fromY, double toX, double toY, double fromW, double fromH, double toW, double toH)
     {
-        if (string.IsNullOrEmpty(name)) return "unknown";
-        var sanitized = System.Text.RegularExpressions.Regex.Replace(name, @"\W", "_");
-        return sanitized.StartsWith("_") ? $"station_{sanitized}" : sanitized;
+        var dx = toX - fromX;
+        var dy = toY - fromY;
+        var len = Math.Sqrt(dx * dx + dy * dy);
+        if (len < 1e-9)
+            return (fromX, fromY, toX, toY);
+
+        var tExitFrom = SegmentRectIntersect(fromX, fromY, toX, toY, fromX, fromY, fromW, fromH).Where(t => t > 1e-9).DefaultIfEmpty(0).Min();
+        var tEnterTo = SegmentRectIntersect(fromX, fromY, toX, toY, toX, toY, toW, toH).Where(t => t >= 0 && t <= 1).DefaultIfEmpty(1).Min();
+
+        if (tExitFrom >= tEnterTo)
+            tExitFrom = 0;
+        var startX = fromX + tExitFrom * dx;
+        var startY = fromY + tExitFrom * dy;
+        var endX = fromX + tEnterTo * dx;
+        var endY = fromY + tEnterTo * dy;
+        return (startX, startY, endX, endY);
     }
 
+    private static IEnumerable<double> SegmentRectIntersect(double x1, double y1, double x2, double y2, double cx, double cy, double w, double h)
+    {
+        var hw = w / 2;
+        var hh = h / 2;
+        var left = cx - hw;
+        var right = cx + hw;
+        var top = cy - hh;
+        var bottom = cy + hh;
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+
+        if (Math.Abs(dx) > 1e-12)
+        {
+            var tLeft = (left - x1) / dx;
+            var tRight = (right - x1) / dx;
+            var yLeft = y1 + tLeft * dy;
+            var yRight = y1 + tRight * dy;
+            if (tLeft >= 0 && tLeft <= 1 && yLeft >= top && yLeft <= bottom) yield return tLeft;
+            if (tRight >= 0 && tRight <= 1 && yRight >= top && yRight <= bottom) yield return tRight;
+        }
+        if (Math.Abs(dy) > 1e-12)
+        {
+            var tTop = (top - y1) / dy;
+            var tBottom = (bottom - y1) / dy;
+            var xTop = x1 + tTop * dx;
+            var xBottom = x1 + tBottom * dx;
+            if (tTop >= 0 && tTop <= 1 && xTop >= left && xTop <= right) yield return tTop;
+            if (tBottom >= 0 && tBottom <= 1 && xBottom >= left && xBottom <= right) yield return tBottom;
+        }
+    }
 
     private async Task HandleMapClick(MouseEventArgs e)
     {
@@ -327,9 +360,9 @@
         var clickY = e.ClientY - rect.Top;
 
         const int minX = -320000;
-        const int maxX = 350000;
-        const int minY = -375000;
-        const int maxY = 300000;
+        const int maxX = 425000;
+        const int minY = -380000;
+        const int maxY = 375000;
 
         var scaleX = (maxX - minX) / rect.Width;
         var scaleY = (maxY - minY) / rect.Height;
@@ -476,23 +509,8 @@
     }
 
     .legend-icon {
-        display: inline-block;
-    }
-
-    .legend-icon.station {
-        width: 14px;
-        height: 14px;
-        background: #212121;
-        border: 2px solid #e59345;
-        box-sizing: border-box;
-    }
-
-    .legend-icon.uploader {
-        width: 0;
-        height: 0;
-        border-left: 7px solid transparent;
-        border-right: 7px solid transparent;
-        border-bottom: 14px solid #00FF00;
+        display: block;
+        flex-shrink: 0;
     }
 
     .factory-tooltip {

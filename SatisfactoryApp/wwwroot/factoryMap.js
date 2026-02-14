@@ -1,24 +1,3 @@
-let graphviz = null;
-
-globalThis.loadGraphviz = async function () {
-  if (!graphviz) {
-    try {
-      const { Graphviz } = await import('https://cdn.jsdelivr.net/npm/@hpcc-js/wasm@2/dist/index.js');
-      graphviz = await Graphviz.load();
-    } catch (error) {
-      console.error('Failed to load Graphviz from CDN:', error);
-      throw error;
-    }
-  }
-};
-
-globalThis.renderDotGraph = async function (dotContent) {
-  if (!graphviz) {
-    await globalThis.loadGraphviz();
-  }
-  return await graphviz.dot(dotContent);
-};
-
 globalThis.getElementBoundingClientRect = function (selector) {
   const element = document.querySelector(selector);
   if (!element) return null;
