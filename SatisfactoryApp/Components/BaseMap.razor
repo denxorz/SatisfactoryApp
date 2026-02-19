@@ -21,11 +21,6 @@
             <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
         }
         @TitleAfterSlot
-        <MudIconButton Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.MagnifyFullscreen"
-                       Color="Color.Tertiary"
-                       Size="Size.Small"
-                       OnClick="OpenFullscreenDialog"
-                       Class="ml-auto" />
     </MudCardHeader>
     <MudCardContent Class="pa-0">
         <div class="map-container @_containerCssClass" onclick="@HandleMapClick">
@@ -41,7 +36,7 @@
             </div>
 
             <div class="map-watermark-overlay">
-                @((MarkupString)CreateWatermarkSvg(30))
+                @((MarkupString)CreateWatermarkSvg())
             </div>
 
             <div class="legend-overlay">
@@ -60,49 +55,8 @@
     </MudCardContent>
 </MudCard>
 
-<MudDialog @bind-Visible="_showFullscreenDialog" Options="@(new DialogOptions { FullScreen = true, CloseButton = true, CloseOnEscapeKey = true })">
-    <DialogContent>
-        <div class="map-container @_fullscreenContainerCssClass" onclick="@HandleFullscreenMapClick">
-            <div class="map-wrapper @_fullscreenWrapperCssClass">
-                @if (_fullscreenInitialized)
-                {
-                    <img src="/images/1920px-Biome_Map.jpg" alt="Satisfactory Map" class="map-image background-only" draggable="false" />
-
-                    @foreach (var l in generatedFullscreenLayers.Where(s => s.Key.IsVisible && !string.IsNullOrEmpty(s.Value)))
-                    {
-                        <div class="map-svg-overlay @l.Key.Class">
-                            @((MarkupString)l.Value)
-                        </div>
-                    }
-                }
-            </div>
-
-            @if (_fullscreenInitialized)
-            {
-                <div class="map-watermark-overlay">
-                    @((MarkupString)CreateWatermarkSvg(100))
-                </div>
-            }
-
-            <div class="legend-overlay">
-                @LegendSlot
-            </div>
-
-            @if (_showTooltip && _selected != null)
-            {
-                <div class="factory-tooltip" style="left: @(_tooltipX)px; top: @(_tooltipY)px">
-                    <div class="tooltip-content">
-                        @TooltipSlot
-                    </div>
-                </div>
-            }
-        </div>
-    </DialogContent>
-</MudDialog>
-
 @code {
     [Parameter] public string Title { get; set; } = string.Empty;
-    [Parameter] public Func<string, T, string, string> CreateEdge { get; set; } = (fId, f, pos) => "";
     [Parameter] public Action<T?>? SelectedChanged { get; set; }
 
     [Parameter] public List<IMapLayer<T>> Layers { get; set; } = [];
@@ -118,24 +72,16 @@
     private int _lastUpdateCounter = -1;
     private readonly string _wrapperCssClass = $"map-wrapper-{Guid.NewGuid():N}";
     private readonly string _containerCssClass = $"map-container-{Guid.NewGuid():N}";
-    private readonly string _fullscreenWrapperCssClass = $"map-wrapper-fullscreen-{Guid.NewGuid():N}";
-    private readonly string _fullscreenContainerCssClass = $"map-container-fullscreen-{Guid.NewGuid():N}";
-    private bool _fullscreenInitialized = false;
-    private bool _fullscreenNeedsRender = false;
-    private bool _fullscreenLoading = false;
     private bool _mapInteractionsInitialized = false;
-    private bool _fullscreenInteractionsInitialized = false;
     private bool _showTooltip = false;
     private double _tooltipX = 0;
     private double _tooltipY = 0;
-    private bool _showFullscreenDialog = false;
 
     private Action? _checkAndRenderHandler;
     private CancellationTokenSource? _renderCts;
-    private CancellationTokenSource? _fullscreenRenderCts;
     private int _pendingUpdateCounter = -1;
-    private int _pendingFullscreenUpdateCounter = -1;
     private const int RenderDebounceMs = 150;
+    private const int MapSize = 30;
 
     private const int minX = -320000;
     private const int maxX = 425000;
@@ -143,8 +89,6 @@
     private const int maxY = 375000;
 
     private Dictionary<IMapLayer<T>, string> generatedLayers = [];
-    private Dictionary<IMapLayer<T>, string> generatedFullscreenLayers = [];
-    private int _lastFullscreenUpdateCounter = -1;
 
     protected override void OnInitialized()
     {
@@ -159,10 +103,7 @@
         LoadedFileStore.LoadedFileNameChanged -= OnLoadedFileNameChanged;
         _renderCts?.Cancel();
         _renderCts?.Dispose();
-        _fullscreenRenderCts?.Cancel();
-        _fullscreenRenderCts?.Dispose();
         _ = JSRuntime.InvokeVoidAsync("disposeMapZoomPan", $".{_containerCssClass}");
-        _ = JSRuntime.InvokeVoidAsync("disposeMapZoomPan", $".{_fullscreenContainerCssClass}");
     }
 
     private void OnLoadedFileNameChanged()
@@ -175,11 +116,6 @@
         if (firstRender && !_mapInteractionsInitialized)
         {
             _mapInteractionsInitialized = await InitializeMapInteractionsAsync(_containerCssClass, _wrapperCssClass);
-        }
-
-        if (_showFullscreenDialog && !_fullscreenInteractionsInitialized)
-        {
-            _fullscreenInteractionsInitialized = await InitializeMapInteractionsAsync(_fullscreenContainerCssClass, _fullscreenWrapperCssClass);
         }
 
         await CheckAndRenderIfNeeded();
@@ -219,17 +155,6 @@
                 _ = QueueRenderMapAsync();
             }
         }
-
-        if (_fullscreenInitialized
-            && (_fullscreenNeedsRender || FactoryStore.UpdateCounter != _lastFullscreenUpdateCounter)
-            && FactoryStore.Factories.Count > 0
-            && !_fullscreenLoading
-            && string.IsNullOrEmpty(_error))
-        {
-            _pendingFullscreenUpdateCounter = FactoryStore.UpdateCounter;
-            _fullscreenNeedsRender = false;
-            _ = QueueRenderFullscreenMapAsync();
-        }
     }
 
     private async Task QueueRenderMapAsync()
@@ -252,31 +177,11 @@
         }
     }
 
-    private async Task QueueRenderFullscreenMapAsync()
-    {
-        await (_fullscreenRenderCts?.CancelAsync() ?? Task.CompletedTask);
-        _fullscreenRenderCts?.Dispose();
-        _fullscreenRenderCts = new CancellationTokenSource();
-
-        var token = _fullscreenRenderCts.Token;
-        try
-        {
-            await Task.Delay(RenderDebounceMs, token);
-            if (!token.IsCancellationRequested)
-            {
-                await RenderFullscreenMap();
-            }
-        }
-        catch (TaskCanceledException)
-        {
-        }
-    }
-
-    private Task<(IMapLayer<T> layer, string svg)> CreateSvgAsync(IMapLayer<T> layer, int mapSize)
+    private Task<(IMapLayer<T> layer, string svg)> CreateSvgAsync(IMapLayer<T> layer)
     {
         try
         {
-            var svg = CreateSvgContent(layer, mapSize);
+            var svg = CreateSvgContent(layer);
             return Task.FromResult((layer, svg));
         }
         catch (Exception ex)
@@ -295,7 +200,7 @@
             _isLoading = true;
 
             var visibleLayers = Layers.Where(l => l.IsVisible).ToList();
-            generatedLayers = (await Task.WhenAll(visibleLayers.Select(l => CreateSvgAsync(l, 30))))
+            generatedLayers = (await Task.WhenAll(visibleLayers.Select(l => CreateSvgAsync(l))))
                 .ToDictionary(l => l.layer, l => l.svg);
         }
         catch (Exception ex)
@@ -311,33 +216,10 @@
         }
     }
 
-    private async Task RenderFullscreenMap()
+    private string CreateSvgContent(IMapLayer<T> layer)
     {
-        Console.WriteLine("Rendering fullscreen map...");
-        try
-        {
-            _fullscreenLoading = true;
-            var visibleLayers = Layers.Where(l => l.IsVisible).ToList();
-            generatedFullscreenLayers = (await Task.WhenAll(visibleLayers.Select(l => CreateSvgAsync(l, 100))))
-                .ToDictionary(l => l.layer, l => l.svg);
-        }
-        catch (Exception ex)
-        {
-            _error = "Failed to render graph: " + ex.Message;
-            Console.WriteLine(_error);
-        }
-        finally
-        {
-            _fullscreenLoading = false;
-            _lastFullscreenUpdateCounter = _pendingFullscreenUpdateCounter;
-            StateHasChanged();
-        }
-    }
-
-    private string CreateSvgContent(IMapLayer<T> layer, int mapSize = 30)
-    {
-        int mapWidth = mapSize;
-        int mapHeight = mapSize;
+        int mapWidth = MapSize;
+        int mapHeight = MapSize;
         float mapWidthClamp = mapWidth - 0.1f;
         float mapHeightClamp = mapHeight - 0.1f;
 
@@ -365,20 +247,20 @@
         return svg.ToString();
     }
 
-    private string CreateWatermarkSvg(int mapSize)
+    private string CreateWatermarkSvg()
     {
         var watermarkText = $"{DateTime.Now:yyyy-MM-dd HH:mm} • Statisfactory.net • {(!string.IsNullOrWhiteSpace(LoadedFileStore.LoadedFileName) ? LoadedFileStore.LoadedFileName : "No file loaded")}";
         var encodedText = WebUtility.HtmlEncode(watermarkText);
-        var fontSize = mapSize / 70.0;
-        var x = mapSize * 0.02;
-        var y = mapSize * 0.02;
+        var fontSize = MapSize / 70.0;
+        var x = MapSize * 0.02;
+        var y = MapSize * 0.02;
 
         return string.Format(
             CultureInfo.InvariantCulture,
             "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {0} {0}\" preserveAspectRatio=\"none\" overflow=\"visible\">" +
             "<text x=\"{1}\" y=\"{2}\" fill=\"rgba(245, 245, 245, 0.02)\" font-size=\"{3}\" font-weight=\"600\" letter-spacing=\"0.08em\">{4}</text>" +
             "</svg>",
-            mapSize,
+            MapSize,
             x,
             y,
             fontSize,
@@ -388,11 +270,6 @@
     private async Task HandleMapClick(MouseEventArgs e)
     {
         await HandleMapClickInternal(e, _wrapperCssClass, _containerCssClass);
-    }
-
-    private async Task HandleFullscreenMapClick(MouseEventArgs e)
-    {
-        await HandleMapClickInternal(e, _fullscreenWrapperCssClass, _fullscreenContainerCssClass);
     }
 
     private async Task HandleMapClickInternal(MouseEventArgs e, string wrapperCssClass, string containerCssClass)
@@ -473,18 +350,6 @@
         StateHasChanged();
     }
 
-    private async Task OpenFullscreenDialog()
-    {
-        _showFullscreenDialog = true;
-        if (!_fullscreenInitialized)
-        {
-            _fullscreenInitialized = true;
-            _fullscreenNeedsRender = true;
-        }
-
-        await CheckAndRenderIfNeeded();
-    }
-
     private class BoundingClientRect
     {
         public double Left { get; set; }
@@ -510,11 +375,6 @@
         cursor: grab;
         user-select: none;
         touch-action: none;
-    }
-
-    .map-container-fullscreen {
-        height: 100%;
-        min-height: 100vh;
     }
 
     .map-wrapper {
