@@ -17,6 +17,8 @@ public abstract class BaseMapLayer<T> : IMapLayer<T>
             var shape = GetItemShape(item);
             var strokeWidth = GetItemStrokeWidth(item);
 
+            const string iconScaleClass = "map-icon-marker";
+            var originStyle = string.Create(CultureInfo.InvariantCulture, $"transform-origin: {x:F2}px {y:F2}px");
             if (shape == "triangle")
             {
                 const double size = 0.15;
@@ -28,12 +30,12 @@ public abstract class BaseMapLayer<T> : IMapLayer<T>
                 var rightY = y + size / 2;
 
                 return string.Create(CultureInfo.InvariantCulture,
-                    $"<polygon points=\"{topX:F2},{topY:F2} {leftX:F2},{leftY:F2} {rightX:F2},{rightY:F2}\" fill=\"{fillColor}\" stroke=\"{borderColor}\" stroke-width=\"{strokeWidth:F2}\" />");
+                    $"<polygon class=\"{iconScaleClass}\" style=\"{originStyle}\" points=\"{topX:F2},{topY:F2} {leftX:F2},{leftY:F2} {rightX:F2},{rightY:F2}\" fill=\"{fillColor}\" stroke=\"{borderColor}\" stroke-width=\"{strokeWidth:F2}\" />");
             }
 
             const double radius = 0.05;
             return string.Create(CultureInfo.InvariantCulture,
-                $"<circle cx=\"{x:F2}\" cy=\"{y:F2}\" r=\"{radius:F2}\" fill=\"{fillColor}\" stroke=\"{borderColor}\" stroke-width=\"{strokeWidth:F2}\" />");
+                $"<circle class=\"{iconScaleClass}\" style=\"{originStyle}\" cx=\"{x:F2}\" cy=\"{y:F2}\" r=\"{radius:F2}\" fill=\"{fillColor}\" stroke=\"{borderColor}\" stroke-width=\"{strokeWidth:F2}\" />");
         })];
     }
 

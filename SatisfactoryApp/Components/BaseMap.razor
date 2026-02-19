@@ -562,6 +562,10 @@
             height: 100%;
         }
 
+    .map-svg-overlay .map-icon-marker {
+        transform: scale(calc(1 / var(--map-scale, 1)));
+    }
+
     .map-svg-overlay-filtered {
         opacity: 0.3;
     }
