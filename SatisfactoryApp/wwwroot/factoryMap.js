@@ -208,6 +208,15 @@ globalThis.disposeMapZoomPan = function (containerSelector) {
   mapInteractions.delete(containerSelector);
 };
 
+globalThis.resetMapZoomPan = function (containerSelector) {
+  const state = mapInteractions.get(containerSelector);
+  if (!state) return;
+  state.scale = state.minScale;
+  state.translateX = 0;
+  state.translateY = 0;
+  applyTransform(state);
+};
+
 globalThis.shouldIgnoreMapClick = function (containerSelector) {
   const state = mapInteractions.get(containerSelector);
   if (!state) return false;
