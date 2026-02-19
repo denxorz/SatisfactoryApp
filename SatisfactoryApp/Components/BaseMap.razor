@@ -21,6 +21,12 @@
             <MudText Typo="Typo.caption" Class="text-uppercase" Color="Color.Error">Error: @_error</MudText>
         }
         @TitleAfterSlot
+        <MudIconButton Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.CenterFocusStrong"
+                       Color="Color.Tertiary"
+                       Size="Size.Small"
+                       OnClick="ResetMapView"
+                       Title="Center map and reset zoom"
+                       Class="ml-auto" />
     </MudCardHeader>
     <MudCardContent Class="pa-0">
         <div class="map-container @_containerCssClass" onclick="@HandleMapClick">
@@ -265,6 +271,11 @@
             y,
             fontSize,
             encodedText);
+    }
+
+    private async Task ResetMapView()
+    {
+        await JSRuntime.InvokeVoidAsync("resetMapZoomPan", $".{_containerCssClass}");
     }
 
     private async Task HandleMapClick(MouseEventArgs e)
