@@ -1,0 +1,266 @@
+@using Denxorz.Satisfactory.Routes.Types
+@using MudBlazor
+@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Utils
+@inject FactoryStore FactoryStore
+@implements IDisposable
+
+<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+    <MudCardHeader Class="mud-primary pa-0 pl-1">
+        <MudText Class="primary-card-header-title" Color="Color.Surface">Factory Inputs & Outputs by Power Circuit</MudText>
+    </MudCardHeader>
+    <MudCardContent Class="pa-2">
+        <MudDataGrid @ref="_dataGrid" Items="@_circuitInputOutputStats" Hover Dense Groupable GroupExpanded>
+            <Columns>
+                <PropertyColumn Property="@(x => x.GroupKey)" Title="Group" Grouping Sortable="false" Hidden />
+                <PropertyColumn Property="@(x => x.CircuitName)" Title="Power Circuit" Groupable="false">
+                    <CellTemplate>
+                        <MudText>@context.Item.CircuitName</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="@(x => x.ItemName)" Title="Item" Groupable="false" />
+                <PropertyColumn Property="@(x => x.TotalConsumed)" Title="Total consumed" align="right" Groupable="false">
+                    <CellTemplate>
+                        <MudText>@(Math.Round(context.Item.TotalConsumed, 3).ToString("0.###"))</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="@(x => x.TotalProduced)" Title="Total produced" align="right" Groupable="false">
+                    <CellTemplate>
+                        <MudText>@(Math.Round(context.Item.TotalProduced, 3).ToString("0.###"))</MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+                <PropertyColumn Property="@(x => x.Net)" Title="Net" align="right" Groupable="false">
+                    <CellTemplate>
+                        <MudText Color="@(context.Item.Net < -0.001 ? Color.Error : Color.Default)">
+                            @{
+                                var net = Math.Round(context.Item.Net, 3);
+                            }
+                            @(net == 0 ? "0" : net.ToString("0.###"))
+                        </MudText>
+                    </CellTemplate>
+                </PropertyColumn>
+            </Columns>
+            <GroupTemplate>
+                <span style="font-weight:bold">
+                    @if (context.DataGrid.FilteredItems.Any())
+                    {
+                        var groupKey = context.Grouping.First().GroupKey;
+                        if (groupKey.StartsWith("MAIN_"))
+                        {
+                            var circuitId = int.Parse(groupKey.Substring(5));
+                            var mainCircuit = _powerMainCircuitStats.GetValueOrDefault(circuitId);
+                            if (mainCircuit != null)
+                            {
+                                <span class="ml-6">[@mainCircuit.CircuitId] @mainCircuit.CircuitName</span>
+                            }
+                            else
+                            {
+                                <span class="ml-6">[Unknown Main Circuit]</span>
+                            }
+                        }
+                        else if (groupKey.StartsWith("SUB_"))
+                        {
+                            var cleanedName = groupKey.Substring(4);
+                            var subCircuits = FactoryStore.PowerCircuits
+                                .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
+                                .ToList();
+                            
+                            if (subCircuits.Any())
+                            {
+                                var firstCircuit = subCircuits.First();
+                                var circuitNames = string.Join(", ", subCircuits.Select(c => CircuitNames.GetIdAndName(c)));
+                                <span class="ml-6">@circuitNames</span>
+                            }
+                            else
+                            {
+                                <span class="ml-6">@cleanedName</span>
+                            }
+                        }
+                        else
+                        {
+                            <span class="ml-6">[Unknown Circuit]</span>
+                        }
+                    }
+                    else
+                    {
+                        <span style="font-weight:bold">??</span>
+                    }
+                </span>
+            </GroupTemplate>
+        </MudDataGrid>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private MudDataGrid<CircuitInputOutputStat>? _dataGrid;
+    private List<CircuitInputOutputStat> _circuitInputOutputStats = [];
+    private Dictionary<int, PowerCircuitStat> _powerMainCircuitStats = [];
+
+    protected override void OnInitialized()
+    {
+        FactoryStore.FactoriesChanged += UpdateStats;
+        UpdateStats();
+    }
+
+    public void Dispose()
+    {
+        FactoryStore.FactoriesChanged -= UpdateStats;
+    }
+
+    private void UpdateStats()
+    {
+        var mainCircuitStats = new Dictionary<int, PowerCircuitStat>();
+        var circuitItemStats = new Dictionary<(int CircuitId, string ItemName), (double Consumed, double Produced)>();
+
+        foreach (var circuit in FactoryStore.PowerCircuits)
+        {
+            if (circuit.ParentCircuitId is null)
+            {
+                mainCircuitStats[circuit.Id] = new PowerCircuitStat
+                {
+                    CircuitId = circuit.Id,
+                    CircuitName = CircuitNames.GetName(circuit)
+                };
+            }
+        }
+
+        foreach (var factory in FactoryStore.Factories)
+        {
+            var clockSpeedMultiplier = (factory.ClockSpeed ?? 100) / 100;
+            var sloopMultiplier = factory.HasSloop ? 2.0 : 1.0;
+            var totalMultiplier = clockSpeedMultiplier * sloopMultiplier;
+
+            var circuitsToProcess = new List<int>();
+
+            circuitsToProcess.Add(factory.MainPowerCircuitId);
+            circuitsToProcess.Add(factory.SubPowerCircuitId);
+
+            foreach (var circuitId in circuitsToProcess)
+            {
+                foreach (var consumed in factory.Input)
+                {
+                    var itemName = GetItemName(consumed);
+                    var amount = GetItemAmount(consumed) * totalMultiplier;
+
+                    var key = (circuitId, itemName);
+                    if (!circuitItemStats.ContainsKey(key))
+                    {
+                        circuitItemStats[key] = (0, 0);
+                    }
+                    var current = circuitItemStats[key];
+                    circuitItemStats[key] = (current.Consumed + amount, current.Produced);
+                }
+
+                foreach (var output in factory.Output)
+                {
+                    var itemName = GetItemName(output);
+                    var amount = GetItemAmount(output) * totalMultiplier;
+
+                    var key = (circuitId, itemName);
+                    if (!circuitItemStats.ContainsKey(key))
+                    {
+                        circuitItemStats[key] = (0, 0);
+                    }
+                    var current = circuitItemStats[key];
+                    circuitItemStats[key] = (current.Consumed, current.Produced + amount);
+                }
+            }
+        }
+
+        _powerMainCircuitStats = mainCircuitStats;
+
+        var combinedStats = new Dictionary<(string GroupKey, string ItemName), (double Consumed, double Produced, int? FirstCircuitId, int? ParentCircuitId, bool IsMainCircuit)>();
+        
+        foreach (var kvp in circuitItemStats)
+        {
+            var (circuitId, itemName) = kvp.Key;
+            var (consumed, produced) = kvp.Value;
+            var circuit = FactoryStore.PowerCircuits.FirstOrDefault(c => c.Id == circuitId);
+            var parentId = circuit?.ParentCircuitId;
+            var isMainCircuit = parentId is null;
+
+            string groupKey;
+            if (isMainCircuit)
+            {
+                groupKey = $"MAIN_{circuitId}";
+            }
+            else
+            {
+                var circuitName = CircuitNames.GetName(circuit);
+                var cleanedName = RemoveBrackets(circuitName);
+                groupKey = $"SUB_{cleanedName}";
+            }
+
+            var combinedKey = (groupKey, itemName);
+            if (!combinedStats.ContainsKey(combinedKey))
+            {
+                combinedStats[combinedKey] = (0, 0, circuitId, parentId, isMainCircuit);
+            }
+            var current = combinedStats[combinedKey];
+            combinedStats[combinedKey] = (current.Consumed + consumed, current.Produced + produced, current.FirstCircuitId, current.ParentCircuitId, current.IsMainCircuit);
+        }
+
+        _circuitInputOutputStats = combinedStats
+            .Select(kvp =>
+            {
+                var ((groupKey, itemName), (consumed, produced, firstCircuitId, parentId, isMainCircuit)) = kvp;
+                var circuit = FactoryStore.PowerCircuits.FirstOrDefault(c => c.Id == firstCircuitId);
+
+                return new CircuitInputOutputStat
+                {
+                    CircuitId = firstCircuitId ?? 0,
+                    CircuitName = isMainCircuit ? CircuitNames.GetName(circuit) : RemoveBrackets(CircuitNames.GetName(circuit)),
+                    ParentCircuitId = parentId,
+                    ItemName = itemName,
+                    TotalConsumed = consumed,
+                    TotalProduced = produced,
+                    GroupKey = groupKey,
+                    IsMainCircuit = isMainCircuit
+                };
+            })
+            .OrderBy(s => s.IsMainCircuit ? 0 : 1)
+            .ThenBy(s => s.GroupKey)
+            .ThenBy(s => s.ItemName)
+            .ToList();
+
+        StateHasChanged();
+    }
+
+    private string GetItemName(FactoryFlow flow)
+    {
+        return flow.Type;
+    }
+
+    private double GetItemAmount(FactoryFlow flow)
+    {
+        return flow.FlowPerMinute ?? 0;
+    }
+
+    private string RemoveBrackets(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            return name;
+
+        var result = System.Text.RegularExpressions.Regex.Replace(name, @"\s*\[.*?\]\s*", " ");
+        return System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ").Trim();
+    }
+
+    private sealed class CircuitInputOutputStat
+    {
+        public int CircuitId { get; set; }
+        public string CircuitName { get; set; } = string.Empty;
+        public int? ParentCircuitId { get; set; }
+        public string ItemName { get; set; } = string.Empty;
+        public double TotalConsumed { get; set; }
+        public double TotalProduced { get; set; }
+        public double Net => TotalProduced - TotalConsumed;
+        public string GroupKey { get; set; } = string.Empty;
+        public bool IsMainCircuit { get; set; }
+    }
+
+    private sealed class PowerCircuitStat
+    {
+        public int CircuitId { get; set; }
+        public string CircuitName { get; set; } = string.Empty;
+    }
+}
