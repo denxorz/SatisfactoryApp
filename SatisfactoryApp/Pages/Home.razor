@@ -17,6 +17,9 @@
     <MudTabPanel Text="Factories" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Factory" Class="pt-1">
         <FactoriesTab />
     </MudTabPanel>
+    <MudTabPanel Text="Inputs & Outputs" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Scale" Class="pt-1">
+        <FactoryInputOutputTable />
+    </MudTabPanel>
     <MudTabPanel Text="Stations" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Train" Class="pt-1">
         <StationsTab />
     </MudTabPanel>
@@ -49,7 +52,7 @@
 
 @code {
     private int _activeTabIndex = 0;
-    private const int MaxTabIndex = 5;
+    private const int MaxTabIndex = 6;
 
     protected override void OnInitialized()
     {

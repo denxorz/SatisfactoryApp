@@ -12,93 +12,113 @@
         <MudText Class="primary-card-header-title" Color="Color.Surface">Factory Inputs & Outputs by Power Circuit</MudText>
     </MudCardHeader>
     <MudCardContent Class="pa-2">
-        <MudDataGrid @ref="_dataGrid" Items="@_circuitInputOutputStats" Hover Dense Groupable GroupExpanded>
-            <Columns>
-                <PropertyColumn Property="@(x => x.GroupKey)" Title="Group" Grouping Sortable="false" Hidden />
-                <PropertyColumn Property="@(x => x.CircuitName)" Title="Power Circuit" Groupable="false">
-                    <CellTemplate>
-                        <MudText>@context.Item.CircuitName</MudText>
-                    </CellTemplate>
-                </PropertyColumn>
-                <PropertyColumn Property="@(x => x.ItemName)" Title="Item" Groupable="false" />
-                <PropertyColumn Property="@(x => x.TotalConsumed)" Title="Total consumed" align="right" Groupable="false">
-                    <CellTemplate>
-                        <MudText Color="@(-context.Item.TotalConsumed < -0.001 ? Color.Error : Color.Default)">
-                            @(Math.Round(-context.Item.TotalConsumed, 3).ToString("0.###"))
+        <MudStack Spacing="2">
+            @foreach (var group in _groupedStats)
+            {
+                <MudCard Outlined="true" Elevation="0">
+                    <MudCardHeader Class="mud-primary pa-2">
+                        <MudText Typo="Typo.subtitle1" Color="Color.Surface">@GetGroupTitle(group.Key)</MudText>
+                    </MudCardHeader>
+                    <MudCardContent Class="pa-2">
+                        <MudText Typo="Typo.caption" Class="mb-2">
+                            <MudText Color="Color.Secondary">Included circuits:</MudText> @GetGroupDisplayName(group.Key)
                         </MudText>
-                    </CellTemplate>
-                </PropertyColumn>
-                <PropertyColumn Property="@(x => x.TotalProduced)" Title="Total produced" align="right" Groupable="false">
-                    <CellTemplate>
-                        <MudText>@(Math.Round(context.Item.TotalProduced, 3).ToString("0.###"))</MudText>
-                    </CellTemplate>
-                </PropertyColumn>
-                <PropertyColumn Property="@(x => x.Net)" Title="Net" align="right" Groupable="false">
-                    <CellTemplate>
-                        <MudText Color="@(context.Item.Net < -0.001 ? Color.Error : context.Item.Net > 0.001 ? Color.Success : Color.Default)">
-                            @{
-                                var net = Math.Round(context.Item.Net, 3);
-                            }
-                            @(net == 0 ? "0" : net.ToString("0.###"))
-                        </MudText>
-                    </CellTemplate>
-                </PropertyColumn>
-            </Columns>
-            <GroupTemplate>
-                <span style="font-weight:bold">
-                    @if (context.DataGrid.FilteredItems.Any())
-                    {
-                        var groupKey = context.Grouping.First().GroupKey;
-                        if (groupKey.StartsWith("MAIN_"))
-                        {
-                            var circuitId = int.Parse(groupKey.Substring(5));
-                            var mainCircuit = _powerMainCircuitStats.GetValueOrDefault(circuitId);
-                            if (mainCircuit != null)
-                            {
-                                <span class="ml-6">[@mainCircuit.CircuitId] @mainCircuit.CircuitName</span>
-                            }
-                            else
-                            {
-                                <span class="ml-6">[Unknown Main Circuit]</span>
-                            }
+                        @{
+                            var netDeficitItems = group.Where(s => s.Net < -0.001).OrderBy(s => s.ItemName).ToList();
+                            var netSurplusItems = group.Where(s => s.Net > 0.001).OrderBy(s => s.ItemName).ToList();
                         }
-                        else if (groupKey.StartsWith("SUB_"))
+                        @if (netDeficitItems.Any() || netSurplusItems.Any())
                         {
-                            var cleanedName = groupKey.Substring(4);
-                            var subCircuits = FactoryStore.PowerCircuits
-                                .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
-                                .ToList();
-                            
-                            if (subCircuits.Any())
-                            {
-                                var firstCircuit = subCircuits.First();
-                                var circuitNames = string.Join(", ", subCircuits.Select(c => CircuitNames.GetIdAndName(c)));
-                                <span class="ml-6">@circuitNames</span>
-                            }
-                            else
-                            {
-                                <span class="ml-6">@cleanedName</span>
-                            }
+                            <MudStack Spacing="1" Class="mb-2">
+                                @if (netDeficitItems.Any())
+                                {
+                                    <MudText Typo="Typo.body2">
+                                        <MudText Color="Color.Error" Typo="Typo.caption">Consumed:</MudText>
+                                        @foreach (var s in netDeficitItems)
+                                        {
+                                            <span class="resource-list-item">
+                                                <span class="resource-icon" style="background: @GetItemColor(s.ItemName);" title="@s.ItemName"></span>
+                                                <span>@s.ItemName @(Math.Round(-s.Net, 3).ToString("0.###"))</span>
+                                            </span>
+                                        }
+                                    </MudText>
+                                }
+                                @if (netSurplusItems.Any())
+                                {
+                                    <MudText Typo="Typo.body2">
+                                        <MudText Color="Color.Success" Typo="Typo.caption">Produced:</MudText>
+                                        @foreach (var s in netSurplusItems)
+                                        {
+                                            <span class="resource-list-item">
+                                                <span class="resource-icon" style="background: @GetItemColor(s.ItemName);" title="@s.ItemName"></span>
+                                                <span>@s.ItemName @(Math.Round(s.Net, 3).ToString("0.###"))</span>
+                                            </span>
+                                        }
+                                    </MudText>
+                                }
+                            </MudStack>
                         }
-                        else
-                        {
-                            <span class="ml-6">[Unknown Circuit]</span>
-                        }
-                    }
-                    else
-                    {
-                        <span style="font-weight:bold">??</span>
-                    }
-                </span>
-            </GroupTemplate>
-        </MudDataGrid>
+                        <MudExpansionPanels Class="mt-2">
+                            <MudExpansionPanel Text="Production details" IsInitiallyExpanded="false">
+                                <MudTable Items="@group" Hover Dense Striped Breakpoint="Breakpoint.Sm" Class="mud-table-dense">
+                            <HeaderContent>
+                                <MudTh>Item</MudTh>
+                                <MudTh Style="text-align: right">Consumed</MudTh>
+                                <MudTh Style="text-align: right">Produced</MudTh>
+                                <MudTh Style="text-align: right">Net</MudTh>
+                            </HeaderContent>
+                            <RowTemplate>
+                                <MudTd DataLabel="Item">@context.ItemName</MudTd>
+                                <MudTd DataLabel="Consumed" Style="text-align: right">
+                                    <MudText Color="@(-context.TotalConsumed < -0.001 ? Color.Error : Color.Default)">
+                                        @(Math.Round(-context.TotalConsumed, 3).ToString("0.###"))
+                                    </MudText>
+                                </MudTd>
+                                <MudTd DataLabel="Produced" Style="text-align: right">
+                                    @(Math.Round(context.TotalProduced, 3).ToString("0.###"))
+                                </MudTd>
+                                <MudTd DataLabel="Net" Style="text-align: right">
+                                    @{
+                                        var net = Math.Round(context.Net, 3);
+                                    }
+                                    <MudText Color="@(context.Net < -0.001 ? Color.Error : context.Net > 0.001 ? Color.Success : Color.Default)">
+                                        @(net == 0 ? "0" : net.ToString("0.###"))
+                                    </MudText>
+                                </MudTd>
+                            </RowTemplate>
+                        </MudTable>
+                            </MudExpansionPanel>
+                        </MudExpansionPanels>
+                    </MudCardContent>
+                </MudCard>
+            }
+        </MudStack>
     </MudCardContent>
 </MudCard>
 
+<style>
+    .resource-list-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        margin-right: 12px;
+        white-space: nowrap;
+    }
+    .resource-icon {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+        flex-shrink: 0;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+</style>
+
 @code {
-    private MudDataGrid<CircuitInputOutputStat>? _dataGrid;
     private List<CircuitInputOutputStat> _circuitInputOutputStats = [];
     private Dictionary<int, PowerCircuitStat> _powerMainCircuitStats = [];
+    private IGrouping<string, CircuitInputOutputStat>[] _groupedStats = [];
+
 
     protected override void OnInitialized()
     {
@@ -270,7 +290,55 @@
             .ThenBy(s => s.ItemName)
             .ToList();
 
+        var mainCircuitSubCount = new Dictionary<int, int>();
+        foreach (var c in FactoryStore.PowerCircuits)
+        {
+            if (c.ParentCircuitId is int parentId)
+                mainCircuitSubCount[parentId] = mainCircuitSubCount.GetValueOrDefault(parentId, 0) + 1;
+        }
+
+        _groupedStats = _circuitInputOutputStats
+            .Where(s => !s.IsMainCircuit || mainCircuitSubCount.GetValueOrDefault(s.CircuitId, 0) <= 1)
+            .GroupBy(s => s.GroupKey)
+            .OrderBy(g => _circuitInputOutputStats.First(x => x.GroupKey == g.Key).IsMainCircuit ? 0 : 1)
+            .ThenBy(g => g.Key)
+            .ToArray();
+
         StateHasChanged();
+    }
+
+    private string GetGroupDisplayName(string groupKey)
+    {
+        if (groupKey.StartsWith("MAIN_"))
+        {
+            var circuitId = int.Parse(groupKey.Substring(5));
+            var mainCircuit = _powerMainCircuitStats.GetValueOrDefault(circuitId);
+            return mainCircuit != null ? $"[{mainCircuit.CircuitId}] {mainCircuit.CircuitName}" : "[Unknown Main Circuit]";
+        }
+        if (groupKey.StartsWith("SUB_"))
+        {
+            var cleanedName = groupKey.Substring(4);
+            var subCircuits = FactoryStore.PowerCircuits
+                .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
+                .ToList();
+            return subCircuits.Any()
+                ? string.Join(", ", subCircuits.Select(c => CircuitNames.GetIdAndName(c)))
+                : cleanedName;
+        }
+        return "[Unknown Circuit]";
+    }
+
+    private string GetGroupTitle(string groupKey)
+    {
+        if (groupKey.StartsWith("MAIN_"))
+        {
+            var circuitId = int.Parse(groupKey.Substring(5));
+            var mainCircuit = _powerMainCircuitStats.GetValueOrDefault(circuitId);
+            return mainCircuit?.CircuitName ?? "[Unknown Main Circuit]";
+        }
+        if (groupKey.StartsWith("SUB_"))
+            return groupKey.Substring(4);
+        return "[Unknown Circuit]";
     }
 
     private string GetItemName(FactoryFlow flow)
@@ -290,6 +358,13 @@
 
         var result = System.Text.RegularExpressions.Regex.Replace(name, @"\s*\[.*?\]\s*", " ");
         return System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ").Trim();
+    }
+
+    private static string GetItemColor(string itemName)
+    {
+        if (string.IsNullOrEmpty(itemName)) return "#FF0000";
+        var key = itemName.Replace(" ", "").ToLowerInvariant();
+        return CargoColors.GetCargoColor(key);
     }
 
     private sealed class CircuitInputOutputStat
