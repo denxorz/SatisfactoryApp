@@ -1,8 +1,10 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using MudBlazor
 @using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Stations
 @using SatisfactoryApp.Utils
 @inject FactoryStore FactoryStore
+@inject StationStore StationStore
 @implements IDisposable
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
@@ -21,7 +23,9 @@
                 <PropertyColumn Property="@(x => x.ItemName)" Title="Item" Groupable="false" />
                 <PropertyColumn Property="@(x => x.TotalConsumed)" Title="Total consumed" align="right" Groupable="false">
                     <CellTemplate>
-                        <MudText>@(Math.Round(context.Item.TotalConsumed, 3).ToString("0.###"))</MudText>
+                        <MudText Color="@(-context.Item.TotalConsumed < -0.001 ? Color.Error : Color.Default)">
+                            @(Math.Round(-context.Item.TotalConsumed, 3).ToString("0.###"))
+                        </MudText>
                     </CellTemplate>
                 </PropertyColumn>
                 <PropertyColumn Property="@(x => x.TotalProduced)" Title="Total produced" align="right" Groupable="false">
@@ -31,7 +35,7 @@
                 </PropertyColumn>
                 <PropertyColumn Property="@(x => x.Net)" Title="Net" align="right" Groupable="false">
                     <CellTemplate>
-                        <MudText Color="@(context.Item.Net < -0.001 ? Color.Error : Color.Default)">
+                        <MudText Color="@(context.Item.Net < -0.001 ? Color.Error : context.Item.Net > 0.001 ? Color.Success : Color.Default)">
                             @{
                                 var net = Math.Round(context.Item.Net, 3);
                             }
@@ -99,12 +103,14 @@
     protected override void OnInitialized()
     {
         FactoryStore.FactoriesChanged += UpdateStats;
+        StationStore.StationsChanged += UpdateStats;
         UpdateStats();
     }
 
     public void Dispose()
     {
         FactoryStore.FactoriesChanged -= UpdateStats;
+        StationStore.StationsChanged -= UpdateStats;
     }
 
     private void UpdateStats()
@@ -164,6 +170,47 @@
                     var current = circuitItemStats[key];
                     circuitItemStats[key] = (current.Consumed, current.Produced + amount);
                 }
+            }
+        }
+
+        var subCircuitIdByCleanedName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        foreach (var circuit in FactoryStore.PowerCircuits)
+        {
+            if (circuit.ParentCircuitId is null) continue;
+            var cleaned = RemoveBrackets(CircuitNames.GetName(circuit)).Trim();
+            if (string.IsNullOrEmpty(cleaned)) continue;
+            if (!subCircuitIdByCleanedName.ContainsKey(cleaned))
+                subCircuitIdByCleanedName[cleaned] = circuit.Id;
+        }
+
+        foreach (var station in StationStore.Stations)
+        {
+            if (station?.CargoFlows == null || station.CargoFlows.Count == 0)
+                continue;
+
+            var stationName = (station.Name ?? "").Trim();
+            var stationShortName = (station.ShortName ?? "").Trim();
+            if (string.IsNullOrEmpty(stationName) && string.IsNullOrEmpty(stationShortName))
+                continue;
+
+            if (!subCircuitIdByCleanedName.TryGetValue(stationName, out var circuitId)
+                && !subCircuitIdByCleanedName.TryGetValue(stationShortName, out circuitId))
+                continue;
+
+            foreach (var flow in station.CargoFlows)
+            {
+                if (flow == null || string.IsNullOrEmpty(flow.Type) || !flow.FlowPerMinute.HasValue)
+                    continue;
+                var itemName = flow.Type;
+                var amount = flow.FlowPerMinute.Value;
+                var key = (circuitId, itemName);
+                if (!circuitItemStats.ContainsKey(key))
+                    circuitItemStats[key] = (0, 0);
+                var current = circuitItemStats[key];
+                if (flow.IsUnload)
+                    circuitItemStats[key] = (current.Consumed, current.Produced + amount);
+                else
+                    circuitItemStats[key] = (current.Consumed + amount, current.Produced);
             }
         }
 
