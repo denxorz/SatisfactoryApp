@@ -33,7 +33,7 @@
                                         {
                                             <span class="resource-list-item">
                                                 <span class="resource-icon" style="background: @GetItemColor(s.ItemName);" title="@s.ItemName"></span>
-                                                <span>@s.ItemName @(Math.Round(-s.Net, 3).ToString("0.###"))</span>
+                                                <span>@ResourceDisplayNames.GetDisplayName(s.ItemName) @(Math.Round(-s.Net, 3).ToString("0.###"))</span>
                                             </span>
                                         }
                                     </MudText>
@@ -46,7 +46,7 @@
                                         {
                                             <span class="resource-list-item">
                                                 <span class="resource-icon" style="background: @GetItemColor(s.ItemName);" title="@s.ItemName"></span>
-                                                <span>@s.ItemName @(Math.Round(s.Net, 3).ToString("0.###"))</span>
+                                                <span>@ResourceDisplayNames.GetDisplayName(s.ItemName) @(Math.Round(s.Net, 3).ToString("0.###"))</span>
                                             </span>
                                         }
                                     </MudText>
@@ -63,7 +63,7 @@
                                 <MudTh Style="text-align: right">Net</MudTh>
                             </HeaderContent>
                             <RowTemplate>
-                                <MudTd DataLabel="Item">@context.ItemName</MudTd>
+                                <MudTd DataLabel="Item">@ResourceDisplayNames.GetDisplayName(context.ItemName)</MudTd>
                                 <MudTd DataLabel="Consumed" Style="text-align: right">
                                     <MudText Color="@(-context.TotalConsumed < -0.001 ? Color.Error : Color.Default)">
                                         @(Math.Round(-context.TotalConsumed, 3).ToString("0.###"))

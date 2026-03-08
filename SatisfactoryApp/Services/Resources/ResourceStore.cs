@@ -1,4 +1,5 @@
 using Denxorz.Satisfactory.Routes.Types;
+using SatisfactoryApp.Utils;
 
 namespace SatisfactoryApp.Services.Resources;
 
@@ -124,7 +125,7 @@ public class ResourceStore
         }
 
         _resourceTypeOptions = Utils.Resources.Types
-            .Select(type => new ResourceTypeOption($"{type} ({counts.GetValueOrDefault(type, 0)})", type))
+            .Select(type => new ResourceTypeOption($"{ResourceDisplayNames.GetDisplayName(type)} ({counts.GetValueOrDefault(type, 0)})", type))
             .ToList();
     }
 }

@@ -1,4 +1,5 @@
 using Denxorz.Satisfactory.Routes.Types;
+using SatisfactoryApp.Utils;
 
 namespace SatisfactoryApp.Services.Stations;
 
@@ -159,7 +160,7 @@ public class StationStore
 
         return [.. cargoTypes
             .OrderBy(t => t)
-            .Select(t => new CargoTypeOption(t, t))];
+            .Select(t => new CargoTypeOption(ResourceDisplayNames.GetDisplayName(t), t))];
     }
 
     private void UpdateFilterCaches()

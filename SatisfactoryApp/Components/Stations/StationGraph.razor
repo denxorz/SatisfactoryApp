@@ -68,7 +68,7 @@
                             {
                                 <div class="tooltip-row">
                                     <span class="tooltip-label">Cargo:</span>
-                                    <span class="tooltip-value">@string.Join(", ", _selectedUploader.CargoTypes)</span>
+                                    <span class="tooltip-value">@string.Join(", ", (_selectedUploader.CargoTypes ?? []).Select(ResourceDisplayNames.GetDisplayName))</span>
                                 </div>
                             }
                         }

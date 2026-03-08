@@ -2,6 +2,7 @@
 @using MudBlazor
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Services.Stations
+@using SatisfactoryApp.Utils
 @implements IDisposable
 @inject StationStore StationStore
 
@@ -84,7 +85,7 @@
                         <MudItem xs="4"><MudText><strong>Type:</strong></MudText></MudItem>
                         <MudItem xs="8"><MudText>@(_selectedStation.IsUnload ? "Unload" : "Load")</MudText></MudItem>
                         <MudItem xs="4"><MudText><strong>Cargo Type:</strong></MudText></MudItem>
-                        <MudItem xs="8"><MudText>@(string.Join("/", _selectedStation.CargoTypes ?? new List<string>()) ?? "Unknown")</MudText></MudItem>
+                        <MudItem xs="8"><MudText>@(string.Join("/", (_selectedStation.CargoTypes ?? []).Select(ResourceDisplayNames.GetDisplayName)) ?? "Unknown")</MudText></MudItem>
                         <MudItem xs="12">
                             <MudDivider Class="my-2" />
                             <MudText><strong>Vehicles:</strong></MudText>
@@ -151,7 +152,7 @@
         {
             var prefix = (cf.IsExact ? "" : "~") + (station.IsUnload ? "-" : "+");
             var flow = cf.FlowPerMinute.HasValue ? cf.FlowPerMinute.Value.ToString("F0") : "??";
-            parts.Add($"{prefix}{flow} {cf.Type}");
+            parts.Add($"{prefix}{flow} {ResourceDisplayNames.GetDisplayName(cf.Type)}");
         }
         return string.Join(" / ", parts);
     }

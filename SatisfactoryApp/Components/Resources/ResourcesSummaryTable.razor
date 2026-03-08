@@ -2,6 +2,7 @@
 @using MudBlazor
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Services.Resources
+@using SatisfactoryApp.Utils
 @implements IDisposable
 @inject ResourceStore ResourceStore
 
@@ -17,7 +18,7 @@
             </HeaderContent>
             <RowTemplate>
                 <MudTd DataLabel="Type">
-                    <MudText>@context.Type</MudText>
+                    <MudText>@ResourceDisplayNames.GetDisplayName(context.Type)</MudText>
                 </MudTd>
                 <MudTd DataLabel="Total Leftover" align="right">@context.TotalLeft.ToString("N0")</MudTd>
             </RowTemplate>

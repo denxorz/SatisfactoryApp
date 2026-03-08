@@ -28,7 +28,7 @@
         </div>
     </LegendSlot>
     <TooltipSlot>
-        <div class="tooltip-header">@(_selected.Type ?? "Unknown")</div>
+        <div class="tooltip-header">@ResourceDisplayNames.GetDisplayName(_selected.Type)</div>
         <div class="tooltip-row">
             <span class="tooltip-label">Used:</span>
             <span class="tooltip-value">@(_selected.Flow.ToString("F1")) / @(_selected.Max.ToString("F1"))</span>

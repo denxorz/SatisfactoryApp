@@ -1,6 +1,7 @@
 @using MudBlazor
 @using SatisfactoryApp.Services
 @using SatisfactoryApp.Services.Stations
+@using SatisfactoryApp.Utils
 @using SatisfactoryApp.Models
 @implements IDisposable
 @inject StationStore StationStore
@@ -14,7 +15,11 @@
         {
             <MudDataGrid Items="@GetCargoFlowData()" Hover Dense>
                 <Columns>
-                    <PropertyColumn Property="x => x.CargoType" Title="Cargo Type" />
+                    <PropertyColumn Property="x => x.CargoType" Title="Cargo Type">
+                        <CellTemplate>
+                            <MudText>@ResourceDisplayNames.GetDisplayName(context.Item.CargoType)</MudText>
+                        </CellTemplate>
+                    </PropertyColumn>
                     <PropertyColumn Property="x => x.Produced" Title="Produced" align="right" Groupable="false">
                         <CellTemplate>
                             <MudText Color="Color.Success">@context.Item.Produced.ToString("F0")</MudText>
