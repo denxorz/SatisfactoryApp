@@ -7,17 +7,12 @@
 @inject StationStore StationStore
 @implements IDisposable
 
-<MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
-    <MudCardHeader Class="mud-primary pa-0 pl-1">
-        <MudText Class="primary-card-header-title" Color="Color.Surface">Factory Inputs & Outputs by Power Circuit</MudText>
-    </MudCardHeader>
-    <MudCardContent Class="pa-2">
-        <MudStack Spacing="2">
+<MudStack Spacing="2">
             @foreach (var group in _groupedStats)
             {
-                <MudCard Outlined="true" Elevation="0">
-                    <MudCardHeader Class="mud-primary pa-2">
-                        <MudText Typo="Typo.subtitle1" Color="Color.Surface">@GetGroupTitle(group.Key)</MudText>
+                <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
+                    <MudCardHeader Class="mud-primary pa-0 pl-1">
+                        <MudText Class="primary-card-header-title" Color="Color.Surface">@GetGroupTitle(group.Key)</MudText>
                     </MudCardHeader>
                     <MudCardContent Class="pa-2">
                         <MudText Typo="Typo.caption" Class="mb-2">
@@ -93,8 +88,6 @@
                 </MudCard>
             }
         </MudStack>
-    </MudCardContent>
-</MudCard>
 
 <style>
     .resource-list-item {
@@ -330,15 +323,18 @@
 
     private string GetGroupTitle(string groupKey)
     {
+        string? title = null;
         if (groupKey.StartsWith("MAIN_"))
         {
             var circuitId = int.Parse(groupKey.Substring(5));
             var mainCircuit = _powerMainCircuitStats.GetValueOrDefault(circuitId);
-            return mainCircuit?.CircuitName ?? "[Unknown Main Circuit]";
+            title = mainCircuit?.CircuitName;
         }
-        if (groupKey.StartsWith("SUB_"))
-            return groupKey.Substring(4);
-        return "[Unknown Circuit]";
+        else if (groupKey.StartsWith("SUB_"))
+        {
+            title = groupKey.Substring(4);
+        }
+        return string.IsNullOrWhiteSpace(title) ? "Unknown" : title;
     }
 
     private string GetItemName(FactoryFlow flow)
