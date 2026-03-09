@@ -1,5 +1,6 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using MudBlazor
+@using SatisfactoryApp.Components
 @using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Services.Stations
 @using SatisfactoryApp.Utils
@@ -15,6 +16,37 @@
                         <MudText Class="primary-card-header-title" Color="Color.Surface">@GetGroupTitle(group.Key)</MudText>
                     </MudCardHeader>
                     <MudCardContent Class="pa-2 io-card-content">
+                        @{
+                            var summary = GetGroupSummaryStats(group.Key);
+                            var hasImports = group.Any(s => s.Net < -0.001);
+                            var hasExports = group.Any(s => s.Net > 0.001);
+                        }
+                        <div class="io-card-summary-icons">
+                            <MudTooltip Text="@(summary.IsStable ? "Power usage is stable" : $"{summary.NumberOfNotStable} not running at 100%")">
+                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.CheckCircle)" Color="Color.Success" Size="Size.Small" Class="@(!summary.IsStable ? "io-header-icon-faded" : "")" />
+                            </MudTooltip>
+                            <MudTooltip Text="@($"{summary.NumberOfNotStable} not running at 100%")">
+                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Warning)" Color="Color.Primary" Size="Size.Small" Class="@(summary.NumberOfNotStable == 0 ? "io-header-icon-faded" : "")" />
+                            </MudTooltip>
+                            <MudTooltip Text="@($"{summary.NumberOfVariablePower} variable power")">
+                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.ShowChart)" Color="Color.Primary" Size="Size.Small" Class="@(summary.NumberOfVariablePower == 0 ? "io-header-icon-faded" : "")" />
+                            </MudTooltip>
+                            <MudTooltip Text="@($"{summary.NumberOfPowerStorage} power storage(s)")">
+                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Battery6Bar)" Color="Color.Info" Size="Size.Small" Class="@(summary.NumberOfPowerStorage == 0 ? "io-header-icon-faded" : "")" />
+                            </MudTooltip>
+                            <MudTooltip Text="@($"{summary.NumberOfPowerGenerator} generator(s)")">
+                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.EvStation)" Color="Color.Info" Size="Size.Small" Class="@(summary.NumberOfPowerGenerator == 0 ? "io-header-icon-faded" : "")" />
+                            </MudTooltip>
+                            <MudTooltip Text="@(summary.NumberOfResourceSinks > 0 ? $"{summary.NumberOfResourceSinks} Resource Sink(s)" : "No Resource Sink")">
+                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.DeleteSweep)" Color="Color.Default" Size="Size.Small" Class="@(summary.NumberOfResourceSinks == 0 ? "io-header-icon-faded" : "")" />
+                            </MudTooltip>
+                            <MudTooltip Text="@(hasImports ? "Has imports" : "No imports")">
+                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Download)" Size="Size.Small" Class="@(!hasImports ? "io-header-icon-faded" : "")" />
+                            </MudTooltip>
+                            <MudTooltip Text="@(hasExports ? "Has exports" : "No exports")">
+                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Upload)" Size="Size.Small" Class="@(!hasExports ? "io-header-icon-faded" : "")" />
+                            </MudTooltip>
+                        </div>
                         @{
                             var netDeficitItems = group.Where(s => s.Net < -0.001).OrderBy(s => s.ItemName).ToList();
                             var netSurplusItems = group.Where(s => s.Net > 0.001).OrderBy(s => s.ItemName).ToList();
@@ -144,6 +176,39 @@
                                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="io-meta-block-empty">—</MudText>
                                 }
                             </div>
+                            @{
+                                var transportCounts = GetGroupStationCounts(group.Key);
+                            }
+                            <div class="io-meta-block io-meta-block-transport">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="io-meta-block-label">Transport</MudText>
+                                @if (transportCounts.Trains > 0 || transportCounts.Trucks > 0 || transportCounts.Drones > 0)
+                                {
+                                    <div class="io-transport-chips">
+                                        <MudTooltip Text="@($"{transportCounts.Trains} train station(s)")">
+                                            <span class="io-transport-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail)" Size="Size.Small" Class="@(transportCounts.Trains == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-transport-count">@transportCounts.Trains</span>
+                                            </span>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@($"{transportCounts.Trucks} truck station(s)")">
+                                            <span class="io-transport-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping)" Size="Size.Small" Class="@(transportCounts.Trucks == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-transport-count">@transportCounts.Trucks</span>
+                                            </span>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@($"{transportCounts.Drones} drone station(s)")">
+                                            <span class="io-transport-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight)" Size="Size.Small" Class="@(transportCounts.Drones == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-transport-count">@transportCounts.Drones</span>
+                                            </span>
+                                        </MudTooltip>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <MudText Typo="Typo.body2" Color="Color.Secondary" Class="io-meta-block-empty">—</MudText>
+                                }
+                            </div>
                         </div>
                         <MudExpansionPanels Class="io-details-panels">
                             <MudExpansionPanel Text="More production details" IsInitiallyExpanded="false" Class="io-details-panel">
@@ -184,6 +249,23 @@
 <style>
     .io-card-content {
         padding: 12px 16px;
+    }
+    .io-card-summary-icons {
+        display: flex;
+        align-items: center;
+        gap: 4px 2px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--mud-palette-lines-default, rgba(0,0,0,0.08));
+    }
+    .io-card-summary-icons .mud-icon-root {
+        margin: 0 2px;
+    }
+    .io-header-icon-faded {
+        color: var(--mud-palette-background-grey, #2b2b2b) !important;
+        fill: var(--mud-palette-background-grey, #2b2b2b) !important;
+        opacity: 0.5;
     }
     .io-imports-exports-row {
         margin-bottom: 16px;
@@ -322,6 +404,26 @@
         color: var(--mud-palette-text-secondary);
         padding: 2px 8px;
     }
+    .io-transport-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px 14px;
+        align-items: center;
+    }
+    .io-transport-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 8px;
+        background: var(--mud-palette-background-gray, rgba(0,0,0,0.06));
+        border-radius: 6px;
+        border: 1px solid var(--mud-palette-lines-default, rgba(0,0,0,0.08));
+        font-size: 0.8125rem;
+    }
+    .io-transport-count {
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
     .io-item-list {
         display: flex;
         flex-wrap: wrap;
@@ -390,6 +492,8 @@
     private Dictionary<int, PowerCircuitStat> _powerMainCircuitStats = [];
     private IGrouping<string, CircuitInputOutputStat>[] _groupedStats = [];
     private Dictionary<string, Dictionary<string, int>> _groupMachineTypeCounts = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, GroupSummaryStats> _groupSummaryStats = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, (int Trains, int Trucks, int Drones)> _groupStationCounts = new(StringComparer.OrdinalIgnoreCase);
 
     protected override void OnInitialized()
     {
@@ -610,7 +714,110 @@
             .ThenBy(g => g.Key)
             .ToArray();
 
+        var groupSummaryStats = new Dictionary<string, GroupSummaryStats>(StringComparer.OrdinalIgnoreCase);
+        foreach (var g in _groupedStats)
+        {
+            var groupKey = g.Key;
+            var factories = GetFactoriesForGroup(groupKey);
+            var total = factories.Count;
+            var notStable = factories.Count(f => f.PercentageProducing is not null && f.PercentageProducing != 100);
+            var variablePower = factories.Count(f => f.IsVariablePower());
+            var powerStorage = factories.Count(f => f.IsPowerStorage());
+            var powerGenerator = factories.Count(f => f.IsPowerProducerStorage());
+            groupSummaryStats[groupKey] = new GroupSummaryStats
+            {
+                Total = total,
+                IsStable = notStable == 0 && variablePower == 0,
+                NumberOfNotStable = notStable,
+                NumberOfVariablePower = variablePower,
+                NumberOfPowerStorage = powerStorage,
+                NumberOfPowerGenerator = powerGenerator,
+                NumberOfResourceSinks = factories.Count(f => string.Equals(f.Type, "ResourceSink", StringComparison.OrdinalIgnoreCase))
+            };
+        }
+        _groupSummaryStats = groupSummaryStats;
+
+        var groupStationCounts = new Dictionary<string, (int Trains, int Trucks, int Drones)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var g in _groupedStats)
+            groupStationCounts[g.Key] = (0, 0, 0);
+
+        HashSet<int> GetCircuitIdsForGroup(string groupKey)
+        {
+            if (groupKey.StartsWith("MAIN_"))
+            {
+                var mainId = int.Parse(groupKey.Substring(5));
+                return MachineStore.PowerCircuits
+                    .Where(c => c.ParentCircuitId == mainId)
+                    .Select(c => c.Id)
+                    .ToHashSet();
+            }
+            if (groupKey.StartsWith("SUB_"))
+            {
+                var cleanedName = groupKey.Substring(4);
+                return MachineStore.PowerCircuits
+                    .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
+                    .Select(c => c.Id)
+                    .ToHashSet();
+            }
+            return [];
+        }
+
+        foreach (var station in StationStore.Stations)
+        {
+            if (station?.CargoFlows == null || station.CargoFlows.Count == 0)
+                continue;
+            var stationName = (station.Name ?? "").Trim();
+            var stationShortName = (station.ShortName ?? "").Trim();
+            if (string.IsNullOrEmpty(stationName) && string.IsNullOrEmpty(stationShortName))
+                continue;
+            if (!subCircuitIdByCleanedName.TryGetValue(stationName, out var circuitId)
+                && !subCircuitIdByCleanedName.TryGetValue(stationShortName, out circuitId))
+                continue;
+            var stationType = (station.Type ?? "").Trim().ToLowerInvariant();
+            foreach (var groupKey in groupStationCounts.Keys.ToList())
+            {
+                var circuitIds = GetCircuitIdsForGroup(groupKey);
+                if (!circuitIds.Contains(circuitId))
+                    continue;
+                var (trains, trucks, drones) = groupStationCounts[groupKey];
+                if (stationType == "train") trains++;
+                else if (stationType == "truck") trucks++;
+                else if (stationType == "drone") drones++;
+                groupStationCounts[groupKey] = (trains, trucks, drones);
+            }
+        }
+        _groupStationCounts = groupStationCounts;
+
         StateHasChanged();
+    }
+
+    private List<Factory> GetFactoriesForGroup(string groupKey)
+    {
+        if (groupKey.StartsWith("MAIN_"))
+        {
+            var circuitId = int.Parse(groupKey.Substring(5));
+            return MachineStore.Factories.Where(f => f.MainPowerCircuitId == circuitId).ToList();
+        }
+        if (groupKey.StartsWith("SUB_"))
+        {
+            var cleanedName = groupKey.Substring(4);
+            var circuitIds = MachineStore.PowerCircuits
+                .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
+                .Select(c => c.Id)
+                .ToHashSet();
+            return MachineStore.Factories.Where(f => circuitIds.Contains(f.SubPowerCircuitId)).ToList();
+        }
+        return [];
+    }
+
+    private GroupSummaryStats GetGroupSummaryStats(string groupKey)
+    {
+        return _groupSummaryStats.TryGetValue(groupKey, out var s) ? s : new GroupSummaryStats();
+    }
+
+    private (int Trains, int Trucks, int Drones) GetGroupStationCounts(string groupKey)
+    {
+        return _groupStationCounts.TryGetValue(groupKey, out var c) ? c : (0, 0, 0);
     }
 
     private string GetGroupDisplayName(string groupKey)
@@ -714,5 +921,16 @@
     {
         public int CircuitId { get; set; }
         public string CircuitName { get; set; } = string.Empty;
+    }
+
+    private sealed class GroupSummaryStats
+    {
+        public int Total { get; set; }
+        public bool IsStable { get; set; }
+        public int NumberOfNotStable { get; set; }
+        public int NumberOfVariablePower { get; set; }
+        public int NumberOfPowerStorage { get; set; }
+        public int NumberOfPowerGenerator { get; set; }
+        public int NumberOfResourceSinks { get; set; }
     }
 }
