@@ -50,7 +50,7 @@
         </div>
     </LegendSlot>
     <TooltipSlot>
-        <div class="tooltip-header">@(_selectedFactory!.Type ?? "Unknown")</div>
+        <div class="tooltip-header">@ResourceDisplayNames.GetDisplayName(_selectedFactory!.Type ?? "Unknown")</div>
         @if (_selectedFactory.Recipe is not null)
         {
             <div class="tooltip-row">

@@ -194,7 +194,11 @@ public class FactoryStore
 
         _factoryTypeOptions = factoryTypeCounts
             .OrderBy(kvp => kvp.Key)
-            .Select(kvp => new FactoryTypeOption($"{kvp.Key} ({kvp.Value})", kvp.Key))
+            .Select(kvp =>
+            {
+                var displayName = ResourceDisplayNames.GetDisplayName(kvp.Key);
+                return new FactoryTypeOption($"{displayName} ({kvp.Value})", kvp.Key);
+            })
             .ToList();
 
         var mainOptions = _powerCircuits

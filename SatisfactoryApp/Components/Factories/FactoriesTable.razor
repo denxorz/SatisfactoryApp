@@ -29,7 +29,11 @@
                         </MudTooltip>
                     </CellTemplate>
                 </TemplateColumn>
-                <PropertyColumn T="Factory" TProperty="string" Property="@(x => x.Type)" Title="Type" Sortable="true" />
+                <TemplateColumn T="Factory" Title="Type" SortBy="@(x => x.Type)" Sortable="true">
+                    <CellTemplate>
+                        @ResourceDisplayNames.GetDisplayName(context.Item.Type ?? "Unknown")
+                    </CellTemplate>
+                </TemplateColumn>
                 <PropertyColumn T="Factory" TProperty="string" Property="@(x => x.Recipe ?? string.Empty)" Title="Recipe" Sortable="true">
                     <CellTemplate>
                         @if (!string.IsNullOrWhiteSpace(context.Item.Recipe))
