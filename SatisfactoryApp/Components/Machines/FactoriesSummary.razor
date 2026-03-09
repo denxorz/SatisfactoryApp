@@ -1,9 +1,9 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using MudBlazor
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Services.Stations
 @using SatisfactoryApp.Utils
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 @inject StationStore StationStore
 @implements IDisposable
 
@@ -260,14 +260,14 @@
 
     protected override void OnInitialized()
     {
-        FactoryStore.FactoriesChanged += UpdateStats;
+        MachineStore.FactoriesChanged += UpdateStats;
         StationStore.StationsChanged += UpdateStats;
         UpdateStats();
     }
 
     public void Dispose()
     {
-        FactoryStore.FactoriesChanged -= UpdateStats;
+        MachineStore.FactoriesChanged -= UpdateStats;
         StationStore.StationsChanged -= UpdateStats;
     }
 
@@ -276,7 +276,7 @@
         var mainCircuitStats = new Dictionary<int, PowerCircuitStat>();
         var circuitItemStats = new Dictionary<(int CircuitId, string ItemName), (double Consumed, double Produced)>();
 
-        foreach (var circuit in FactoryStore.PowerCircuits)
+        foreach (var circuit in MachineStore.PowerCircuits)
         {
             if (circuit.ParentCircuitId is null)
             {
@@ -288,7 +288,7 @@
             }
         }
 
-        foreach (var factory in FactoryStore.Factories)
+        foreach (var factory in MachineStore.Factories)
         {
             var clockSpeedMultiplier = (factory.ClockSpeed ?? 100) / 100;
             var sloopMultiplier = factory.HasSloop ? 2.0 : 1.0;
@@ -332,7 +332,7 @@
         }
 
         var subCircuitIdByCleanedName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var circuit in FactoryStore.PowerCircuits)
+        foreach (var circuit in MachineStore.PowerCircuits)
         {
             if (circuit.ParentCircuitId is null) continue;
             var cleaned = RemoveBrackets(CircuitNames.GetName(circuit)).Trim();
@@ -392,11 +392,11 @@
             typeCounts[type] = count + 1;
         }
 
-        foreach (var factory in FactoryStore.Factories)
+        foreach (var factory in MachineStore.Factories)
         {
             AddFactoryToGroup($"MAIN_{factory.MainPowerCircuitId}", factory.Type);
 
-            var subCircuit = FactoryStore.PowerCircuits.FirstOrDefault(c => c.Id == factory.SubPowerCircuitId);
+            var subCircuit = MachineStore.PowerCircuits.FirstOrDefault(c => c.Id == factory.SubPowerCircuitId);
             if (subCircuit?.ParentCircuitId is not null)
             {
                 var cleaned = RemoveBrackets(CircuitNames.GetName(subCircuit));
@@ -410,12 +410,12 @@
         _groupMachineTypeCounts = groupMachineTypeCounts;
 
         var combinedStats = new Dictionary<(string GroupKey, string ItemName), (double Consumed, double Produced, int? FirstCircuitId, int? ParentCircuitId, bool IsMainCircuit)>();
-        
+
         foreach (var kvp in circuitItemStats)
         {
             var (circuitId, itemName) = kvp.Key;
             var (consumed, produced) = kvp.Value;
-            var circuit = FactoryStore.PowerCircuits.FirstOrDefault(c => c.Id == circuitId);
+            var circuit = MachineStore.PowerCircuits.FirstOrDefault(c => c.Id == circuitId);
             var parentId = circuit?.ParentCircuitId;
             var isMainCircuit = parentId is null;
 
@@ -444,7 +444,7 @@
             .Select(kvp =>
             {
                 var ((groupKey, itemName), (consumed, produced, firstCircuitId, parentId, isMainCircuit)) = kvp;
-                var circuit = FactoryStore.PowerCircuits.FirstOrDefault(c => c.Id == firstCircuitId);
+                var circuit = MachineStore.PowerCircuits.FirstOrDefault(c => c.Id == firstCircuitId);
 
                 return new CircuitInputOutputStat
                 {
@@ -464,7 +464,7 @@
             .ToList();
 
         var mainCircuitSubCount = new Dictionary<int, int>();
-        foreach (var c in FactoryStore.PowerCircuits)
+        foreach (var c in MachineStore.PowerCircuits)
         {
             if (c.ParentCircuitId is int parentId)
                 mainCircuitSubCount[parentId] = mainCircuitSubCount.GetValueOrDefault(parentId, 0) + 1;
@@ -491,7 +491,7 @@
         if (groupKey.StartsWith("SUB_"))
         {
             var cleanedName = groupKey.Substring(4);
-            var subCircuits = FactoryStore.PowerCircuits
+            var subCircuits = MachineStore.PowerCircuits
                 .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
                 .ToList();
             return subCircuits.Any()

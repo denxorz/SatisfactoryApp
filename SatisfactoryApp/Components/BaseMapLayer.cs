@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace SatisfactoryApp.Components.Factories;
+namespace SatisfactoryApp.Components;
 
 public abstract class BaseMapLayer<T> : IMapLayer<T>
 {

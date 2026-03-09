@@ -1,10 +1,10 @@
 @using Denxorz.Satisfactory.Routes.Types
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Utils
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 
 <BaseMap T="Factory"
-         Title="Factory Stability Map"
+         Title="Machine Stability Map"
          SelectedChanged="SelectedChanged"
          Layers="[allMapLayer,filteredMapLayer]">
     <LegendSlot>
@@ -67,14 +67,14 @@
 </BaseMap>
 
 @code {
-    private readonly StabilityFactoryMapLayer allMapLayer;
-    private readonly StabilityFilteredFactoryMapLayer filteredMapLayer;
+    private readonly StabilityMachineMapLayer allMapLayer;
+    private readonly StabilityFilteredMachineMapLayer filteredMapLayer;
 
     private Factory? _selectedFactory;
     private string? _mainPowerCircuitName;
     private string? _subPowerCircuitName;
 
-    public StabilityMap(FactoryStore s)
+    public StabilityMap(MachineStore s)
     {
         allMapLayer = new(s);
         filteredMapLayer = new(s);
@@ -90,8 +90,8 @@
     {
         if (_selectedFactory != null)
         {
-            _mainPowerCircuitName = CircuitNames.GetIdAndName(FactoryStore.GetCircuitById(_selectedFactory.MainPowerCircuitId));
-            _subPowerCircuitName = CircuitNames.GetName(FactoryStore.GetCircuitById(_selectedFactory.SubPowerCircuitId));
+            _mainPowerCircuitName = CircuitNames.GetIdAndName(MachineStore.GetCircuitById(_selectedFactory.MainPowerCircuitId));
+            _subPowerCircuitName = CircuitNames.GetName(MachineStore.GetCircuitById(_selectedFactory.SubPowerCircuitId));
         }
         else
         {

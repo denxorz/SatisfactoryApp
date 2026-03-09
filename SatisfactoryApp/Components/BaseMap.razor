@@ -2,13 +2,13 @@
 @using Microsoft.JSInterop
 @using MudBlazor
 @using SatisfactoryApp.Services
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Utils
 @using System.Net
 @using System.Text
 @using System.Globalization
 @implements IDisposable
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 @inject LoadedFileStore LoadedFileStore
 @inject IJSRuntime JSRuntime
 @typeparam T where T : class
@@ -99,13 +99,13 @@
     protected override void OnInitialized()
     {
         _checkAndRenderHandler = () => _ = CheckAndRenderIfNeeded();
-        FactoryStore.FilteredFactoriesChanged += _checkAndRenderHandler;
+        MachineStore.FilteredFactoriesChanged += _checkAndRenderHandler;
         LoadedFileStore.LoadedFileNameChanged += OnLoadedFileNameChanged;
     }
 
     public void Dispose()
     {
-        FactoryStore.FilteredFactoriesChanged -= _checkAndRenderHandler;
+        MachineStore.FilteredFactoriesChanged -= _checkAndRenderHandler;
         LoadedFileStore.LoadedFileNameChanged -= OnLoadedFileNameChanged;
         _renderCts?.Cancel();
         _renderCts?.Dispose();
@@ -153,10 +153,10 @@
 
     private async Task CheckAndRenderIfNeeded()
     {
-        if (FactoryStore.UpdateCounter != _lastUpdateCounter)
+        if (MachineStore.UpdateCounter != _lastUpdateCounter)
         {
-            _pendingUpdateCounter = FactoryStore.UpdateCounter;
-            if (FactoryStore.Factories.Count > 0 && !_isLoading && string.IsNullOrEmpty(_error))
+            _pendingUpdateCounter = MachineStore.UpdateCounter;
+            if (MachineStore.Factories.Count > 0 && !_isLoading && string.IsNullOrEmpty(_error))
             {
                 _ = QueueRenderMapAsync();
             }

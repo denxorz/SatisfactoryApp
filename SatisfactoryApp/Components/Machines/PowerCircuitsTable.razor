@@ -1,9 +1,9 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using MudBlazor
 @using SatisfactoryApp.Services
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Utils
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 @implements IDisposable
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
@@ -104,13 +104,13 @@
 
     protected override void OnInitialized()
     {
-        FactoryStore.FactoriesChanged += UpdateStats;
+        MachineStore.FactoriesChanged += UpdateStats;
         UpdateStats();
     }
 
     public void Dispose()
     {
-        FactoryStore.FactoriesChanged -= UpdateStats;
+        MachineStore.FactoriesChanged -= UpdateStats;
     }
 
     private void UpdateStats()
@@ -118,10 +118,10 @@
         var statsMain = new Dictionary<int, PowerCircuitStat>();
         var statsSub = new Dictionary<int, PowerCircuitStat>();
 
-        foreach (var c in FactoryStore.PowerCircuits)
+        foreach (var c in MachineStore.PowerCircuits)
         {
             bool isMainCircuit = c.ParentCircuitId is null;
-            var factories = FactoryStore.Factories
+            var factories = MachineStore.Factories
                 .Where(f => isMainCircuit ? f.MainPowerCircuitId == c.Id : f.SubPowerCircuitId == c.Id)
                 .ToList();
 
@@ -224,4 +224,3 @@
         public int? ParentCircuitId { get; set; }
     }
 }
-

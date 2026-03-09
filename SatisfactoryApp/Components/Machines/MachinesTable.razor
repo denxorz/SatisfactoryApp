@@ -1,17 +1,17 @@
 @using Denxorz.Satisfactory.Routes.Types
 @using MudBlazor
 @using SatisfactoryApp.Components
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Utils
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 @implements IDisposable
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
     <MudCardHeader Class="mud-primary pa-0 pl-1">
-        <MudText Class="primary-card-header-title" Color="Color.Surface">Factories</MudText>
+        <MudText Class="primary-card-header-title" Color="Color.Surface">Machines</MudText>
     </MudCardHeader>
     <MudCardContent Class="pa-2">
-        <MudDataGrid T="Factory" Items="@FactoryStore.FilteredFactories" Hover Dense SortMode="SortMode.Multiple" Virtualize="true">
+        <MudDataGrid T="Factory" Items="@MachineStore.FilteredFactories" Hover Dense SortMode="SortMode.Multiple" Virtualize="true">
             <Columns>
                 <TemplateColumn T="Factory" Title="" Sortable="false">
                     <CellTemplate>
@@ -89,12 +89,12 @@
 @code {
     protected override void OnInitialized()
     {
-        FactoryStore.FilteredFactoriesChanged += OnFilteredFactoriesChanged;
+        MachineStore.FilteredFactoriesChanged += OnFilteredFactoriesChanged;
     }
 
     public void Dispose()
     {
-        FactoryStore.FilteredFactoriesChanged -= OnFilteredFactoriesChanged;
+        MachineStore.FilteredFactoriesChanged -= OnFilteredFactoriesChanged;
     }
 
     private void OnFilteredFactoriesChanged()
@@ -103,9 +103,8 @@
     }
 
     private string GetCircuitName(Factory factory) =>
-        CircuitNames.GetIdAndName(FactoryStore.GetCircuitById(factory.MainPowerCircuitId));
+        CircuitNames.GetIdAndName(MachineStore.GetCircuitById(factory.MainPowerCircuitId));
 
     private string GetSubCircuitName(Factory factory) =>
-        CircuitNames.GetName(FactoryStore.GetCircuitById(factory.SubPowerCircuitId));
+        CircuitNames.GetName(MachineStore.GetCircuitById(factory.SubPowerCircuitId));
 }
-

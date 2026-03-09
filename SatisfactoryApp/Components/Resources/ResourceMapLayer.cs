@@ -1,5 +1,5 @@
-﻿using Denxorz.Satisfactory.Routes.Types;
-using SatisfactoryApp.Components.Factories;
+using Denxorz.Satisfactory.Routes.Types;
+using SatisfactoryApp.Components;
 using SatisfactoryApp.Services.Resources;
 
 namespace SatisfactoryApp.Components.Resources;

@@ -1,8 +1,9 @@
-﻿using Denxorz.Satisfactory.Routes.Types;
+using Denxorz.Satisfactory.Routes.Types;
+using SatisfactoryApp.Components;
 
-namespace SatisfactoryApp.Components.Factories;
+namespace SatisfactoryApp.Components.Machines;
 
-public abstract class BaseFilteredFactoryMapLayer : BaseFactoryMapLayer
+public abstract class BaseFilteredMachineMapLayer : BaseMachineMapLayer
 {
     public override string Class { get; } = "";
     public override List<(float X, float Y, Factory Item)> ItemsWithTooltip()

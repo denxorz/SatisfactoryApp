@@ -1,26 +1,26 @@
 using Denxorz.Satisfactory.Routes.Types;
 using SatisfactoryApp.Utils;
 
-namespace SatisfactoryApp.Services.Factories;
+namespace SatisfactoryApp.Services.Machines;
 
-public class FactoryStore
+public class MachineStore
 {
     private readonly List<Factory> _factories = [];
     private readonly List<PowerCircuit> _powerCircuits = [];
     private Dictionary<int, PowerCircuit> _powerCircuitsById = [];
-    private readonly FactoryFilters _filters = new();
+    private readonly MachineFilters _filters = new();
     private List<Factory> _filteredFactories = [];
-    private List<FactoryTypeOption> _factoryTypeOptions = [];
+    private List<MachineTypeOption> _machineTypeOptions = [];
     private List<PowerCircuitOption> _powerCircuitIdOptions = [];
-    private List<FactoryStabilityOption> _factoryStabilityOptions = [];
-    private HashSet<string>? _selectedFactoryTypes;
+    private List<MachineStabilityOption> _machineStabilityOptions = [];
+    private HashSet<string>? _selectedMachineTypes;
     private HashSet<string>? _selectedPowerCircuits;
-    private HashSet<string>? _selectedFactoryStabilities;
+    private HashSet<string>? _selectedMachineStabilities;
     private int _updateCounter = 0;
 
     public List<Factory> Factories => _factories;
     public List<PowerCircuit> PowerCircuits => _powerCircuits;
-    public FactoryFilters Filters => _filters;
+    public MachineFilters Filters => _filters;
     public int UpdateCounter => _updateCounter;
 
     public event Action? FactoriesChanged;
@@ -34,7 +34,7 @@ public class FactoryStore
         _powerCircuits.Clear();
         _powerCircuits.AddRange(powerCircuits);
         _powerCircuitsById = new Dictionary<int, PowerCircuit>();
-        
+
         foreach (var c in _powerCircuits)
         {
             _powerCircuitsById.TryAdd(c.Id, c);
@@ -63,10 +63,10 @@ public class FactoryStore
 
     private bool IsFactoryIncluded(Factory factory)
     {
-        if (_selectedFactoryTypes is { Count: > 0 })
+        if (_selectedMachineTypes is { Count: > 0 })
         {
             var factoryType = factory.Type ?? "unknown";
-            if (!_selectedFactoryTypes.Contains(factoryType))
+            if (!_selectedMachineTypes.Contains(factoryType))
             {
                 return false;
             }
@@ -77,7 +77,7 @@ public class FactoryStore
             var mainCircuitKey = $"main_{factory.MainPowerCircuitId}";
             var subCircuitKey = $"sub_{factory.SubPowerCircuitId}";
 
-            var hasMatchingCircuit = _selectedPowerCircuits.Contains(mainCircuitKey) 
+            var hasMatchingCircuit = _selectedPowerCircuits.Contains(mainCircuitKey)
                                      || _selectedPowerCircuits.Contains(subCircuitKey);
 
             if (!hasMatchingCircuit)
@@ -86,10 +86,10 @@ public class FactoryStore
             }
         }
 
-        if (_selectedFactoryStabilities is { Count: > 0 })
+        if (_selectedMachineStabilities is { Count: > 0 })
         {
             var status = GetFactoryStability(factory);
-            if (!_selectedFactoryStabilities.Contains(status))
+            if (!_selectedMachineStabilities.Contains(status))
             {
                 return false;
             }
@@ -108,27 +108,16 @@ public class FactoryStore
         return "Off";
     }
 
-    public List<FactoryTypeOption> FactoryTypeOptions
-    {
-        get => _factoryTypeOptions;
-    }
+    public List<MachineTypeOption> MachineTypeOptions => _machineTypeOptions;
+    public List<PowerCircuitOption> PowerCircuitIdOptions => _powerCircuitIdOptions;
+    public List<MachineStabilityOption> MachineStabilityOptions => _machineStabilityOptions;
 
-    public List<PowerCircuitOption> PowerCircuitIdOptions
+    public IEnumerable<MachineTypeOption> SelectedMachineTypes
     {
-        get => _powerCircuitIdOptions;
-    }
-
-    public List<FactoryStabilityOption> FactoryStabilityOptions
-    {
-        get => _factoryStabilityOptions;
-    }
-
-    public IEnumerable<FactoryTypeOption> SelectedFactoryTypes
-    {
-        get => Filters.SelectedFactoryTypes;
+        get => Filters.SelectedMachineTypes;
         set
         {
-            Filters.SelectedFactoryTypes = value?.ToList() ?? [];
+            Filters.SelectedMachineTypes = value?.ToList() ?? [];
             NotifyFiltersChanged();
         }
     }
@@ -143,26 +132,26 @@ public class FactoryStore
         }
     }
 
-    public IEnumerable<FactoryStabilityOption> SelectedFactoryStabilities
+    public IEnumerable<MachineStabilityOption> SelectedMachineStabilities
     {
-        get => Filters.SelectedFactoryStabilities;
+        get => Filters.SelectedMachineStabilities;
         set
         {
-            Filters.SelectedFactoryStabilities = value?.ToList() ?? [];
+            Filters.SelectedMachineStabilities = value?.ToList() ?? [];
             NotifyFiltersChanged();
         }
     }
 
     private void UpdateFilterCaches()
     {
-        _selectedFactoryTypes = _filters.SelectedFactoryTypes.Count > 0
-            ? _filters.SelectedFactoryTypes.Select(f => f.Value).ToHashSet()
+        _selectedMachineTypes = _filters.SelectedMachineTypes.Count > 0
+            ? _filters.SelectedMachineTypes.Select(f => f.Value).ToHashSet()
             : null;
         _selectedPowerCircuits = _filters.SelectedPowerCircuits.Count > 0
             ? _filters.SelectedPowerCircuits.Select(c => c.Value).ToHashSet()
             : null;
-        _selectedFactoryStabilities = _filters.SelectedFactoryStabilities.Count > 0
-            ? _filters.SelectedFactoryStabilities.Select(s => s.Value).ToHashSet()
+        _selectedMachineStabilities = _filters.SelectedMachineStabilities.Count > 0
+            ? _filters.SelectedMachineStabilities.Select(s => s.Value).ToHashSet()
             : null;
     }
 
@@ -192,12 +181,12 @@ public class FactoryStore
             subCircuitCounts[factory.SubPowerCircuitId] = subCount + 1;
         }
 
-        _factoryTypeOptions = factoryTypeCounts
+        _machineTypeOptions = factoryTypeCounts
             .OrderBy(kvp => kvp.Key)
             .Select(kvp =>
             {
                 var displayName = ResourceDisplayNames.GetDisplayName(kvp.Key);
-                return new FactoryTypeOption($"{displayName} ({kvp.Value})", kvp.Key);
+                return new MachineTypeOption($"{displayName} ({kvp.Value})", kvp.Key);
             })
             .ToList();
 
@@ -215,7 +204,7 @@ public class FactoryStore
 
         _powerCircuitIdOptions = [.. mainOptions, .. subOptions];
 
-        _factoryStabilityOptions =
+        _machineStabilityOptions =
         [
             new($"Stable ({statusCounts.GetValueOrDefault("Stable", 0)})", "Stable"),
             new($"Almost Stable ({statusCounts.GetValueOrDefault("Almost Stable", 0)})", "Almost Stable"),

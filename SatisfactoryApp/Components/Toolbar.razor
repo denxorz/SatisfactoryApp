@@ -4,12 +4,12 @@
 @using Microsoft.JSInterop
 @using MudBlazor
 @using SatisfactoryApp.Services
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Services.Resources
 @using SatisfactoryApp.Services.Stations
 using Microsoft.AspNetCore.Components
 @implements IDisposable
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 @inject LoadedFileStore LoadedFileStore
 @inject StationStore StationStore
 @inject ResourceStore ResourceStore
@@ -194,7 +194,7 @@ using Microsoft.AspNetCore.Components
             StateHasChanged();
 
             var saveData = await loadSaveData;
-            FactoryStore.Set(saveData.Factories, saveData.PowerCircuits);
+            MachineStore.Set(saveData.Factories, saveData.PowerCircuits);
             StationStore.Set(saveData.Stations, saveData.Uploaders);
             ResourceStore.Set(saveData.Resources);
 
@@ -288,7 +288,7 @@ using Microsoft.AspNetCore.Components
             _error = null;
             StateHasChanged();
 
-            var jsonContent = DataService.ExportToJson(FactoryStore, StationStore, ResourceStore);
+            var jsonContent = DataService.ExportToJson(MachineStore, StationStore, ResourceStore);
             var filename = $"satisfactory-data-{DateTime.Now:yyyyMMdd-HHmmss}.json";
 
             await JSRuntime.InvokeVoidAsync("downloadJsonFile", jsonContent, filename);

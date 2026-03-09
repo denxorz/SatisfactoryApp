@@ -1,17 +1,17 @@
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @implements IDisposable
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 
 <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
     <MudCardHeader Class="mud-primary pa-0 pl-1">
-        <MudText Class="primary-card-header-title">Factory Filters</MudText>
+        <MudText Class="primary-card-header-title">Machine Filters</MudText>
     </MudCardHeader>
     <MudCardContent Class="pa-2">
         <MudGrid>
             <MudItem xs="12" sm="4">
                 <MudComboBox 
-                    T="FactoryTypeOption"
-                    @bind-SelectedValues="@FactoryStore.SelectedFactoryTypes"
+                    T="MachineTypeOption"
+                    @bind-SelectedValues="@MachineStore.SelectedMachineTypes"
                     Variant="Variant.Outlined"
                     MultiSelection
                     Label="Type" 
@@ -19,7 +19,7 @@
                     Clearable
                     SelectAll
                     ShowCheckbox>
-                    @foreach (var item in FactoryTypeOptions)
+                    @foreach (var item in MachineTypeOptions)
                     {
                         <MudComboBoxItem Value="@item" Text="@item.Title"></MudComboBoxItem>
                     }
@@ -27,7 +27,7 @@
             </MudItem>
             <MudItem xs="12" sm="4">
                 <MudComboBox T="PowerCircuitOption"
-                             @bind-SelectedValues="@FactoryStore.SelectedPowerCircuits"
+                             @bind-SelectedValues="@MachineStore.SelectedPowerCircuits"
                              Variant="Variant.Outlined"
                              MultiSelection
                              Label="Power Circuit"
@@ -42,8 +42,8 @@
                 </MudComboBox>
             </MudItem>
             <MudItem xs="12" sm="4">
-                <MudComboBox T="FactoryStabilityOption"
-                             @bind-SelectedValues="@FactoryStore.SelectedFactoryStabilities"
+                <MudComboBox T="MachineStabilityOption"
+                             @bind-SelectedValues="@MachineStore.SelectedMachineStabilities"
                              Variant="Variant.Outlined"
                              MultiSelection
                              Label="Stability"
@@ -51,7 +51,7 @@
                              Clearable
                              SelectAll
                              ShowCheckbox>
-                    @foreach (var item in FactoryStabilityOptions)
+                    @foreach (var item in MachineStabilityOptions)
                     {
                         <MudComboBoxItem Value="@item" Text="@item.ToString()"></MudComboBoxItem>
                     }
@@ -63,13 +63,13 @@
 
 @code {
 
-    private List<FactoryTypeOption> FactoryTypeOptions = [];
+    private List<MachineTypeOption> MachineTypeOptions = [];
     private List<PowerCircuitOption> PowerCircuitIdOptions = [];
-    private List<FactoryStabilityOption> FactoryStabilityOptions = [];
+    private List<MachineStabilityOption> MachineStabilityOptions = [];
 
     protected override void OnInitialized() 
     {
-        FactoryStore.FactoriesChanged += OnChanged;
+        MachineStore.FactoriesChanged += OnChanged;
         Load();
     }
 
@@ -81,13 +81,13 @@
 
     private void Load()
     {
-        FactoryTypeOptions = FactoryStore.FactoryTypeOptions;
-        PowerCircuitIdOptions = FactoryStore.PowerCircuitIdOptions;
-        FactoryStabilityOptions = FactoryStore.FactoryStabilityOptions;
+        MachineTypeOptions = MachineStore.MachineTypeOptions;
+        PowerCircuitIdOptions = MachineStore.PowerCircuitIdOptions;
+        MachineStabilityOptions = MachineStore.MachineStabilityOptions;
     }
 
     public void Dispose()
     {
-        FactoryStore.FactoriesChanged -= OnChanged;
+        MachineStore.FactoriesChanged -= OnChanged;
     }
 }

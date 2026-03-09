@@ -3,7 +3,7 @@
 @using MudBlazor
 @using Microsoft.AspNetCore.WebUtilities
 @using SatisfactoryApp.Components.Credits
-@using SatisfactoryApp.Components.Factories
+@using SatisfactoryApp.Components.Machines
 @using SatisfactoryApp.Components.Instructions
 @using SatisfactoryApp.Components.Resources
 @using SatisfactoryApp.Components.Stations
@@ -14,11 +14,11 @@
          Elevation="2"
          ActivePanelIndexChanged="OnTabChanged"
          KeepPanelsAlive>
-    <MudTabPanel Text="Factories" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Factory" Class="pt-1">
-        <FactoriesTab />
+    <MudTabPanel Text="Machines" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Print" Class="pt-1">
+        <MachinesTab />
     </MudTabPanel>
-    <MudTabPanel Text="Inputs & Outputs" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Scale" Class="pt-1">
-        <FactoryInputOutputTable />
+    <MudTabPanel Text="Factories" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Factory" Class="pt-1">
+        <FactoriesSummary />
     </MudTabPanel>
     <MudTabPanel Text="Stations" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Train" Class="pt-1">
         <StationsTab />
@@ -29,10 +29,10 @@
     <MudTabPanel Text="Everything" Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.GridView" Class="pt-1">
         <MudGrid Spacing="3">
             <MudItem xs="12">
-                <FactoryFilters />
+                <MachineFilters />
             </MudItem>
             <MudItem xs="12">
-                <FactoriesTable />
+                <MachinesTable />
             </MudItem>
         </MudGrid>
     </MudTabPanel>

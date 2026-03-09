@@ -1,7 +1,7 @@
 @using Denxorz.Satisfactory.Routes.Types
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Utils
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 
 <BaseMap T="Factory"
          Title="Power Circuits Map"
@@ -55,14 +55,14 @@
 </BaseMap>
 
 @code {
-    private readonly PowerCircuitFactoryMapLayer allMapLayer;
-    private readonly PowerCircuitFilteredFactoryMapLayer filteredMapLayer;
+    private readonly PowerCircuitMachineMapLayer allMapLayer;
+    private readonly PowerCircuitFilteredMachineMapLayer filteredMapLayer;
 
     private Factory? _selectedFactory;
     private string? _mainPowerCircuitName;
     private string? _subPowerCircuitName;
 
-    public PowerCircuitMap(FactoryStore s)
+    public PowerCircuitMap(MachineStore s)
     {
         allMapLayer = new(s);
         filteredMapLayer = new(s);
@@ -78,8 +78,8 @@
     {
         if (_selectedFactory != null)
         {
-            _mainPowerCircuitName = CircuitNames.GetIdAndName(FactoryStore.GetCircuitById(_selectedFactory.MainPowerCircuitId));
-            _subPowerCircuitName = CircuitNames.GetName(FactoryStore.GetCircuitById(_selectedFactory.SubPowerCircuitId));
+            _mainPowerCircuitName = CircuitNames.GetIdAndName(MachineStore.GetCircuitById(_selectedFactory.MainPowerCircuitId));
+            _subPowerCircuitName = CircuitNames.GetName(MachineStore.GetCircuitById(_selectedFactory.SubPowerCircuitId));
         }
         else
         {

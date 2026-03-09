@@ -1,17 +1,17 @@
-﻿using Denxorz.Satisfactory.Routes.Types;
-using SatisfactoryApp.Services.Factories;
+using Denxorz.Satisfactory.Routes.Types;
+using SatisfactoryApp.Services.Machines;
 using SatisfactoryApp.Utils;
 
-namespace SatisfactoryApp.Components.Factories;
+namespace SatisfactoryApp.Components.Machines;
 
-public class SloopsFactoryMapLayer(FactoryStore FactoryStore) : BaseFactoryMapLayer
+public class SloopsFilteredMachineMapLayer(MachineStore MachineStore) : BaseFilteredMachineMapLayer
 {
-    public override string Class { get; } = "map-svg-overlay-hassloop map-svg-overlay-filtered";
+    public override string Class { get; } = "map-svg-overlay-hassloop";
 
     protected override List<Factory> GetItems()
     {
         return [..
-            FactoryStore.Factories
+            MachineStore.FilteredFactories
              .Where(f => f.ClockSpeed.HasValue)
              .Where(f => f.HasSloop)
          ];

@@ -2,7 +2,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Denxorz.Satisfactory.Routes;
 using Denxorz.Satisfactory.Routes.Types;
-using SatisfactoryApp.Services.Factories;
+using SatisfactoryApp.Services.Machines;
 using SatisfactoryApp.Services.Resources;
 using SatisfactoryApp.Services.Stations;
 
@@ -23,12 +23,12 @@ public class DataService
             ?? throw new InvalidOperationException($"Failed to load data from {TestDataFileName}");
     }
 
-    public static string ExportToJson(FactoryStore factoryStore, StationStore stationStore, ResourceStore resourceStore)
+    public static string ExportToJson(MachineStore machineStore, StationStore stationStore, ResourceStore resourceStore)
     {
         var testData = new SaveData
         {
-            PowerCircuits = [.. factoryStore.PowerCircuits],
-            Factories = [.. factoryStore.Factories],
+            PowerCircuits = [.. machineStore.PowerCircuits],
+            Factories = [.. machineStore.Factories],
             Stations = [.. stationStore.Stations],
             Uploaders = [.. stationStore.Uploaders],
             Resources = [.. resourceStore.Resources],

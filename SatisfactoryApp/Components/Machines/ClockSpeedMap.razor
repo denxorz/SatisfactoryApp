@@ -2,12 +2,12 @@
 @using Microsoft.JSInterop
 @using MudBlazor
 @using SatisfactoryApp.Services
-@using SatisfactoryApp.Services.Factories
+@using SatisfactoryApp.Services.Machines
 @using SatisfactoryApp.Utils
-@inject FactoryStore FactoryStore
+@inject MachineStore MachineStore
 
 <BaseMap T="Factory"
-         Title="Factory Clock speed"
+         Title="Machine Clock speed"
          SelectedChanged="SelectedChanged"
          Layers="[clockSpeedMapLayer,clockSpeedFilteredMapLayer,sloopMapLayer,sloopFilteredMapLayer]">
     <TitleAfterSlot>
@@ -70,10 +70,10 @@
 </BaseMap>
 
 @code {
-    private readonly ClockSpeedFactoryMapLayer clockSpeedMapLayer;
-    private readonly ClockSpeedFilteredFactoryMapLayer clockSpeedFilteredMapLayer;
-    private readonly SloopsFactoryMapLayer sloopMapLayer;
-    private readonly SloopsFilteredFactoryMapLayer sloopFilteredMapLayer;
+    private readonly ClockSpeedMachineMapLayer clockSpeedMapLayer;
+    private readonly ClockSpeedFilteredMachineMapLayer clockSpeedFilteredMapLayer;
+    private readonly SloopsMachineMapLayer sloopMapLayer;
+    private readonly SloopsFilteredMachineMapLayer sloopFilteredMapLayer;
 
     private bool _showSloopOnly = false;
     private Factory? _selectedFactory;
@@ -92,7 +92,7 @@
         }
     }
 
-    public ClockSpeedMap(FactoryStore s)
+    public ClockSpeedMap(MachineStore s)
     {
         clockSpeedMapLayer = new(s);
         clockSpeedFilteredMapLayer = new(s);
