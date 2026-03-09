@@ -10,11 +10,11 @@
 <MudStack Spacing="2">
             @foreach (var group in _groupedStats)
             {
-                <MudCard Outlined="true" Square="true" Class="io-card">
-                    <MudCardHeader Class="io-card-header">
-                        <MudText Class="io-card-title" Color="Color.Surface">@GetGroupTitle(group.Key)</MudText>
+                <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary io-card">
+                    <MudCardHeader Class="mud-primary pa-0 pl-1">
+                        <MudText Class="primary-card-header-title" Color="Color.Surface">@GetGroupTitle(group.Key)</MudText>
                     </MudCardHeader>
-                    <MudCardContent Class="io-card-content">
+                    <MudCardContent Class="pa-2 io-card-content">
                         <MudText Typo="Typo.caption" Class="io-card-circuits mb-1">
                             <MudText Color="Color.Secondary">Included circuits:</MudText> @GetGroupDisplayName(group.Key)
                         </MudText>
@@ -57,7 +57,7 @@
                                 @if (netDeficitItems.Any())
                                 {
                                     <div class="io-section">
-                                        <MudText Typo="Typo.caption" Color="Color.Error" Class="io-section-label">Consumed</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Error" Class="io-section-label">Imports</MudText>
                                         <div class="io-item-list">
                                             @foreach (var s in netDeficitItems)
                                             {
@@ -81,7 +81,7 @@
                                 @if (netSurplusItems.Any())
                                 {
                                     <div class="io-section">
-                                        <MudText Typo="Typo.caption" Color="Color.Success" Class="io-section-label">Produced</MudText>
+                                        <MudText Typo="Typo.caption" Color="Color.Success" Class="io-section-label">Exports</MudText>
                                         <div class="io-item-list">
                                             @foreach (var s in netSurplusItems)
                                             {
@@ -141,20 +141,6 @@
         </MudStack>
 
 <style>
-    .io-card {
-        border: 1px solid var(--mud-palette-primary);
-        border-radius: 4px;
-        overflow: hidden;
-    }
-    .io-card-header {
-        padding: 8px 12px;
-        min-height: auto;
-        background-color: var(--mud-palette-primary);
-    }
-    .io-card-title {
-        font-weight: 600;
-        font-size: 1rem;
-    }
     .io-card-content {
         padding: 12px 16px;
     }
