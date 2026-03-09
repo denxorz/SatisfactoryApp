@@ -10,51 +10,102 @@
 <MudStack Spacing="2">
             @foreach (var group in _groupedStats)
             {
-                <MudCard Outlined="true" Square="true" Class="border-solid border-4 mud-border-primary">
-                    <MudCardHeader Class="mud-primary pa-0 pl-1">
-                        <MudText Class="primary-card-header-title" Color="Color.Surface">@GetGroupTitle(group.Key)</MudText>
+                <MudCard Outlined="true" Square="true" Class="io-card">
+                    <MudCardHeader Class="io-card-header">
+                        <MudText Class="io-card-title" Color="Color.Surface">@GetGroupTitle(group.Key)</MudText>
                     </MudCardHeader>
-                    <MudCardContent Class="pa-2">
-                        <MudText Typo="Typo.caption" Class="mb-2">
+                    <MudCardContent Class="io-card-content">
+                        <MudText Typo="Typo.caption" Class="io-card-circuits mb-1">
                             <MudText Color="Color.Secondary">Included circuits:</MudText> @GetGroupDisplayName(group.Key)
                         </MudText>
+                        @{
+                            var machineSummary = GetMachineSummary(group.Key);
+                        }
+                        @if (machineSummary.Count > 0)
+                        {
+                            <div class="io-machines mb-3">
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="io-section-label">Machines</MudText>
+                                <div class="io-machine-list">
+                                    @foreach (var kvp in machineSummary)
+                                    {
+                                        var typeKey = kvp.Key;
+                                        var count = kvp.Value;
+                                        var machineName = ResourceDisplayNames.GetDisplayName(typeKey);
+                                        var iconUrl = ResourceDisplayNames.GetItemIconUrl(typeKey);
+                                        <div class="io-machine">
+                                            @if (!string.IsNullOrEmpty(iconUrl))
+                                            {
+                                                <img class="io-machine-icon" src="@iconUrl" alt="" title="@machineName" />
+                                            }
+                                            else
+                                            {
+                                                <span class="io-machine-icon io-machine-icon-fallback" title="@machineName"></span>
+                                            }
+                                            <span class="io-machine-text">@($"{count}× {machineName}")</span>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
                         @{
                             var netDeficitItems = group.Where(s => s.Net < -0.001).OrderBy(s => s.ItemName).ToList();
                             var netSurplusItems = group.Where(s => s.Net > 0.001).OrderBy(s => s.ItemName).ToList();
                         }
                         @if (netDeficitItems.Any() || netSurplusItems.Any())
                         {
-                            <MudStack Spacing="1" Class="mb-2">
+                            <div class="io-summary">
                                 @if (netDeficitItems.Any())
                                 {
-                                    <MudText Typo="Typo.body2">
-                                        <MudText Color="Color.Error" Typo="Typo.caption">Consumed:</MudText>
-                                        @foreach (var s in netDeficitItems)
-                                        {
-                                            <span class="resource-list-item">
-                                                <span class="resource-icon" style="background: @GetItemColor(s.ItemName);" title="@s.ItemName"></span>
-                                                <span>@ResourceDisplayNames.GetDisplayName(s.ItemName) @(Math.Round(-s.Net, 3).ToString("0.###"))</span>
-                                            </span>
-                                        }
-                                    </MudText>
+                                    <div class="io-section">
+                                        <MudText Typo="Typo.caption" Color="Color.Error" Class="io-section-label">Consumed</MudText>
+                                        <div class="io-item-list">
+                                            @foreach (var s in netDeficitItems)
+                                            {
+                                                var iconUrl = ResourceDisplayNames.GetItemIconUrl(s.ItemName);
+                                                <div class="io-item">
+                                                    @if (!string.IsNullOrEmpty(iconUrl))
+                                                    {
+                                                        <img class="io-item-icon" src="@iconUrl" alt="" title="@ResourceDisplayNames.GetDisplayName(s.ItemName)" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="io-item-icon io-item-icon-fallback" style="background: @GetItemColor(s.ItemName);" title="@ResourceDisplayNames.GetDisplayName(s.ItemName)"></span>
+                                                    }
+                                                    <span class="io-item-text">@ResourceDisplayNames.GetDisplayName(s.ItemName)</span>
+                                                    <span class="io-item-amount">@(Math.Round(-s.Net, 3).ToString("0.###"))/m</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
                                 }
                                 @if (netSurplusItems.Any())
                                 {
-                                    <MudText Typo="Typo.body2">
-                                        <MudText Color="Color.Success" Typo="Typo.caption">Produced:</MudText>
-                                        @foreach (var s in netSurplusItems)
-                                        {
-                                            <span class="resource-list-item">
-                                                <span class="resource-icon" style="background: @GetItemColor(s.ItemName);" title="@s.ItemName"></span>
-                                                <span>@ResourceDisplayNames.GetDisplayName(s.ItemName) @(Math.Round(s.Net, 3).ToString("0.###"))</span>
-                                            </span>
-                                        }
-                                    </MudText>
+                                    <div class="io-section">
+                                        <MudText Typo="Typo.caption" Color="Color.Success" Class="io-section-label">Produced</MudText>
+                                        <div class="io-item-list">
+                                            @foreach (var s in netSurplusItems)
+                                            {
+                                                var iconUrl = ResourceDisplayNames.GetItemIconUrl(s.ItemName);
+                                                <div class="io-item">
+                                                    @if (!string.IsNullOrEmpty(iconUrl))
+                                                    {
+                                                        <img class="io-item-icon" src="@iconUrl" alt="" title="@ResourceDisplayNames.GetDisplayName(s.ItemName)" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="io-item-icon io-item-icon-fallback" style="background: @GetItemColor(s.ItemName);" title="@ResourceDisplayNames.GetDisplayName(s.ItemName)"></span>
+                                                    }
+                                                    <span class="io-item-text">@ResourceDisplayNames.GetDisplayName(s.ItemName)</span>
+                                                    <span class="io-item-amount">@(Math.Round(s.Net, 3).ToString("0.###"))/m</span>
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
                                 }
-                            </MudStack>
+                            </div>
                         }
-                        <MudExpansionPanels Class="mt-2">
-                            <MudExpansionPanel Text="Production details" IsInitiallyExpanded="false">
+                        <MudExpansionPanels Class="io-details-panels">
+                            <MudExpansionPanel Text="Production details" IsInitiallyExpanded="false" Class="io-details-panel">
                                 <MudTable Items="@group" Hover Dense Striped Breakpoint="Breakpoint.Sm" Class="mud-table-dense">
                             <HeaderContent>
                                 <MudTh>Item</MudTh>
@@ -90,20 +141,114 @@
         </MudStack>
 
 <style>
-    .resource-list-item {
+    .io-card {
+        border: 1px solid var(--mud-palette-primary);
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    .io-card-header {
+        padding: 8px 12px;
+        min-height: auto;
+        background-color: var(--mud-palette-primary);
+    }
+    .io-card-title {
+        font-weight: 600;
+        font-size: 1rem;
+    }
+    .io-card-content {
+        padding: 12px 16px;
+    }
+    .io-card-circuits {
+        opacity: 0.9;
+    }
+    .io-machines {
+        opacity: 0.9;
+    }
+    .io-machine-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 12px;
+        margin-top: 4px;
+    }
+    .io-machine {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        margin-right: 12px;
+        gap: 6px;
+        padding: 2px 8px;
+        background: var(--mud-palette-background-gray, rgba(0,0,0,0.06));
+        border-radius: 4px;
         white-space: nowrap;
     }
-    .resource-icon {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 2px;
+    .io-machine-icon {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
         flex-shrink: 0;
+    }
+    .io-machine-icon-fallback {
+        display: inline-block;
+        border-radius: 2px;
         border: 1px solid rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.12);
+    }
+    .io-machine-text {
+        font-size: 0.8125rem;
+    }
+    .io-summary {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-bottom: 12px;
+    }
+    .io-section {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .io-section-label {
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-size: 0.7rem;
+    }
+    .io-item-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 16px;
+    }
+    .io-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 8px;
+        background: var(--mud-palette-background-gray, rgba(0,0,0,0.08));
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .io-item-icon {
+        width: 20px;
+        height: 20px;
+        object-fit: contain;
+        flex-shrink: 0;
+    }
+    .io-item-icon-fallback {
+        display: inline-block;
+        border-radius: 2px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    .io-item-text {
+        font-size: 0.875rem;
+    }
+    .io-item-amount {
+        font-size: 0.8125rem;
+        opacity: 0.9;
+        font-variant-numeric: tabular-nums;
+    }
+    .io-details-panels {
+        margin-top: 4px;
+    }
+    .io-details-panel {
+        border-radius: 4px;
     }
 </style>
 
@@ -111,7 +256,7 @@
     private List<CircuitInputOutputStat> _circuitInputOutputStats = [];
     private Dictionary<int, PowerCircuitStat> _powerMainCircuitStats = [];
     private IGrouping<string, CircuitInputOutputStat>[] _groupedStats = [];
-
+    private Dictionary<string, Dictionary<string, int>> _groupMachineTypeCounts = new(StringComparer.OrdinalIgnoreCase);
 
     protected override void OnInitialized()
     {
@@ -229,6 +374,41 @@
 
         _powerMainCircuitStats = mainCircuitStats;
 
+        var groupMachineTypeCounts = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
+
+        void AddFactoryToGroup(string groupKey, string? factoryType)
+        {
+            if (string.IsNullOrWhiteSpace(groupKey))
+                return;
+
+            var type = string.IsNullOrWhiteSpace(factoryType) ? "Unknown" : factoryType!;
+            if (!groupMachineTypeCounts.TryGetValue(groupKey, out var typeCounts))
+            {
+                typeCounts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+                groupMachineTypeCounts[groupKey] = typeCounts;
+            }
+
+            typeCounts.TryGetValue(type, out var count);
+            typeCounts[type] = count + 1;
+        }
+
+        foreach (var factory in FactoryStore.Factories)
+        {
+            AddFactoryToGroup($"MAIN_{factory.MainPowerCircuitId}", factory.Type);
+
+            var subCircuit = FactoryStore.PowerCircuits.FirstOrDefault(c => c.Id == factory.SubPowerCircuitId);
+            if (subCircuit?.ParentCircuitId is not null)
+            {
+                var cleaned = RemoveBrackets(CircuitNames.GetName(subCircuit));
+                if (!string.IsNullOrWhiteSpace(cleaned))
+                {
+                    AddFactoryToGroup($"SUB_{cleaned}", factory.Type);
+                }
+            }
+        }
+
+        _groupMachineTypeCounts = groupMachineTypeCounts;
+
         var combinedStats = new Dictionary<(string GroupKey, string ItemName), (double Consumed, double Produced, int? FirstCircuitId, int? ParentCircuitId, bool IsMainCircuit)>();
         
         foreach (var kvp in circuitItemStats)
@@ -337,6 +517,19 @@
         return string.IsNullOrWhiteSpace(title) ? "Unknown" : title;
     }
 
+    private IReadOnlyList<KeyValuePair<string, int>> GetMachineSummary(string groupKey)
+    {
+        if (_groupMachineTypeCounts.TryGetValue(groupKey, out var dict))
+        {
+            return dict
+                .OrderByDescending(kvp => kvp.Value)
+                .ThenBy(kvp => kvp.Key)
+                .ToList();
+        }
+
+        return Array.Empty<KeyValuePair<string, int>>();
+    }
+
     private string GetItemName(FactoryFlow flow)
     {
         return flow.Type;
@@ -358,8 +551,8 @@
 
     private static string GetItemColor(string itemName)
     {
-        if (string.IsNullOrEmpty(itemName)) return "#FF0000";
-        var key = itemName.Replace(" ", "").ToLowerInvariant();
+        if (string.IsNullOrEmpty(itemName)) return "#888";
+        var key = new string(itemName.Where(c => char.IsLetterOrDigit(c)).ToArray()).ToLowerInvariant();
         return CargoColors.GetCargoColor(key);
     }
 

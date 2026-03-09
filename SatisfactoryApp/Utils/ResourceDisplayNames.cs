@@ -23,7 +23,7 @@ public static class ResourceDisplayNames
         ["computer"] = "Computer",
         ["modularframeheavy"] = "Heavy Modular Frame",
         ["aluminumcasing"] = "Aluminum Casing",
-        ["aluminumplate"] = "Aluminum Plate",
+        ["aluminumplate"] = "Alclad Aluminum Sheet",
         ["ficsiteingot"] = "Ficsite Ingot",
         ["fluidcanister"] = "Empty Canister",
         ["gastank"] = "Empty Fluid Tank",
@@ -33,15 +33,15 @@ public static class ResourceDisplayNames
         ["computersuper"] = "Supercomputer",
         ["turbofuel"] = "Turbofuel",
         ["samingot"] = "SAM Ingot",
-        ["nuclearwaste"] = "Nuclear Waste",
+        ["nuclearwaste"] = "Uranium Waste",
         ["timecrystal"] = "Time Crystal",
         ["crystaloscillator"] = "Crystal Oscillator",
         ["coppersheet"] = "Copper Sheet",
-        ["packagedbiofuel"] = "Packaged Biofuel",
+        ["packagedbiofuel"] = "Packaged Liquid Biofuel",
         ["biofuel"] = "Biofuel",
         ["wire"] = "Wire",
         ["cable"] = "Cable",
-        ["motorlightweight"] = "Lightweight Motor",
+        ["motorlightweight"] = "Turbo Motor",
         ["ficsitemesh"] = "Ficsite Mesh",
         ["ironplatereinforced"] = "Reinforced Iron Plate",
         ["ironplate"] = "Iron Plate",
@@ -60,12 +60,12 @@ public static class ResourceDisplayNames
         ["rotor"] = "Rotor",
         ["highspeedwire"] = "Quickwire",
         ["modularframelightweight"] = "Lightweight Modular Frame",
-        ["hazmatfilter"] = "Hazmat Filter",
-        ["filter"] = "Filter",
+        ["hazmatfilter"] = "Iodine-Infused Filter",
+        ["filter"] = "Gas Filter",
         ["fabric"] = "Fabric",
         ["circuitboardhighspeed"] = "High-Speed Connector",
         ["circuitboard"] = "Circuit Board",
-        ["crystalshard"] = "Crystal Shard",
+        ["crystalshard"] = "Power Shard",
         ["samfluctuator"] = "SAM Fluctuator",
         ["silica"] = "Silica",
         ["highspeedconnector"] = "High-Speed Connector",
@@ -75,7 +75,7 @@ public static class ResourceDisplayNames
         ["steelingot"] = "Steel Ingot",
         ["cateriumingot"] = "Caterium Ingot",
         ["aluminumingot"] = "Aluminum Ingot",
-        ["liquidfuel"] = "Liquid Fuel",
+        ["liquidfuel"] = "Fuel",
         ["packagednitrogengas"] = "Packaged Nitrogen Gas",
         ["spaceelevatorpart1"] = "Smart Plating",
         ["spaceelevatorpart2"] = "Versatile Framework",
@@ -90,11 +90,11 @@ public static class ResourceDisplayNames
         ["spaceelevatorpart11"] = "Ballistic Warp Drive",
         ["spaceelevatorpart12"] = "AI Expansion Server",
         ["goldingot"] = "Caterium Ingot",
-        ["darkenergy"] = "Dark Energy",
+        ["darkenergy"] = "Dark Matter Residue",
         ["darkmatter"] = "Dark Matter",
-        ["quantumoscillator"] = "Quantum Oscillator",
-        ["quantumenergy"] = "Quantum Energy",
-        ["alienpowerfuel"] = "Alien Power Fuel",
+        ["quantumoscillator"] = "Superposition Oscillator",
+        ["quantumenergy"] = "Excited Photonic Matter",
+        ["alienpowerfuel"] = "Alien Power Matrix",
         ["polymerresin"] = "Polymer Resin",
         ["plutoniumwaste"] = "Plutonium Waste",
         ["ficsoniumfuelrod"] = "Ficsonium Fuel Rod",
@@ -124,16 +124,16 @@ public static class ResourceDisplayNames
         ["nobeliskshockwave"] = "Pulse Nobelisk",
         ["packagedrocketfuel"] = "Packaged Rocket Fuel",
         ["rebarexplosive"] = "Explosive Rebar",
-        ["rebarspreadshot"] = "Spreadshot Rebar",
+        ["rebarspreadshot"] = "Shatter Rebar",
         ["rebarstunshot"] = "Stun Rebar",
         ["rocketfuel"] = "Rocket Fuel",
         ["spikedrebar"] = "Iron Rebar",
-        ["uraniumcell"] = "Uranium Cell",
+        ["uraniumcell"] = "Encased Uranium Cell",
         ["nuclearfuelrod"] = "Uranium Fuel Rod",
         ["plutoniumfuelrod"] = "Plutonium Fuel Rod",
-        ["crystal"] = "Power Shard",
-        ["crystalmk2"] = "Power Shard (Mk.2)",
-        ["crystalmk3"] = "Power Shard (Mk.3)",
+        ["crystal"] = "Blue Power Slug",
+        ["crystalmk2"] = "Yellow Power Slug",
+        ["crystalmk3"] = "Purple Power Slug",
         ["hatcherparts"] = "Hatcher Remains",
         ["hogparts"] = "Hog Remains",
         ["leaves"] = "Leaves",
@@ -145,7 +145,7 @@ public static class ResourceDisplayNames
         ["alienprotein"] = "Alien Protein",
         ["genericbiomass"] = "Biomass",
         ["liquidbiofuel"] = "Liquid Biofuel",
-        ["diamond"] = "Diamond",
+        ["diamond"] = "Diamonds",
         ["aluminumscrap"] = "Aluminum Scrap",
         ["packagedoilresidue"] = "Packaged Heavy Oil Residue",
         ["heavyoilresidue"] = "Heavy Oil Residue",
@@ -160,6 +160,41 @@ public static class ResourceDisplayNames
         ["plutoniumcell"] = "Plutonium Cell",
         ["plutoniumpellet"] = "Plutonium Pellet",
         ["sulfuricacid"] = "Sulfuric Acid",
+
+        // Machines / buildings (used in factory summaries)
+        ["constructor"] = "Constructor",
+        ["smelter"] = "Smelter",
+        ["foundry"] = "Foundry",
+        ["assembler"] = "Assembler",
+        ["manufacturer"] = "Manufacturer",
+        ["refinery"] = "Refinery",
+        ["blender"] = "Blender",
+        ["packager"] = "Packager",
+        ["converter"] = "Converter",
+        ["hadroncollider"] = "Particle Accelerator",
+        ["quantumencoder"] = "Quantum Encoder",
+        ["minermk1"] = "Miner Mk.1",
+        ["minermk2"] = "Miner Mk.2",
+        ["minermk3"] = "Miner Mk.3",
+        ["waterextractor"] = "Water Extractor",
+        ["oilextractor"] = "Oil Extractor",
+        ["resourcesink"] = "AWESOME Sink",
+        ["trainstation"] = "Train Station",
+        ["truckstation"] = "Truck Station",
+        ["dronestation"] = "Drone Station",
+        ["generatorbiomass"] = "Biomass Burner",
+        ["generatorcoal"] = "Coal Generator",
+        ["generatorfuel"] = "Fuel Generator",
+        ["generatornuclear"] = "Nuclear Power Plant",
+        ["generatorgeothermal"] = "Geothermal Generator",
+        ["powerstorage"] = "Power Storage",
+        ["frackingextractor"] = "Resource Well Extractor",
+        ["assemblermk1"] = "Assembler",
+        ["manufacturermk1"] = "Manufacturer",
+        ["foundrymk1"] = "Foundry",
+        ["oilrefinery"] = "Refinery",
+        ["spaceelevator"] = "Space Elevator",
+        ["pipehyperstart"] = "Hypertube Entrance",
     };
 
     private static readonly HashSet<string> _loggedMissing = new(StringComparer.OrdinalIgnoreCase);
@@ -178,8 +213,37 @@ public static class ResourceDisplayNames
         return itemName;
     }
 
+    public static string GetItemIconUrl(string? itemName)
+    {
+        var displayName = GetDisplayName(itemName);
+        if (string.IsNullOrEmpty(displayName) || displayName == "Unknown") return string.Empty;
+        return $"/icons/{GetIconSlug(displayName)}.png";
+    }
+
+    public static string GetIconSlug(string displayName)
+    {
+        if (string.IsNullOrEmpty(displayName)) return string.Empty;
+        return displayName.Replace(" ", "_");
+    }
+
     private static string NormalizeKey(string value)
     {
+        if (value.StartsWith("Desc_", StringComparison.OrdinalIgnoreCase) &&
+            value.EndsWith("_C", StringComparison.OrdinalIgnoreCase) &&
+            value.Length > "Desc__C".Length)
+        {
+            var inner = value[5..^2]; // between Desc_ and _C
+            return new string(inner.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        }
+
+        if (value.StartsWith("Build_", StringComparison.OrdinalIgnoreCase) &&
+            value.EndsWith("_C", StringComparison.OrdinalIgnoreCase) &&
+            value.Length > "Build__C".Length)
+        {
+            var inner = value[6..^2]; // between Build_ and _C
+            return new string(inner.Where(char.IsLetterOrDigit).ToArray()).ToLowerInvariant();
+        }
+
         return new string(value.Where(c => char.IsLetterOrDigit(c)).ToArray()).ToLowerInvariant();
     }
 }
