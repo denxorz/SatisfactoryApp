@@ -55,17 +55,17 @@
 </BaseMap>
 
 @code {
-    private readonly PowerCircuitFactoryMapLayer allMapLayer;
-    private readonly PowerCircuitFilteredFactoryMapLayer filteredMapLayer;
+    private PowerCircuitFactoryMapLayer allMapLayer = default!;
+    private PowerCircuitFilteredFactoryMapLayer filteredMapLayer = default!;
 
     private Factory? _selectedFactory;
     private string? _mainPowerCircuitName;
     private string? _subPowerCircuitName;
 
-    public PowerCircuitMap(FactoryStore s)
+    protected override void OnInitialized()
     {
-        allMapLayer = new(s);
-        filteredMapLayer = new(s);
+        allMapLayer = new(FactoryStore);
+        filteredMapLayer = new(FactoryStore);
     }
 
     private void SelectedChanged(Factory? factory)

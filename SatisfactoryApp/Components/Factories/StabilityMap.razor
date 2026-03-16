@@ -67,17 +67,17 @@
 </BaseMap>
 
 @code {
-    private readonly StabilityFactoryMapLayer allMapLayer;
-    private readonly StabilityFilteredFactoryMapLayer filteredMapLayer;
+    private StabilityFactoryMapLayer allMapLayer = default!;
+    private StabilityFilteredFactoryMapLayer filteredMapLayer = default!;
 
     private Factory? _selectedFactory;
     private string? _mainPowerCircuitName;
     private string? _subPowerCircuitName;
 
-    public StabilityMap(FactoryStore s)
+    protected override void OnInitialized()
     {
-        allMapLayer = new(s);
-        filteredMapLayer = new(s);
+        allMapLayer = new(FactoryStore);
+        filteredMapLayer = new(FactoryStore);
     }
 
     private void SelectedChanged(Factory? factory)

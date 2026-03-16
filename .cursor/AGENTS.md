@@ -2,7 +2,7 @@
 
 - **App**: `SatisfactoryApp` – a Blazor WebAssembly app for visualizing and analyzing Satisfactory save data (factories, power circuits, resources, stations, routes, etc.).
 - **Tech stack**: .NET, C#, Blazor components (`.razor`), MudBlazor/MudExtensions UI, browser-hosted WebAssembly.
-- **Core services**: `FactoryStore`, `ResourceStore`, `StationStore`, `LoadedFileStore` and related services manage in-memory state and filtering.
+- **Core services**: `FactoryStore`, `ResourceStore`, `StationStore`, `LoadedFileStore` and related services act as scoped state services for in-memory data and filtering.
 - **Runtime**: Typically run via `dotnet watch run` on the `SatisfactoryApp` project.
 
 ## General Assistant Behavior
@@ -13,6 +13,8 @@
 - **Safe changes first**: Prefer minimal, behavior-preserving changes unless the user asks for a larger refactor.
 - **Use automation**: When helpful, propose small scripts or repeatable steps (e.g., for data updates, cleanup) instead of manual, one-off edits.
 - **Blazor awareness**: Keep component lifecycle, parameter binding, and state updates in mind to avoid unnecessary renders or broken data flows.
+- **State services via DI**: Treat the `*Store` types as scoped state services; inject them with `@inject`/constructor DI and prefer standard Blazor patterns for initialization and updates.
+- **UI refresh pattern**: When refreshing UI from store events or async callbacks, use `await InvokeAsync(StateHasChanged)` (or `_ = InvokeAsync(StateHasChanged)` in fire-and-forget handlers) instead of calling `StateHasChanged()` directly.
 
 ## Core Priorities (In Order)
 

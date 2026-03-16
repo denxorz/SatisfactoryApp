@@ -70,10 +70,10 @@
 </BaseMap>
 
 @code {
-    private readonly ClockSpeedFactoryMapLayer clockSpeedMapLayer;
-    private readonly ClockSpeedFilteredFactoryMapLayer clockSpeedFilteredMapLayer;
-    private readonly SloopsFactoryMapLayer sloopMapLayer;
-    private readonly SloopsFilteredFactoryMapLayer sloopFilteredMapLayer;
+    private ClockSpeedFactoryMapLayer clockSpeedMapLayer = default!;
+    private ClockSpeedFilteredFactoryMapLayer clockSpeedFilteredMapLayer = default!;
+    private SloopsFactoryMapLayer sloopMapLayer = default!;
+    private SloopsFilteredFactoryMapLayer sloopFilteredMapLayer = default!;
 
     private bool _showSloopOnly = false;
     private Factory? _selectedFactory;
@@ -92,12 +92,12 @@
         }
     }
 
-    public ClockSpeedMap(FactoryStore s)
+    protected override void OnInitialized()
     {
-        clockSpeedMapLayer = new(s);
-        clockSpeedFilteredMapLayer = new(s);
-        sloopMapLayer = new(s);
-        sloopFilteredMapLayer = new(s);
+        clockSpeedMapLayer = new(FactoryStore);
+        clockSpeedFilteredMapLayer = new(FactoryStore);
+        sloopMapLayer = new(FactoryStore);
+        sloopFilteredMapLayer = new(FactoryStore);
     }
 
     private void SelectedChanged(Factory? factory)
