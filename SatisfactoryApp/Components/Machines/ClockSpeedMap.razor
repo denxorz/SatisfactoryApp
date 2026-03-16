@@ -94,10 +94,10 @@
 
     protected override void OnInitialized()
     {
-        clockSpeedMapLayer = new(FactoryStore);
-        clockSpeedFilteredMapLayer = new(FactoryStore);
-        sloopMapLayer = new(FactoryStore);
-        sloopFilteredMapLayer = new(FactoryStore);
+        clockSpeedMapLayer = new(MachineStore);
+        clockSpeedFilteredMapLayer = new(MachineStore);
+        sloopMapLayer = new(MachineStore);
+        sloopFilteredMapLayer = new(MachineStore);
     }
 
     private void SelectedChanged(Factory? factory)

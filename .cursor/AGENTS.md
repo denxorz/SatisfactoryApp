@@ -20,9 +20,10 @@
 
 1. **Correctness**: Changes must preserve or improve correctness of domain logic (factories, power circuits, resources, stations, stability, etc.).
 2. **Data and model integrity**: Do not silently change IDs, shapes, or semantics of the saved data models without calling it out explicitly.
-3. **Readability and maintainability**: Prefer clear, idiomatic C# and Blazor patterns, even if slightly more verbose.
-4. **User experience**: Avoid breaking UI layout or making the app harder to understand or control; keep filters and tables responsive and predictable.
-5. **Performance**: Optimize only when it is likely to matter (large lists, heavy calculations, or tight loops), and measure or reason clearly about impact.
+3. **Build health**: The solution should compile successfully; avoid leaving the project in a broken (non-building) state.
+4. **Readability and maintainability**: Prefer clear, idiomatic C# and Blazor patterns, even if slightly more verbose.
+5. **User experience**: Avoid breaking UI layout or making the app harder to understand or control; keep filters and tables responsive and predictable.
+6. **Performance**: Optimize only when it is likely to matter (large lists, heavy calculations, or tight loops), and measure or reason clearly about impact.
 
 ## Common Workflows
 

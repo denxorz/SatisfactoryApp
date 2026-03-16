@@ -64,8 +64,8 @@
 
     protected override void OnInitialized()
     {
-        allMapLayer = new(FactoryStore);
-        filteredMapLayer = new(FactoryStore);
+        allMapLayer = new(MachineStore);
+        filteredMapLayer = new(MachineStore);
     }
 
     private void SelectedChanged(Factory? factory)
