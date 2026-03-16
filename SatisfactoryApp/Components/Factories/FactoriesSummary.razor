@@ -247,7 +247,6 @@
                                             var station = entry.Station;
                                             var vehicle = entry.Vehicle;
                                             var stationType = (station.Type ?? "").Trim().ToLowerInvariant();
-                                            var label = vehicle.Name ?? vehicle.Id ?? (string.IsNullOrWhiteSpace(station.ShortName) ? station.Name : station.ShortName);
                                             var icon = stationType == "train"
                                                 ? MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail
                                                 : stationType == "truck"
@@ -255,7 +254,7 @@
                                                     : MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight;
                                             <div class="io-transport-row">
                                                 <MudIcon Icon="@icon" Size="Size.Small" Color="Color.Info" />
-                                                <span class="io-transport-name">@label</span>
+                                                <span class="io-transport-name">@vehicle.Name</span>
                                             </div>
                                         }
                                     </div>
