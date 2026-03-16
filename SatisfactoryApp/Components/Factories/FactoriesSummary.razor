@@ -20,32 +20,85 @@
                             var summary = GetGroupSummaryStats(group.Key);
                             var hasImports = group.Any(s => s.Net < -0.001);
                             var hasExports = group.Any(s => s.Net > 0.001);
+                            var meanPos = GetGroupMeanPosition(group.Key);
+                            var transportCounts = GetGroupStationCounts(group.Key);
                         }
                         <div class="io-card-summary-icons">
-                            <MudTooltip Text="@(summary.IsStable ? "Power usage is stable" : $"{summary.NumberOfNotStable} not running at 100%")">
-                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.CheckCircle)" Color="Color.Success" Size="Size.Small" Class="@(!summary.IsStable ? "io-header-icon-faded" : "")" />
-                            </MudTooltip>
-                            <MudTooltip Text="@($"{summary.NumberOfNotStable} not running at 100%")">
-                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Warning)" Color="Color.Primary" Size="Size.Small" Class="@(summary.NumberOfNotStable == 0 ? "io-header-icon-faded" : "")" />
-                            </MudTooltip>
-                            <MudTooltip Text="@($"{summary.NumberOfVariablePower} variable power")">
-                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.ShowChart)" Color="Color.Primary" Size="Size.Small" Class="@(summary.NumberOfVariablePower == 0 ? "io-header-icon-faded" : "")" />
-                            </MudTooltip>
-                            <MudTooltip Text="@($"{summary.NumberOfPowerStorage} power storage(s)")">
-                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Battery6Bar)" Color="Color.Info" Size="Size.Small" Class="@(summary.NumberOfPowerStorage == 0 ? "io-header-icon-faded" : "")" />
-                            </MudTooltip>
-                            <MudTooltip Text="@($"{summary.NumberOfPowerGenerator} generator(s)")">
-                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.EvStation)" Color="Color.Info" Size="Size.Small" Class="@(summary.NumberOfPowerGenerator == 0 ? "io-header-icon-faded" : "")" />
-                            </MudTooltip>
-                            <MudTooltip Text="@(summary.NumberOfResourceSinks > 0 ? $"{summary.NumberOfResourceSinks} Resource Sink(s)" : "No Resource Sink")">
-                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.DeleteSweep)" Color="Color.Default" Size="Size.Small" Class="@(summary.NumberOfResourceSinks == 0 ? "io-header-icon-faded" : "")" />
-                            </MudTooltip>
-                            <MudTooltip Text="@(hasImports ? "Has imports" : "No imports")">
-                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Download)" Size="Size.Small" Class="@(!hasImports ? "io-header-icon-faded" : "")" />
-                            </MudTooltip>
-                            <MudTooltip Text="@(hasExports ? "Has exports" : "No exports")">
-                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Upload)" Size="Size.Small" Class="@(!hasExports ? "io-header-icon-faded" : "")" />
-                            </MudTooltip>
+                            @if (meanPos.HasValue)
+                            {
+                                <div class="io-mini-map-wrap">
+                                    <div class="io-mini-map">
+                                        <img src="/images/1920px-Biome_Map.jpg" alt="" class="io-mini-map-bg" />
+                                        @((MarkupString)CreateMiniMapSvg(meanPos.Value.x, meanPos.Value.y))
+                                    </div>
+                                </div>
+                            }
+                            <div class="io-card-summary-icons-list">
+                                <div class="io-summary-chip-card">
+                                    <div class="io-summary-chips">
+                                        <MudTooltip Text="@(summary.IsStable ? "Power usage is stable" : $"{summary.NumberOfNotStable} not running at 100%")">
+                                            <div class="io-summary-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.CheckCircle)" Color="Color.Success" Size="Size.Medium" Class="@(!summary.IsStable ? "io-header-icon-faded" : "")" />
+                                                <span class="io-summary-chip-label">Stable</span>
+                                            </div>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@($"{summary.NumberOfVariablePower} variable power")">
+                                            <div class="io-summary-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.ShowChart)" Color="Color.Primary" Size="Size.Medium" Class="@(summary.NumberOfVariablePower == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-summary-chip-label">Variable</span>
+                                            </div>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@($"{summary.NumberOfPowerStorage} power storage(s)")">
+                                            <div class="io-summary-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Battery6Bar)" Color="Color.Info" Size="Size.Medium" Class="@(summary.NumberOfPowerStorage == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-summary-chip-label">Storage</span>
+                                            </div>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@($"{summary.NumberOfPowerGenerator} generator(s)")">
+                                            <div class="io-summary-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.EvStation)" Color="Color.Info" Size="Size.Medium" Class="@(summary.NumberOfPowerGenerator == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-summary-chip-label">Generators</span>
+                                            </div>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@(summary.NumberOfResourceSinks > 0 ? $"{summary.NumberOfResourceSinks} Resource Sink(s)" : "No Resource Sink")">
+                                            <div class="io-summary-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Faucet)"
+                                                         Color="@(summary.NumberOfResourceSinks > 0 ? Color.Primary : Color.Default)"
+                                                         Size="Size.Medium"
+                                                         Class="@(summary.NumberOfResourceSinks == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-summary-chip-label">Has sink</span>
+                                            </div>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@($"{transportCounts.Trains} train station(s)")">
+                                            <div class="io-summary-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail)"
+                                                         Color="Color.Info"
+                                                         Size="Size.Medium"
+                                                         Class="@(transportCounts.Trains == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-summary-chip-label">Trains</span>
+                                            </div>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@($"{transportCounts.Trucks} truck station(s)")">
+                                            <div class="io-summary-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping)"
+                                                         Color="Color.Info"
+                                                         Size="Size.Medium"
+                                                         Class="@(transportCounts.Trucks == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-summary-chip-label">Trucks</span>
+                                            </div>
+                                        </MudTooltip>
+                                        <MudTooltip Text="@($"{transportCounts.Drones} drone station(s)")">
+                                            <div class="io-summary-chip">
+                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight)"
+                                                         Color="Color.Info"
+                                                         Size="Size.Medium"
+                                                         Class="@(transportCounts.Drones == 0 ? "io-header-icon-faded" : "")" />
+                                                <span class="io-summary-chip-label">Drones</span>
+                                            </div>
+                                        </MudTooltip>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         @{
                             var netDeficitItems = group.Where(s => s.Net < -0.001).OrderBy(s => s.ItemName).ToList();
@@ -89,7 +142,7 @@
                                 <div class="io-imports-exports-block io-exports">
                                     <MudText Typo="Typo.subtitle1" Class="io-imports-exports-title">
                                         <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Upload" Size="Size.Small" Class="mr-1" />
-                                        Exports
+                                        @(summary.NumberOfResourceSinks > 0 ? "Exports or sinks" : "Exports")
                                     </MudText>
                                     @if (netSurplusItems.Any())
                                     {
@@ -176,32 +229,35 @@
                                     <MudText Typo="Typo.body2" Color="Color.Secondary" Class="io-meta-block-empty">—</MudText>
                                 }
                             </div>
-                            @{
-                                var transportCounts = GetGroupStationCounts(group.Key);
-                            }
                             <div class="io-meta-block io-meta-block-transport">
-                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="io-meta-block-label">Transport</MudText>
-                                @if (transportCounts.Trains > 0 || transportCounts.Trucks > 0 || transportCounts.Drones > 0)
+                                @{
+                                    var transportStations = GetGroupStations(group.Key);
+                                    var transportVehicles = transportStations
+                                        .Where(s => s.Transporters != null && s.Transporters.Count > 0)
+                                        .SelectMany(s => s.Transporters.Select(v => (Station: s, Vehicle: v)))
+                                        .OrderBy(p => p.Vehicle.Name ?? p.Vehicle.Id)
+                                        .ToList();
+                                }
+                                <MudText Typo="Typo.caption" Color="Color.Secondary" Class="io-meta-block-label">Transport arrivals</MudText>
+                                @if (transportVehicles.Count > 0)
                                 {
-                                    <div class="io-transport-chips">
-                                        <MudTooltip Text="@($"{transportCounts.Trains} train station(s)")">
-                                            <span class="io-transport-chip">
-                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail)" Size="Size.Small" Class="@(transportCounts.Trains == 0 ? "io-header-icon-faded" : "")" />
-                                                <span class="io-transport-count">@transportCounts.Trains</span>
-                                            </span>
-                                        </MudTooltip>
-                                        <MudTooltip Text="@($"{transportCounts.Trucks} truck station(s)")">
-                                            <span class="io-transport-chip">
-                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping)" Size="Size.Small" Class="@(transportCounts.Trucks == 0 ? "io-header-icon-faded" : "")" />
-                                                <span class="io-transport-count">@transportCounts.Trucks</span>
-                                            </span>
-                                        </MudTooltip>
-                                        <MudTooltip Text="@($"{transportCounts.Drones} drone station(s)")">
-                                            <span class="io-transport-chip">
-                                                <MudIcon Icon="@(MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight)" Size="Size.Small" Class="@(transportCounts.Drones == 0 ? "io-header-icon-faded" : "")" />
-                                                <span class="io-transport-count">@transportCounts.Drones</span>
-                                            </span>
-                                        </MudTooltip>
+                                    <div class="io-transport-list">
+                                        @foreach (var entry in transportVehicles)
+                                        {
+                                            var station = entry.Station;
+                                            var vehicle = entry.Vehicle;
+                                            var stationType = (station.Type ?? "").Trim().ToLowerInvariant();
+                                            var label = vehicle.Name ?? vehicle.Id ?? (string.IsNullOrWhiteSpace(station.ShortName) ? station.Name : station.ShortName);
+                                            var icon = stationType == "train"
+                                                ? MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail
+                                                : stationType == "truck"
+                                                    ? MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping
+                                                    : MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight;
+                                            <div class="io-transport-row">
+                                                <MudIcon Icon="@icon" Size="Size.Small" Color="Color.Info" />
+                                                <span class="io-transport-name">@label</span>
+                                            </div>
+                                        }
                                     </div>
                                 }
                                 else
@@ -253,19 +309,58 @@
     .io-card-summary-icons {
         display: flex;
         align-items: center;
-        gap: 4px 2px;
+        gap: 12px;
         flex-wrap: wrap;
         margin-bottom: 12px;
         padding-bottom: 10px;
         border-bottom: 1px solid var(--mud-palette-lines-default, rgba(0,0,0,0.08));
     }
-    .io-card-summary-icons .mud-icon-root {
-        margin: 0 2px;
+    .io-card-summary-icons-list {
+        display: flex;
+        align-items: center;
+        gap: 4px 2px;
+        flex-wrap: wrap;
+    }
+    .io-summary-chip-card {
+        padding: 10px 14px;
+        min-height: 72px;
+        display: flex;
+        align-items: center;
+        background: var(--mud-palette-background-gray, rgba(0,0,0,0.04));
+        border-radius: 8px;
+        border: 1px solid var(--mud-palette-lines-default, rgba(0,0,0,0.08));
+    }
+    .io-summary-chips {
+        display: flex;
+        align-items: flex-end;
+        gap: 10px 14px;
+        flex-wrap: wrap;
+    }
+    .io-summary-chip {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+        min-width: 44px;
+    }
+    .io-summary-chip .mud-icon-root {
+        margin: 0;
+    }
+    .io-summary-chip-label {
+        font-size: 0.7rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+        color: var(--mud-palette-text-secondary);
+        line-height: 1.1;
+    }
+    .io-mini-map-wrap {
+        flex-shrink: 0;
     }
     .io-header-icon-faded {
-        color: var(--mud-palette-background-grey, #2b2b2b) !important;
-        fill: var(--mud-palette-background-grey, #2b2b2b) !important;
-        opacity: 0.5;
+        color: var(--mud-palette-text-secondary) !important;
+        fill: var(--mud-palette-text-secondary) !important;
+        opacity: 0.7;
     }
     .io-imports-exports-row {
         margin-bottom: 16px;
@@ -324,6 +419,30 @@
         padding-top: 12px;
         margin-top: 12px;
         border-top: 1px solid var(--mud-palette-lines-default, rgba(0,0,0,0.12));
+    }
+    .io-mini-map {
+        position: relative;
+        width: 72px;
+        height: 72px;
+        border-radius: 6px;
+        overflow: hidden;
+        border: 1px solid var(--mud-palette-lines-default, rgba(0,0,0,0.12));
+    }
+    .io-mini-map-bg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        filter: grayscale(0.4) contrast(0.8) brightness(1.1);
+        opacity: 0.7;
+    }
+    .io-mini-map svg {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
     }
     .io-meta-block {
         padding: 10px 14px;
@@ -404,25 +523,25 @@
         color: var(--mud-palette-text-secondary);
         padding: 2px 8px;
     }
-    .io-transport-chips {
+    .io-transport-list {
         display: flex;
-        flex-wrap: wrap;
-        gap: 10px 14px;
-        align-items: center;
-    }
-    .io-transport-chip {
-        display: inline-flex;
-        align-items: center;
+        flex-direction: column;
         gap: 4px;
-        padding: 4px 8px;
-        background: var(--mud-palette-background-gray, rgba(0,0,0,0.06));
-        border-radius: 6px;
-        border: 1px solid var(--mud-palette-lines-default, rgba(0,0,0,0.08));
-        font-size: 0.8125rem;
     }
-    .io-transport-count {
-        font-weight: 600;
-        font-variant-numeric: tabular-nums;
+    .io-transport-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.875rem;
+    }
+    .io-transport-row .mud-icon-root {
+        font-size: 1.1rem;
+    }
+    .io-transport-name {
+        color: var(--mud-palette-text-primary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .io-item-list {
         display: flex;
@@ -494,6 +613,7 @@
     private Dictionary<string, Dictionary<string, int>> _groupMachineTypeCounts = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, GroupSummaryStats> _groupSummaryStats = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, (int Trains, int Trucks, int Drones)> _groupStationCounts = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<Station>> _groupStations = new(StringComparer.OrdinalIgnoreCase);
 
     protected override void OnInitialized()
     {
@@ -531,10 +651,11 @@
             var sloopMultiplier = factory.HasSloop ? 2.0 : 1.0;
             var totalMultiplier = clockSpeedMultiplier * sloopMultiplier;
 
-            var circuitsToProcess = new List<int>();
-
-            circuitsToProcess.Add(factory.MainPowerCircuitId);
-            circuitsToProcess.Add(factory.SubPowerCircuitId);
+            var circuitsToProcess = new List<int>
+            {
+                factory.MainPowerCircuitId,
+                factory.SubPowerCircuitId
+            };
 
             foreach (var circuitId in circuitsToProcess)
             {
@@ -738,8 +859,12 @@
         _groupSummaryStats = groupSummaryStats;
 
         var groupStationCounts = new Dictionary<string, (int Trains, int Trucks, int Drones)>(StringComparer.OrdinalIgnoreCase);
+        var groupStations = new Dictionary<string, List<Station>>(StringComparer.OrdinalIgnoreCase);
         foreach (var g in _groupedStats)
+        {
             groupStationCounts[g.Key] = (0, 0, 0);
+            groupStations[g.Key] = [];
+        }
 
         HashSet<int> GetCircuitIdsForGroup(string groupKey)
         {
@@ -784,9 +909,11 @@
                 else if (stationType == "truck") trucks++;
                 else if (stationType == "drone") drones++;
                 groupStationCounts[groupKey] = (trains, trucks, drones);
+                groupStations[groupKey].Add(station);
             }
         }
         _groupStationCounts = groupStationCounts;
+        _groupStations = groupStations;
 
         StateHasChanged();
     }
@@ -818,6 +945,11 @@
     private (int Trains, int Trucks, int Drones) GetGroupStationCounts(string groupKey)
     {
         return _groupStationCounts.TryGetValue(groupKey, out var c) ? c : (0, 0, 0);
+    }
+
+    private IReadOnlyList<Station> GetGroupStations(string groupKey)
+    {
+        return _groupStations.TryGetValue(groupKey, out var list) ? list : Array.Empty<Station>();
     }
 
     private string GetGroupDisplayName(string groupKey)
@@ -878,6 +1010,40 @@
         return Array.Empty<KeyValuePair<string, int>>();
     }
 
+    private const int MapMinX = -320000;
+    private const int MapMaxX = 425000;
+    private const int MapMinY = -380000;
+    private const int MapMaxY = 375000;
+    private const int MapSize = 30;
+
+    private (double x, double y)? GetGroupMeanPosition(string groupKey)
+    {
+        var factories = GetFactoriesForGroup(groupKey);
+        if (factories.Count == 0) return null;
+        double sumX = 0, sumY = 0;
+        int n = 0;
+        foreach (var f in factories)
+        {
+            sumX += f.X;
+            sumY += f.Y;
+            n++;
+        }
+        if (n == 0) return null;
+        return (sumX / n, sumY / n);
+    }
+
+    private static string CreateMiniMapSvg(double worldX, double worldY)
+    {
+        var scaleX = MapSize / (double)(MapMaxX - MapMinX);
+        var scaleY = MapSize / (double)(MapMaxY - MapMinY);
+        var sx = (worldX - MapMinX) * scaleX;
+        var sy = (worldY - MapMinY) * scaleY;
+        var cx = Math.Clamp(sx, 0, MapSize);
+        var cy = Math.Clamp(sy, 0, MapSize);
+        var r = 0.8;
+        return $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {MapSize} {MapSize}\" preserveAspectRatio=\"none\"><circle cx=\"{cx.ToString(System.Globalization.CultureInfo.InvariantCulture)}\" cy=\"{cy.ToString(System.Globalization.CultureInfo.InvariantCulture)}\" r=\"{r}\" fill=\"#e59345\" stroke=\"#1a1a1a\" stroke-width=\"0.4\"/></svg>";
+    }
+
     private string GetItemName(FactoryFlow flow)
     {
         return flow.Type;
@@ -893,8 +1059,8 @@
         if (string.IsNullOrEmpty(name))
             return name;
 
-        var result = System.Text.RegularExpressions.Regex.Replace(name, @"\s*\[.*?\]\s*", " ");
-        return System.Text.RegularExpressions.Regex.Replace(result, @"\s+", " ").Trim();
+        var result = System.Text.RegularExpressions.Regex.Replace(name, "\\s*\\[.*?\\]\\s*", " ");
+        return System.Text.RegularExpressions.Regex.Replace(result, "\\s+", " ").Trim();
     }
 
     private static string GetItemColor(string itemName)
