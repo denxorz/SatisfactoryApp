@@ -76,7 +76,7 @@
     private void OnChanged()
     {
         Load();
-        StateHasChanged();
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private void Load()

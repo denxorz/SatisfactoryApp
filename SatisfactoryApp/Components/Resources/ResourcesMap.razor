@@ -61,15 +61,15 @@
 </BaseMap>
 
 @code {
-    private readonly ResourceMapLayer allMapLayer;
-    private readonly ResourceFilteredMapLayer filteredMapLayer;
+    private ResourceMapLayer allMapLayer = default!;
+    private ResourceFilteredMapLayer filteredMapLayer = default!;
 
     private Resource? _selected;
 
-    public ResourcesMap(ResourceStore s)
+    protected override void OnInitialized()
     {
-        allMapLayer = new(s);
-        filteredMapLayer = new(s);
+        allMapLayer = new(ResourceStore);
+        filteredMapLayer = new(ResourceStore);
     }
 
     private void SelectedChanged(Resource? item)

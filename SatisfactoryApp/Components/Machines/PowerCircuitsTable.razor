@@ -198,7 +198,7 @@
             .OrderBy(s => s.CircuitId)
             .ToList();
 
-        StateHasChanged();
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private string GetMainCircuitNameFromParentId(string? parentId)

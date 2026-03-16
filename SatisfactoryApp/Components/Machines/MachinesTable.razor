@@ -99,7 +99,7 @@
 
     private void OnFilteredFactoriesChanged()
     {
-        StateHasChanged();
+        _ = InvokeAsync(StateHasChanged);
     }
 
     private string GetCircuitName(Factory factory) =>
