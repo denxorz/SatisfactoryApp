@@ -1,0 +1,36 @@
+---
+description: Core .NET and Blazor coding conventions for SatisfactoryApp. Applies to all code in this repository.
+alwaysApply: true
+---
+
+## C# / .NET Conventions
+
+- Prefer **clear, descriptive names** for classes, methods, and variables that reflect the Satisfactory domain (factories, power circuits, resources, stations, stability, etc.).
+- Use **async/await** with `Task`-returning methods for async work; avoid blocking calls on async APIs.
+- Favor **expression-bodied members** and LINQ when it improves readability, but avoid deeply nested or opaque LINQ chains.
+- Keep **null-handling explicit** and intentional; prefer early returns or helper methods instead of tangled `if` nests.
+- Group related fields and properties together; keep private mutable fields and expose read-only properties where appropriate.
+
+## Blazor Component Patterns (`.razor` and code-behind)
+
+- Keep **components focused**: each component should represent a clear piece of UI or layout (maps, tables, filters, toolbars, etc.).
+- Use **parameters** for parent → child data flow and events/callbacks for child → parent communication.
+- Avoid performing heavy computation directly in the markup; prefer computed properties or methods in the component class.
+- Be mindful of **render frequency**: avoid unnecessary state changes in frequently-called methods.
+- Prefer existing patterns in this app (e.g., how existing map and table components bind to `FactoryStore`, `ResourceStore`, and `StationStore`) when adding new UI.
+
+## Stores and Services
+
+- Keep **stores** (e.g., `FactoryStore`, `ResourceStore`, `StationStore`) as the primary source of truth for in-memory state.
+- When adding new filters or options, follow the established pattern:
+  - Maintain private backing collections and caches.
+  - Update caches in a single place.
+  - Raise change events (`...Changed`) after state updates.
+- Avoid tightly coupling Blazor components directly to low-level models when a store abstraction already exists.
+
+## Refactoring and Comments
+
+- Prefer **small, behavior-preserving refactors** (extract methods, clarify names, reduce duplication) over large rewrites.
+- Only add **comments** when intent or logic is non-obvious; do not restate what the code already makes clear.
+- When changing core domain logic (factories, power circuits, stability, resources, stations), keep invariants and behavior consistent unless explicitly requested otherwise.
+
