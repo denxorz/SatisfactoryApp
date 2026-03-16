@@ -188,14 +188,7 @@
                 var edgeStyle = "solid";
                 var edgePenwidth = 2;
 
-                var stationType = station.Type;
-                if (stationType == "drone")
-                    edgeStyle = "dashed";
-                else if (stationType == "truck")
-                {
-                    edgeStyle = "dotted";
-                    edgePenwidth = 4;
-                }
+                (edgeStyle, edgePenwidth) = station.Type.GetStationEdgeStyle();
 
                 var cargoTypes = fromStation.CargoTypes ?? new List<string>();
                 if (cargoTypes.Count == 0 && fromStation.CargoFlows != null)

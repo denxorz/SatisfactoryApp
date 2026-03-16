@@ -1,4 +1,4 @@
-﻿using Denxorz.Satisfactory.Routes.Types;
+using Denxorz.Satisfactory.Routes.Types;
 
 namespace SatisfactoryApp.Components;
 
@@ -14,33 +14,30 @@ public static class FactoryExtensions
         "GeneratorGeoThermal"
     ];
 
-    extension(Factory f)
+    public static bool IsVariablePower(this Factory f) => variablePowerTypes.Contains(f.Type);
+    public static bool IsPowerStorage(this Factory f) => f.Type == "PowerStorage";
+    public static bool IsPowerProducerStorage(this Factory f) => f.Type.StartsWith("Generator");
+    public static bool IsStable(this Factory f) => f.PercentageProducing == 100;
+
+    public static string GetStabilityTooltip(this Factory f)
     {
-        public bool IsVariablePower() => variablePowerTypes.Contains(f.Type);
-        public bool IsPowerStorage() => f.Type == "PowerStorage";
-        public bool IsPowerProducerStorage() => f.Type.StartsWith("Generator");
-        public bool IsStable() => f.PercentageProducing == 100;
-
-        public string GetStabilityTooltip()
+        return f.PercentageProducing switch
         {
-            return f.PercentageProducing switch
-            {
-                null => "Off or unknown",
-                100 => "Stable (100%)",
-                _ => $"Running at {f.PercentageProducing:F1}%"
-            };
-        }
+            null => "Off or unknown",
+            100 => "Stable (100%)",
+            _ => $"Running at {f.PercentageProducing:F1}%"
+        };
+    }
 
-        public string GetFactoryStability()
+    public static string GetFactoryStability(this Factory f)
+    {
+        return f.PercentageProducing switch
         {
-            return f.PercentageProducing switch
-            {
-                null => "Unknown",
-                100 => "Stable",
-                >= 95 and < 100 => "Almost Stable",
-                >= 1 and < 95 => "Unstable",
-                _ => "Off"
-            };
-        }
+            null => "Unknown",
+            100 => "Stable",
+            >= 95 and < 100 => "Almost Stable",
+            >= 1 and < 95 => "Unstable",
+            _ => "Off"
+        };
     }
 }

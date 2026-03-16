@@ -15,9 +15,9 @@
             <Columns>
                 <PropertyColumn Property="x => x.Type" Title="" Groupable="false" CellStyle="width: 200px">
                     <CellTemplate>
-                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail" Size="Size.Small" Color="Color.Info" Class=@($"ml-4 {(context.Item.Type != "train" ? "disabled-faded-icon" : "")}") />
-                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping" Size="Size.Small" Color="Color.Info" Class=@($"{(context.Item.Type != "truck" ? "disabled-faded-icon" : "")}") />
-                        <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight" Size="Size.Small" Color="Color.Info" Class=@($"{(context.Item.Type != "drone" ? "disabled-faded-icon" : "")}") />
+                        <MudIcon Icon="@("train".GetStationTypeIcon())" Size="Size.Small" Color="Color.Info" Class=@($"ml-4 {(!context.Item.Type.IsTrainType() ? "disabled-faded-icon" : "")}") />
+                        <MudIcon Icon="@("truck".GetStationTypeIcon())" Size="Size.Small" Color="Color.Info" Class=@($"{(!context.Item.Type.IsTruckType() ? "disabled-faded-icon" : "")}") />
+                        <MudIcon Icon="@("drone".GetStationTypeIcon())" Size="Size.Small" Color="Color.Info" Class=@($"{(!context.Item.Type.IsDroneType() ? "disabled-faded-icon" : "")}") />
                         <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Input" Size="Size.Small" Color="Color.Tertiary"  Class=@($"{(context.Item.IsUnload ? "disabled-faded-icon" : "")}") />
                         <MudIcon Icon="@MudBlazor.FontIcons.MaterialSymbols.Outlined.Output" Size="Size.Small" Color="Color.Primary" Class=@($"{(!context.Item.IsUnload ? "disabled-faded-icon" : "")}") />
                     </CellTemplate>
@@ -47,9 +47,9 @@
                     {
                         var station = context.Grouping.First();
 
-                        var hasTrains = context.Grouping.Any(s => s.Type == "train");
-                        var hasTrucks = context.Grouping.Any(s => s.Type == "truck");
-                        var hasDrones = context.Grouping.Any(s => s.Type == "drone");
+                        var hasTrains = context.Grouping.Any(s => s.Type.IsTrainType());
+                        var hasTrucks = context.Grouping.Any(s => s.Type.IsTruckType());
+                        var hasDrones = context.Grouping.Any(s => s.Type.IsDroneType());
                         var hasLoad = context.Grouping.Any(s => !s.IsUnload);
                         var hasUnload = context.Grouping.Any(s => s.IsUnload);
 

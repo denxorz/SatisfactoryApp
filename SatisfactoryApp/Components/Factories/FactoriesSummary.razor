@@ -246,12 +246,8 @@
                                         {
                                             var station = entry.Station;
                                             var vehicle = entry.Vehicle;
-                                            var stationType = (station.Type ?? "").Trim().ToLowerInvariant();
-                                            var icon = stationType == "train"
-                                                ? MudBlazor.FontIcons.MaterialSymbols.Outlined.Monorail
-                                                : stationType == "truck"
-                                                    ? MudBlazor.FontIcons.MaterialSymbols.Outlined.LocalShipping
-                                                    : MudBlazor.FontIcons.MaterialSymbols.Outlined.Flight;
+                                            var stationType = station.Type;
+                                            var icon = stationType.GetStationTypeIcon();
                                             <div class="io-transport-row">
                                                 <MudIcon Icon="@icon" Size="Size.Small" Color="Color.Info" />
                                                 <span class="io-transport-name">@vehicle.Name</span>
@@ -897,16 +893,16 @@
             if (!subCircuitIdByCleanedName.TryGetValue(stationName, out var circuitId)
                 && !subCircuitIdByCleanedName.TryGetValue(stationShortName, out circuitId))
                 continue;
-            var stationType = (station.Type ?? "").Trim().ToLowerInvariant();
+            var stationType = station.Type;
             foreach (var groupKey in groupStationCounts.Keys.ToList())
             {
                 var circuitIds = GetCircuitIdsForGroup(groupKey);
                 if (!circuitIds.Contains(circuitId))
                     continue;
                 var (trains, trucks, drones) = groupStationCounts[groupKey];
-                if (stationType == "train") trains++;
-                else if (stationType == "truck") trucks++;
-                else if (stationType == "drone") drones++;
+                if (stationType.IsTrainType()) trains++;
+                else if (stationType.IsTruckType()) trucks++;
+                else if (stationType.IsDroneType()) drones++;
                 groupStationCounts[groupKey] = (trains, trucks, drones);
                 groupStations[groupKey].Add(station);
             }
