@@ -22,6 +22,14 @@
                             var hasExports = group.Any(s => s.Net > 0.001);
                             var meanPos = GetGroupMeanPosition(group.Key);
                             var transportCounts = GetGroupStationCounts(group.Key);
+                            var stabilityData = new double[] { summary.StableCount, summary.UnstableCount };
+                            var stabilityLabels = new[] { "Stable", "Unstable" };
+                            var stabilityChartOptions = new ChartOptions
+                            {
+                                ChartPalette = new[] { "#4CAF50", "#FF9800" },
+                                ShowLegend = false,
+                                ShowLabels = false
+                            };
                         }
                         <div class="io-card-summary-icons">
                             @if (meanPos.HasValue)
@@ -98,6 +106,22 @@
                                         </MudTooltip>
                                     </div>
                                 </div>
+                                @if (summary.StableCount + summary.UnstableCount > 0)
+                                {
+                                    <MudTooltip Text="@($"Stable: {summary.StableCount} | Unstable: {summary.UnstableCount}")">
+                                        <div class="io-summary-chart-card">
+                                            <div class="io-stability-donut-wrap">
+                                                <MudChart Class="io-stability-donut-chart"
+                                                          ChartType="ChartType.Pie"
+                                                          Width="64px"
+                                                          Height="64px"
+                                                          InputData="@stabilityData"
+                                                          InputLabels="@stabilityLabels"
+                                                          ChartOptions="@stabilityChartOptions" />
+                                            </div>
+                                        </div>
+                                    </MudTooltip>
+                                }
                             </div>
                         </div>
                         @{
@@ -313,7 +337,7 @@
     .io-card-summary-icons-list {
         display: flex;
         align-items: center;
-        gap: 4px 2px;
+        gap: 8px;
         flex-wrap: wrap;
     }
     .io-summary-chip-card {
@@ -330,6 +354,58 @@
         align-items: flex-end;
         gap: 10px 14px;
         flex-wrap: wrap;
+    }
+    .io-summary-chart-card {
+        width: 72px;
+        height: 72px;
+        padding: 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--mud-palette-background-gray, rgba(0,0,0,0.04));
+        border-radius: 6px;
+        border: 1px solid var(--mud-palette-lines-default, rgba(0,0,0,0.12));
+    }
+    .io-stability-donut-wrap {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 72px;
+        height: 72px;
+    }
+    .io-stability-donut-chart {
+        flex: 0 0 64px;
+    }
+    .io-stability-donut-chart ::deep .mud-chart-tooltip {
+        font-size: 1.2rem;
+        font-weight: 700;
+        line-height: 1.3;
+        padding: 10px 12px;
+    }
+    .io-stability-donut-legend {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+    }
+    .io-stability-donut-legend-row {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .io-stability-dot {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+        border: 1px solid rgba(0,0,0,0.20);
+        display: inline-block;
+    }
+    .io-stability-dot-stable { background: rgba(76, 175, 80, 0.9); }
+    .io-stability-dot-unstable { background: rgba(244, 67, 54, 0.9); }
+    .io-stability-label {
+        font-weight: 600;
+        color: var(--mud-palette-text-primary);
+        min-width: 2ch;
+        text-align: right;
     }
     .io-summary-chip {
         display: flex;
@@ -836,15 +912,20 @@
             var groupKey = g.Key;
             var factories = GetFactoriesForGroup(groupKey);
             var total = factories.Count;
-            var notStable = factories.Count(f => f.PercentageProducing is not null && f.PercentageProducing != 100);
+            var stable = factories.Count(f => f.PercentageProducing == 100);
+            var unstable = factories.Count(f => f.PercentageProducing is not null && f.PercentageProducing != 100);
+            var unknown = Math.Max(0, total - stable - unstable);
             var variablePower = factories.Count(f => f.IsVariablePower());
             var powerStorage = factories.Count(f => f.IsPowerStorage());
             var powerGenerator = factories.Count(f => f.IsPowerProducerStorage());
             groupSummaryStats[groupKey] = new GroupSummaryStats
             {
                 Total = total,
-                IsStable = notStable == 0 && variablePower == 0,
-                NumberOfNotStable = notStable,
+                StableCount = stable,
+                UnstableCount = unstable,
+                UnknownCount = unknown,
+                IsStable = unstable == 0 && variablePower == 0,
+                NumberOfNotStable = unstable,
                 NumberOfVariablePower = variablePower,
                 NumberOfPowerStorage = powerStorage,
                 NumberOfPowerGenerator = powerGenerator,
@@ -1087,6 +1168,9 @@
     private sealed class GroupSummaryStats
     {
         public int Total { get; set; }
+        public int StableCount { get; set; }
+        public int UnstableCount { get; set; }
+        public int UnknownCount { get; set; }
         public bool IsStable { get; set; }
         public int NumberOfNotStable { get; set; }
         public int NumberOfVariablePower { get; set; }
