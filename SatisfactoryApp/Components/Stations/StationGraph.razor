@@ -172,6 +172,7 @@
 
         var requiredStations = new HashSet<string>();
         var edges = new List<(string from, string to, string color, string style, int penwidth)>();
+        var stationsById = StationStore.Stations.ToDictionary(s => s.Id);
 
         foreach (var station in StationStore.FilteredStations)
         {
@@ -179,8 +180,8 @@
 
             foreach (var transporter in station.Transporters)
             {
-                var fromStation = StationStore.Stations.FirstOrDefault(s => s.Id == transporter.From);
-                var toStation = StationStore.Stations.FirstOrDefault(s => s.Id == transporter.To);
+                stationsById.TryGetValue(transporter.From, out var fromStation);
+                stationsById.TryGetValue(transporter.To, out var toStation);
 
                 if (fromStation == null || toStation == null) continue;
 
@@ -210,7 +211,7 @@
                 {
                     foreach (var stopId in transporter.OtherStops)
                     {
-                        var otherStopStation = StationStore.Stations.FirstOrDefault(s => s.Id == stopId);
+                        stationsById.TryGetValue(stopId, out var otherStopStation);
                         if (otherStopStation != null)
                         {
                             var otherName = otherStopStation.ShortName ?? otherStopStation.Id;
@@ -383,30 +384,32 @@
         var mapY = mapPoint.Y * scaleY + minY;
 
         const int clickRadius = 5000;
+        const int clickRadiusSquared = clickRadius * clickRadius;
         Station? closestStation = null;
         Uploader? closestUploader = null;
-        double closestDistance = double.MaxValue;
+        double closestDistanceSquared = double.MaxValue;
 
-        var allStations = StationStore.Stations.ToList();
-        var allUploaders = StationStore.Uploaders.ToList();
-
-        foreach (var station in allStations)
+        foreach (var station in StationStore.Stations)
         {
-            var distance = Math.Sqrt(Math.Pow(mapX - station.X, 2) + Math.Pow(mapY - station.Y, 2));
-            if (distance < clickRadius && distance < closestDistance)
+            var dx = mapX - station.X;
+            var dy = mapY - station.Y;
+            var distanceSquared = (dx * dx) + (dy * dy);
+            if (distanceSquared < clickRadiusSquared && distanceSquared < closestDistanceSquared)
             {
-                closestDistance = distance;
+                closestDistanceSquared = distanceSquared;
                 closestStation = station;
                 closestUploader = null;
             }
         }
 
-        foreach (var uploader in allUploaders)
+        foreach (var uploader in StationStore.Uploaders)
         {
-            var distance = Math.Sqrt(Math.Pow(mapX - uploader.X, 2) + Math.Pow(mapY - uploader.Y, 2));
-            if (distance < clickRadius && distance < closestDistance)
+            var dx = mapX - uploader.X;
+            var dy = mapY - uploader.Y;
+            var distanceSquared = (dx * dx) + (dy * dy);
+            if (distanceSquared < clickRadiusSquared && distanceSquared < closestDistanceSquared)
             {
-                closestDistance = distance;
+                closestDistanceSquared = distanceSquared;
                 closestUploader = uploader;
                 closestStation = null;
             }

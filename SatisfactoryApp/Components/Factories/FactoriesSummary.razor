@@ -18,18 +18,9 @@
                     <MudCardContent Class="pa-2 io-card-content">
                         @{
                             var summary = GetGroupSummaryStats(group.Key);
-                            var hasImports = group.Any(s => s.Net < -0.001);
-                            var hasExports = group.Any(s => s.Net > 0.001);
                             var meanPos = GetGroupMeanPosition(group.Key);
                             var transportCounts = GetGroupStationCounts(group.Key);
                             var stabilityData = new double[] { summary.StableCount, summary.UnstableCount };
-                            var stabilityLabels = new[] { "Stable", "Unstable" };
-                            var stabilityChartOptions = new ChartOptions
-                            {
-                                ChartPalette = new[] { "#4CAF50", "#FF9800" },
-                                ShowLegend = false,
-                                ShowLabels = false
-                            };
                         }
                         <div class="io-card-summary-icons">
                             @if (meanPos.HasValue)
@@ -116,8 +107,8 @@
                                                           Width="64px"
                                                           Height="64px"
                                                           InputData="@stabilityData"
-                                                          InputLabels="@stabilityLabels"
-                                                          ChartOptions="@stabilityChartOptions" />
+                                                          InputLabels="@StabilityLabels"
+                                                          ChartOptions="@StabilityChartOptions" />
                                             </div>
                                         </div>
                                     </MudTooltip>
@@ -678,6 +669,14 @@
 </style>
 
 @code {
+    private static readonly string[] StabilityLabels = ["Stable", "Unstable"];
+    private static readonly ChartOptions StabilityChartOptions = new()
+    {
+        ChartPalette = ["#4CAF50", "#FF9800"],
+        ShowLegend = false,
+        ShowLabels = false
+    };
+
     private List<CircuitInputOutputStat> _circuitInputOutputStats = [];
     private Dictionary<int, PowerCircuitStat> _powerMainCircuitStats = [];
     private IGrouping<string, CircuitInputOutputStat>[] _groupedStats = [];
@@ -685,6 +684,10 @@
     private Dictionary<string, GroupSummaryStats> _groupSummaryStats = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, (int Trains, int Trucks, int Drones)> _groupStationCounts = new(StringComparer.OrdinalIgnoreCase);
     private Dictionary<string, List<Station>> _groupStations = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<Factory>> _groupFactories = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, List<string>> _groupCircuitChips = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, (double x, double y)?> _groupMeanPositions = new(StringComparer.OrdinalIgnoreCase);
+    private Dictionary<string, IReadOnlyList<KeyValuePair<string, int>>> _groupMachineSummary = new(StringComparer.OrdinalIgnoreCase);
 
     protected override void OnInitialized()
     {
@@ -701,10 +704,14 @@
 
     private void UpdateStats()
     {
+        var powerCircuits = MachineStore.PowerCircuits;
+        var powerCircuitById = powerCircuits.ToDictionary(c => c.Id);
         var mainCircuitStats = new Dictionary<int, PowerCircuitStat>();
+        var cleanedSubCircuitNameById = new Dictionary<int, string>();
+        var subCircuitIdByCleanedName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         var circuitItemStats = new Dictionary<(int CircuitId, string ItemName), (double Consumed, double Produced)>();
 
-        foreach (var circuit in MachineStore.PowerCircuits)
+        foreach (var circuit in powerCircuits)
         {
             if (circuit.ParentCircuitId is null)
             {
@@ -713,7 +720,16 @@
                     CircuitId = circuit.Id,
                     CircuitName = CircuitNames.GetName(circuit)
                 };
+                continue;
             }
+
+            var cleaned = RemoveBrackets(CircuitNames.GetName(circuit)).Trim();
+            if (string.IsNullOrEmpty(cleaned))
+                continue;
+
+            cleanedSubCircuitNameById[circuit.Id] = cleaned;
+            if (!subCircuitIdByCleanedName.ContainsKey(cleaned))
+                subCircuitIdByCleanedName[cleaned] = circuit.Id;
         }
 
         foreach (var factory in MachineStore.Factories)
@@ -734,13 +750,8 @@
                 {
                     var itemName = GetItemName(consumed);
                     var amount = GetItemAmount(consumed) * totalMultiplier;
-
                     var key = (circuitId, itemName);
-                    if (!circuitItemStats.ContainsKey(key))
-                    {
-                        circuitItemStats[key] = (0, 0);
-                    }
-                    var current = circuitItemStats[key];
+                    var current = circuitItemStats.GetValueOrDefault(key);
                     circuitItemStats[key] = (current.Consumed + amount, current.Produced);
                 }
 
@@ -748,26 +759,11 @@
                 {
                     var itemName = GetItemName(output);
                     var amount = GetItemAmount(output) * totalMultiplier;
-
                     var key = (circuitId, itemName);
-                    if (!circuitItemStats.ContainsKey(key))
-                    {
-                        circuitItemStats[key] = (0, 0);
-                    }
-                    var current = circuitItemStats[key];
+                    var current = circuitItemStats.GetValueOrDefault(key);
                     circuitItemStats[key] = (current.Consumed, current.Produced + amount);
                 }
             }
-        }
-
-        var subCircuitIdByCleanedName = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-        foreach (var circuit in MachineStore.PowerCircuits)
-        {
-            if (circuit.ParentCircuitId is null) continue;
-            var cleaned = RemoveBrackets(CircuitNames.GetName(circuit)).Trim();
-            if (string.IsNullOrEmpty(cleaned)) continue;
-            if (!subCircuitIdByCleanedName.ContainsKey(cleaned))
-                subCircuitIdByCleanedName[cleaned] = circuit.Id;
         }
 
         foreach (var station in StationStore.Stations)
@@ -788,22 +784,21 @@
             {
                 if (flow == null || string.IsNullOrEmpty(flow.Type) || !flow.FlowPerMinute.HasValue)
                     continue;
-                var itemName = flow.Type;
+
+                var key = (circuitId, flow.Type);
+                var current = circuitItemStats.GetValueOrDefault(key);
                 var amount = flow.FlowPerMinute.Value;
-                var key = (circuitId, itemName);
-                if (!circuitItemStats.ContainsKey(key))
-                    circuitItemStats[key] = (0, 0);
-                var current = circuitItemStats[key];
-                if (flow.IsUnload)
-                    circuitItemStats[key] = (current.Consumed, current.Produced + amount);
-                else
-                    circuitItemStats[key] = (current.Consumed + amount, current.Produced);
+                circuitItemStats[key] = flow.IsUnload
+                    ? (current.Consumed, current.Produced + amount)
+                    : (current.Consumed + amount, current.Produced);
             }
         }
 
         _powerMainCircuitStats = mainCircuitStats;
 
         var groupMachineTypeCounts = new Dictionary<string, Dictionary<string, int>>(StringComparer.OrdinalIgnoreCase);
+        var groupFactories = new Dictionary<string, List<Factory>>(StringComparer.OrdinalIgnoreCase);
+        var groupCircuitIds = new Dictionary<string, HashSet<int>>(StringComparer.OrdinalIgnoreCase);
 
         void AddFactoryToGroup(string groupKey, string? factoryType)
         {
@@ -821,64 +816,79 @@
             typeCounts[type] = count + 1;
         }
 
+        void AddFactoryGroupCache(string groupKey, int circuitId, Factory factory)
+        {
+            if (!groupFactories.TryGetValue(groupKey, out var factories))
+            {
+                factories = [];
+                groupFactories[groupKey] = factories;
+            }
+            factories.Add(factory);
+
+            if (!groupCircuitIds.TryGetValue(groupKey, out var ids))
+            {
+                ids = [];
+                groupCircuitIds[groupKey] = ids;
+            }
+            ids.Add(circuitId);
+        }
+
         foreach (var factory in MachineStore.Factories)
         {
-            AddFactoryToGroup($"MAIN_{factory.MainPowerCircuitId}", factory.Type);
+            var mainGroupKey = $"MAIN_{factory.MainPowerCircuitId}";
+            AddFactoryToGroup(mainGroupKey, factory.Type);
+            AddFactoryGroupCache(mainGroupKey, factory.MainPowerCircuitId, factory);
 
-            var subCircuit = MachineStore.PowerCircuits.FirstOrDefault(c => c.Id == factory.SubPowerCircuitId);
+            powerCircuitById.TryGetValue(factory.SubPowerCircuitId, out var subCircuit);
             if (subCircuit?.ParentCircuitId is not null)
             {
-                var cleaned = RemoveBrackets(CircuitNames.GetName(subCircuit));
+                var cleaned = cleanedSubCircuitNameById.GetValueOrDefault(subCircuit.Id) ?? string.Empty;
                 if (!string.IsNullOrWhiteSpace(cleaned))
                 {
-                    AddFactoryToGroup($"SUB_{cleaned}", factory.Type);
+                    var subGroupKey = $"SUB_{cleaned}";
+                    AddFactoryToGroup(subGroupKey, factory.Type);
+                    AddFactoryGroupCache(subGroupKey, subCircuit.Id, factory);
                 }
             }
         }
 
         _groupMachineTypeCounts = groupMachineTypeCounts;
+        _groupFactories = groupFactories;
 
         var combinedStats = new Dictionary<(string GroupKey, string ItemName), (double Consumed, double Produced, int? FirstCircuitId, int? ParentCircuitId, bool IsMainCircuit)>();
-
         foreach (var kvp in circuitItemStats)
         {
             var (circuitId, itemName) = kvp.Key;
             var (consumed, produced) = kvp.Value;
-            var circuit = MachineStore.PowerCircuits.FirstOrDefault(c => c.Id == circuitId);
+            powerCircuitById.TryGetValue(circuitId, out var circuit);
             var parentId = circuit?.ParentCircuitId;
             var isMainCircuit = parentId is null;
 
-            string groupKey;
-            if (isMainCircuit)
-            {
-                groupKey = $"MAIN_{circuitId}";
-            }
-            else
-            {
-                var circuitName = CircuitNames.GetName(circuit);
-                var cleanedName = RemoveBrackets(circuitName);
-                groupKey = $"SUB_{cleanedName}";
-            }
+            var groupKey = isMainCircuit
+                ? $"MAIN_{circuitId}"
+                : $"SUB_{(cleanedSubCircuitNameById.GetValueOrDefault(circuitId) ?? RemoveBrackets(CircuitNames.GetName(circuit)))}";
 
             var combinedKey = (groupKey, itemName);
-            if (!combinedStats.ContainsKey(combinedKey))
-            {
-                combinedStats[combinedKey] = (0, 0, circuitId, parentId, isMainCircuit);
-            }
-            var current = combinedStats[combinedKey];
-            combinedStats[combinedKey] = (current.Consumed + consumed, current.Produced + produced, current.FirstCircuitId, current.ParentCircuitId, current.IsMainCircuit);
+            var current = combinedStats.GetValueOrDefault(combinedKey);
+            combinedStats[combinedKey] = (
+                current.Consumed + consumed,
+                current.Produced + produced,
+                current.FirstCircuitId ?? circuitId,
+                current.ParentCircuitId ?? parentId,
+                current.FirstCircuitId.HasValue ? current.IsMainCircuit : isMainCircuit);
         }
 
         _circuitInputOutputStats = combinedStats
             .Select(kvp =>
             {
                 var ((groupKey, itemName), (consumed, produced, firstCircuitId, parentId, isMainCircuit)) = kvp;
-                var circuit = MachineStore.PowerCircuits.FirstOrDefault(c => c.Id == firstCircuitId);
+                var circuit = firstCircuitId.HasValue ? powerCircuitById.GetValueOrDefault(firstCircuitId.Value) : null;
+                var circuitName = CircuitNames.GetName(circuit);
 
                 return new CircuitInputOutputStat
                 {
                     CircuitId = firstCircuitId ?? 0,
-                    CircuitName = isMainCircuit ? CircuitNames.GetName(circuit) : RemoveBrackets(CircuitNames.GetName(circuit)),
+                    CircuitName = isMainCircuit ? circuitName : RemoveBrackets(circuitName),
                     ParentCircuitId = parentId,
                     ItemName = itemName,
                     TotalConsumed = consumed,
@@ -893,7 +903,7 @@
             .ToList();
 
         var mainCircuitSubCount = new Dictionary<int, int>();
-        foreach (var c in MachineStore.PowerCircuits)
+        foreach (var c in powerCircuits)
         {
             if (c.ParentCircuitId is int parentId)
                 mainCircuitSubCount[parentId] = mainCircuitSubCount.GetValueOrDefault(parentId, 0) + 1;
@@ -902,28 +912,27 @@
         _groupedStats = _circuitInputOutputStats
             .Where(s => !s.IsMainCircuit || mainCircuitSubCount.GetValueOrDefault(s.CircuitId, 0) <= 1)
             .GroupBy(s => s.GroupKey)
-            .OrderBy(g => _circuitInputOutputStats.First(x => x.GroupKey == g.Key).IsMainCircuit ? 0 : 1)
+            .OrderBy(g => g.First().IsMainCircuit ? 0 : 1)
             .ThenBy(g => g.Key)
             .ToArray();
 
         var groupSummaryStats = new Dictionary<string, GroupSummaryStats>(StringComparer.OrdinalIgnoreCase);
         foreach (var g in _groupedStats)
         {
-            var groupKey = g.Key;
-            var factories = GetFactoriesForGroup(groupKey);
+            var factories = _groupFactories.GetValueOrDefault(g.Key) ?? [];
             var total = factories.Count;
             var stable = factories.Count(f => f.PercentageProducing == 100);
             var unstable = factories.Count(f => f.PercentageProducing is not null && f.PercentageProducing != 100);
-            var unknown = Math.Max(0, total - stable - unstable);
             var variablePower = factories.Count(f => f.IsVariablePower());
             var powerStorage = factories.Count(f => f.IsPowerStorage());
             var powerGenerator = factories.Count(f => f.IsPowerProducerStorage());
-            groupSummaryStats[groupKey] = new GroupSummaryStats
+
+            groupSummaryStats[g.Key] = new GroupSummaryStats
             {
                 Total = total,
                 StableCount = stable,
                 UnstableCount = unstable,
-                UnknownCount = unknown,
+                UnknownCount = Math.Max(0, total - stable - unstable),
                 IsStable = unstable == 0 && variablePower == 0,
                 NumberOfNotStable = unstable,
                 NumberOfVariablePower = variablePower,
@@ -934,6 +943,36 @@
         }
         _groupSummaryStats = groupSummaryStats;
 
+        var groupMeanPositions = new Dictionary<string, (double x, double y)?>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in _groupFactories)
+        {
+            if (kvp.Value.Count == 0)
+            {
+                groupMeanPositions[kvp.Key] = null;
+                continue;
+            }
+
+            double sumX = 0;
+            double sumY = 0;
+            foreach (var f in kvp.Value)
+            {
+                sumX += f.X;
+                sumY += f.Y;
+            }
+            groupMeanPositions[kvp.Key] = (sumX / kvp.Value.Count, sumY / kvp.Value.Count);
+        }
+        _groupMeanPositions = groupMeanPositions;
+
+        var groupMachineSummary = new Dictionary<string, IReadOnlyList<KeyValuePair<string, int>>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var kvp in _groupMachineTypeCounts)
+        {
+            groupMachineSummary[kvp.Key] = kvp.Value
+                .OrderByDescending(e => e.Value)
+                .ThenBy(e => e.Key)
+                .ToList();
+        }
+        _groupMachineSummary = groupMachineSummary;
+
         var groupStationCounts = new Dictionary<string, (int Trains, int Trucks, int Drones)>(StringComparer.OrdinalIgnoreCase);
         var groupStations = new Dictionary<string, List<Station>>(StringComparer.OrdinalIgnoreCase);
         foreach (var g in _groupedStats)
@@ -942,44 +981,27 @@
             groupStations[g.Key] = [];
         }
 
-        HashSet<int> GetCircuitIdsForGroup(string groupKey)
-        {
-            if (groupKey.StartsWith("MAIN_"))
-            {
-                var mainId = int.Parse(groupKey.Substring(5));
-                return MachineStore.PowerCircuits
-                    .Where(c => c.ParentCircuitId == mainId)
-                    .Select(c => c.Id)
-                    .ToHashSet();
-            }
-            if (groupKey.StartsWith("SUB_"))
-            {
-                var cleanedName = groupKey.Substring(4);
-                return MachineStore.PowerCircuits
-                    .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
-                    .Select(c => c.Id)
-                    .ToHashSet();
-            }
-            return [];
-        }
-
         foreach (var station in StationStore.Stations)
         {
             if (station?.CargoFlows == null || station.CargoFlows.Count == 0)
                 continue;
+
             var stationName = (station.Name ?? "").Trim();
             var stationShortName = (station.ShortName ?? "").Trim();
             if (string.IsNullOrEmpty(stationName) && string.IsNullOrEmpty(stationShortName))
                 continue;
+
             if (!subCircuitIdByCleanedName.TryGetValue(stationName, out var circuitId)
                 && !subCircuitIdByCleanedName.TryGetValue(stationShortName, out circuitId))
                 continue;
+
             var stationType = station.Type;
             foreach (var groupKey in groupStationCounts.Keys.ToList())
             {
-                var circuitIds = GetCircuitIdsForGroup(groupKey);
+                var circuitIds = groupCircuitIds.GetValueOrDefault(groupKey) ?? [];
                 if (!circuitIds.Contains(circuitId))
                     continue;
+
                 var (trains, trucks, drones) = groupStationCounts[groupKey];
                 if (stationType.IsTrainType()) trains++;
                 else if (stationType.IsTruckType()) trucks++;
@@ -991,26 +1013,37 @@
         _groupStationCounts = groupStationCounts;
         _groupStations = groupStations;
 
+        var groupCircuitChips = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var groupKey in _groupedStats.Select(g => g.Key))
+        {
+            if (groupKey.StartsWith("MAIN_"))
+            {
+                var circuitId = int.Parse(groupKey.Substring(5));
+                var mainCircuit = _powerMainCircuitStats.GetValueOrDefault(circuitId);
+                groupCircuitChips[groupKey] = mainCircuit != null
+                    ? [$"[{mainCircuit.CircuitId}] {mainCircuit.CircuitName}"]
+                    : ["[Unknown Main Circuit]"];
+                continue;
+            }
+
+            if (groupKey.StartsWith("SUB_"))
+            {
+                var cleanedName = groupKey.Substring(4);
+                var chips = powerCircuits
+                    .Where(c => c.ParentCircuitId is not null && string.Equals(cleanedSubCircuitNameById.GetValueOrDefault(c.Id), cleanedName, StringComparison.Ordinal))
+                    .Select(CircuitNames.GetIdAndName)
+                    .ToList();
+                groupCircuitChips[groupKey] = chips.Count > 0 ? chips : [cleanedName];
+            }
+        }
+        _groupCircuitChips = groupCircuitChips;
+
         StateHasChanged();
     }
 
     private List<Factory> GetFactoriesForGroup(string groupKey)
     {
-        if (groupKey.StartsWith("MAIN_"))
-        {
-            var circuitId = int.Parse(groupKey.Substring(5));
-            return MachineStore.Factories.Where(f => f.MainPowerCircuitId == circuitId).ToList();
-        }
-        if (groupKey.StartsWith("SUB_"))
-        {
-            var cleanedName = groupKey.Substring(4);
-            var circuitIds = MachineStore.PowerCircuits
-                .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
-                .Select(c => c.Id)
-                .ToHashSet();
-            return MachineStore.Factories.Where(f => circuitIds.Contains(f.SubPowerCircuitId)).ToList();
-        }
-        return [];
+        return _groupFactories.TryGetValue(groupKey, out var factories) ? factories : [];
     }
 
     private GroupSummaryStats GetGroupSummaryStats(string groupKey)
@@ -1036,25 +1069,7 @@
 
     private List<string> GetGroupCircuitChips(string groupKey)
     {
-        if (groupKey.StartsWith("MAIN_"))
-        {
-            var circuitId = int.Parse(groupKey.Substring(5));
-            var mainCircuit = _powerMainCircuitStats.GetValueOrDefault(circuitId);
-            return mainCircuit != null
-                ? [$"[{mainCircuit.CircuitId}] {mainCircuit.CircuitName}"]
-                : ["[Unknown Main Circuit]"];
-        }
-        if (groupKey.StartsWith("SUB_"))
-        {
-            var cleanedName = groupKey.Substring(4);
-            var subCircuits = MachineStore.PowerCircuits
-                .Where(c => c.ParentCircuitId is not null && RemoveBrackets(CircuitNames.GetName(c)) == cleanedName)
-                .ToList();
-            return subCircuits.Any()
-                ? subCircuits.Select(c => CircuitNames.GetIdAndName(c)).ToList()
-                : [cleanedName];
-        }
-        return [];
+        return _groupCircuitChips.TryGetValue(groupKey, out var chips) ? chips : [];
     }
 
     private string GetGroupTitle(string groupKey)
@@ -1075,15 +1090,9 @@
 
     private IReadOnlyList<KeyValuePair<string, int>> GetMachineSummary(string groupKey)
     {
-        if (_groupMachineTypeCounts.TryGetValue(groupKey, out var dict))
-        {
-            return dict
-                .OrderByDescending(kvp => kvp.Value)
-                .ThenBy(kvp => kvp.Key)
-                .ToList();
-        }
-
-        return Array.Empty<KeyValuePair<string, int>>();
+        return _groupMachineSummary.TryGetValue(groupKey, out var summary)
+            ? summary
+            : Array.Empty<KeyValuePair<string, int>>();
     }
 
     private const int MapMinX = -320000;
@@ -1094,18 +1103,7 @@
 
     private (double x, double y)? GetGroupMeanPosition(string groupKey)
     {
-        var factories = GetFactoriesForGroup(groupKey);
-        if (factories.Count == 0) return null;
-        double sumX = 0, sumY = 0;
-        int n = 0;
-        foreach (var f in factories)
-        {
-            sumX += f.X;
-            sumY += f.Y;
-            n++;
-        }
-        if (n == 0) return null;
-        return (sumX / n, sumY / n);
+        return _groupMeanPositions.GetValueOrDefault(groupKey);
     }
 
     private static string CreateMiniMapSvg(double worldX, double worldY)
