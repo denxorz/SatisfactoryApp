@@ -2,6 +2,7 @@
 
 - **App**: `SatisfactoryApp` – a Blazor WebAssembly app for visualizing and analyzing Satisfactory save data (factories, power circuits, resources, stations, routes, etc.).
 - **Tech stack**: .NET, C#, Blazor components (`.razor`), MudBlazor/MudExtensions UI, browser-hosted WebAssembly.
+- **External package**: Depends on `Denxorz.Satisfactory.Routes` (NuGet). The project owner also maintains this package, so upstream package changes are an allowed path when app fixes require route-domain updates.
 - **Core services**: `FactoryStore`, `ResourceStore`, `StationStore`, `LoadedFileStore` and related services act as scoped state services for in-memory data and filtering.
 - **Runtime**: Typically run via `dotnet watch run` on the `SatisfactoryApp` project.
 
@@ -54,6 +55,18 @@
 - If introducing a new type or field, wire it through from data loading → store → filters/options → components.
 - Call out any assumptions you are making about the save data.
 
+### Working with `Denxorz.Satisfactory.Routes`
+
+- Treat route parsing and route-domain behavior as package-owned when logic clearly belongs in `Denxorz.Satisfactory.Routes`; avoid duplicating that logic in app code.
+- If an app issue is caused by package behavior, prefer one of these paths:
+  - Temporary app-side guard with a clear TODO and follow-up package change.
+  - Direct package update and app package-version bump.
+- Keep package upgrades explicit:
+  - Note the version change and expected behavior delta.
+  - Verify affected screens (stations/routes, graphs, summaries) after bumping.
+- If local integration testing is needed, a local package source or local-repo wiring (e.g., submodule/subtree or project reference workflow) is acceptable, but keep the default repo state simple and reviewable.
+- Do not silently introduce long-lived forks or vendored copies of the package.
+
 ## Agent Roles
 
 ### `feature-implementer`
@@ -80,6 +93,13 @@
 - Focus on the Satisfactory domain: factories, resources, belts, power circuits, stability, stations/routes.
 - Maintain domain invariants (e.g., stability categories, power circuit relationships, valid ranges for rates).
 - Make domain assumptions explicit and keep them consistent across services and components.
+
+### `package-integrator`
+
+- Focus on dependency edges between this app and `Denxorz.Satisfactory.Routes`.
+- Decide whether a fix belongs in app code, package code, or both.
+- Keep package-version updates intentional and clearly documented in change summaries.
+- Prefer fast feedback loops for integration testing before proposing broad refactors.
 
 ## Interaction Preferences
 
