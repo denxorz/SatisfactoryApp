@@ -41,6 +41,7 @@
 - Reuse existing patterns: for state, prefer stores; for UI, prefer following the existing Blazor + MudBlazor component structure.
 - Keep new configuration and options consistent with current naming and behavior.
 - Describe any migration or data-shape impact if models change.
+- If creating a new project (`.csproj`) in this repository, add it to `SatisfactoryApp.slnx` so it is discoverable in standard solution workflows.
 
 ### Refactoring
 
