@@ -1,3 +1,5 @@
+Shared environment, save-parser safety, Release-mode SaveProbe testing, and local package rewiring live in the repo-root `AGENTS.md` (used by Cursor and GitHub Copilot). This file is Cursor-specific.
+
 ## Project Context
 
 - **App**: `SatisfactoryApp` – a Blazor WebAssembly app for visualizing and analyzing Satisfactory save data (factories, power circuits, resources, stations, routes, etc.).
